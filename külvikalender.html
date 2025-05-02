@@ -103,6 +103,14 @@
             display: flex;
             flex-direction: column;
         }
+
+        .category-card:last-child {
+            grid-column: 1 / -1; /* Täidab kogu rea laiuse */
+        }
+
+        .aiatööd-card {
+            grid-column: 1 / -1; /* Täidab kogu rea laiuse */
+        }
         
         .category-card .plant-list {
             flex-grow: 1;
@@ -486,7 +494,10 @@
                 
                 // Loo kategooria kaart
                 const categoryCard = document.createElement('div');
-                categoryCard.className = 'category-card fade-in';
+                const categoryClass = category === 'aiatööd' ? 'category-card aiatööd-card' : 'category-card';
+                categoryCard.className = `${categoryClass} fade-in`;
+
+                //categoryCard.className = 'category-card fade-in';
                 categoryCard.style.animationDelay = `${delay}ms`;
                 delay += 100;
                 
