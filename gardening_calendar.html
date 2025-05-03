@@ -967,6 +967,36 @@
                 display: block;
             }
         }
+
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .select-all-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            padding: 6px 10px;
+            background-color: var(--light-bg);
+            border-radius: 6px;
+        }
+        
+        .select-all-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+        
+        .select-all-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+        }
     </style>
 </head>
 <body>
@@ -1736,6 +1766,12 @@
                         <div class="category-icon">${categoryIcons[category] || '🌿'}</div>
                         <h2 class="category-title">${categoryDisplayName}</h2>
                     </div>
+                    <div class="select-all-container">
+                        <label class="select-all-label">
+                            <input type="checkbox" class="select-all-checkbox" data-category="${category}">
+                            <span>Select All ${isTaskCategory ? 'Tasks' : 'Plants'}</span>
+                        </label>
+                    </div>
                     <ul class="plant-list">
                         ${filteredItems.map(item => {
                             const itemText = item[currentLang] || item.en;
@@ -1771,6 +1807,39 @@
             if (!hasResults) {
                 calendarContent.innerHTML = `<div class="no-results">${translations[currentLang].no_results || 'No results found for your search.'}</div>`;
             }
+
+            // Add event listeners for "Select All" checkboxes
+            const selectAllCheckboxes = document.querySelectorAll('.select-all-checkbox');
+            selectAllCheckboxes.forEach(checkbox => {
+                const category = checkbox.dataset.category;
+                
+                // Initial state: check if all items are selected
+                const categoryItems = calendarData[month][category] || [];
+                if (categoryItems.length > 0) {
+                    const allSelected = categoryItems.every(item => isItemSelected(month, category, item));
+                    checkbox.checked = allSelected;
+                }
+                
+                // Add change event
+                checkbox.addEventListener('change', (e) => {
+                    const isChecked = e.target.checked;
+                    const categoryCard = e.target.closest('.category-card');
+                    const checkboxes = categoryCard.querySelectorAll('.item-checkbox');
+                    
+                    // Update all checkboxes in this category
+                    checkboxes.forEach(itemCheckbox => {
+                        if (itemCheckbox.checked !== isChecked) {
+                            itemCheckbox.checked = isChecked;
+                            
+                            // Get and update the item
+                            const itemLi = itemCheckbox.closest('li');
+                            const itemJson = decodeURIComponent(itemLi.dataset.itemId);
+                            const item = JSON.parse(itemJson);
+                            toggleItemSelection(month, category, item, isChecked);
+                        }
+                    });
+                });
+            });
         }
 
         // Search function
@@ -2161,7 +2230,7 @@
             let coloredPaths = '';
             
             if (allPoints.length > 0) {
-                coloredPaths += `<path d="M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                // Don't start with an incomplete path
                 
                 pathSegments.forEach((segment, i) => {
                     const color = getTemperatureColor(segment.temp, tempUnit);
@@ -2243,7 +2312,7 @@
             let coloredPaths = '';
             
             if (allPoints.length > 0) {
-                coloredPaths += `<path d="M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                // Don't start with an incomplete path
                 
                 pathSegments.forEach((segment, i) => {
                     const color = getTemperatureColor(segment.temp, tempUnit);
@@ -2613,7 +2682,12 @@
             const heatSensitive = ['lettuce', 'spinach', 'arugula', 'peas'];
             const moistureSensitive = ['tomato', 'rosemary', 'thyme', 'sage'];
 
-            const plantLower = plant.toLowerCase();
+            // Ensure we have a string to work with
+            const plantText = typeof plant === 'string' ? plant : '';
+            const plantLower = plantText.toLowerCase();
+
+            // Skip checks if we don't have valid plant text
+            if (!plantLower) return true;
 
             // Check temperature suitability
             if (coldSensitive.some(p => plantLower.includes(p)) && minTemp < 10) return false;
@@ -2678,10 +2752,20 @@
                         if (items.length > 0) {
                             const filteredItems = items.filter(item => {
                                 if (!includeRelevantPlantsOnly.checked || !lastWeatherData) return true;
-                                return isPlantSuitableForWeather(item, lastWeatherData);
+                                // If item is an object, get its name or description, otherwise use item as is
+                                const plantName = typeof item === 'object' ? (item.name || item.description || JSON.stringify(item)) : item;
+                                return isPlantSuitableForWeather(plantName, lastWeatherData);
                             });
                             if (filteredItems.length > 0) {
-                                plantItems.push(`${categoryNames[category] || category}:\n${filteredItems.join('\n')}`);
+                                // Format each item to display readable text
+                                const formattedItems = filteredItems.map(item => {
+                                    if (typeof item === 'object') {
+                                        // Get the name in the current language or fall back to English
+                                        return item[currentLang] || item.en || JSON.stringify(item);
+                                    }
+                                    return item;
+                                });
+                                plantItems.push(`${categoryNames[category] || category}:\n${formattedItems.join('\n')}`);
                             }
                         }
                     });
@@ -2837,6 +2921,21 @@ Please be specific and consider the weather forecast and climate zone in your re
             if (Object.keys(selections[month]).length === 0) delete selections[month];
             
             localStorage.setItem('gardening_selected_items', JSON.stringify(selections));
+            
+            // Update "Select All" checkbox status
+            updateSelectAllCheckbox(month, category);
+        }
+
+        // Function to update the select all checkbox based on individual item selections
+        function updateSelectAllCheckbox(month, category) {
+            const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-category="${category}"]`);
+            if (!selectAllCheckbox) return;
+            
+            const categoryItems = calendarData[month][category] || [];
+            if (categoryItems.length > 0) {
+                const allSelected = categoryItems.every(item => isItemSelected(month, category, item));
+                selectAllCheckbox.checked = allSelected;
+            }
         }
 
         // Add scroll-related event listeners
