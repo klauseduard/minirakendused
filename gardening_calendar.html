@@ -2787,16 +2787,21 @@
                     const cells = row.querySelectorAll('td');
                     const date = cells[0].textContent;
                     
-                    // Extract weather condition - careful with undefined
-                    const weatherTextEl = cells[6].textContent.split('\n');
-                    const weatherCondition = weatherTextEl.length > 1 ? weatherTextEl[1] : "Not available";
+                    // Extract weather condition and clean it up
+                    let weatherText = cells[6].textContent.trim();
+                    // Split by newline and get only the weather condition text (usually the second line)
+                    let weatherParts = weatherText.split('\n').map(part => part.trim()).filter(part => part);
+                    // Find the weather condition (not a temperature and not containing "selected")
+                    let weatherCondition = weatherParts.find(part => 
+                        !part.includes('°') && !part.toLowerCase().includes('selected')
+                    ) || "Not available";
                     
-                    // Get temperature information
-                    const nightMinTemp = cells[1].textContent.trim();
-                    const nightMaxTemp = cells[2].textContent.trim();
-                    const dayMinTemp = cells[3].textContent.trim();
-                    const dayMaxTemp = cells[4].textContent.trim();
-                    const precipitation = cells[5].textContent.trim();
+                    // Clean temperature information
+                    const nightMinTemp = cells[1].textContent.trim().replace(/selected/gi, '');
+                    const nightMaxTemp = cells[2].textContent.trim().replace(/selected/gi, '');
+                    const dayMinTemp = cells[3].textContent.trim().replace(/selected/gi, '');
+                    const dayMaxTemp = cells[4].textContent.trim().replace(/selected/gi, '');
+                    const precipitation = cells[5].textContent.trim().replace(/selected/gi, '');
                     
                     // Build detailed forecast string
                     let dayForecast = `- ${date}:\n  Weather: ${weatherCondition}`;
@@ -2818,42 +2823,93 @@
 
             // Get current month's planting calendar with only selected items
             let plantingCalendar = '';
+            
+            // Only include plant information if the includeCalendar checkbox is checked
             if (includeCalendar.checked) {
+                // Retrieve the user's selected items from localStorage
                 const selections = getSelectedItems();
+                // Get only the selections for the current active month
                 const currentSelections = selections[activeMonth];
                 
                 if (currentSelections && Object.keys(currentSelections).length > 0) {
                     const plantItems = [];
-                    Object.entries(currentSelections).forEach(([category, items]) => {
-                        if (items.length > 0) {
-                            const filteredItems = items.filter(item => {
-                                if (!includeRelevantPlantsOnly.checked || !lastWeatherData) return true;
-                                // If item is an object, get its name or description, otherwise use item as is
-                                const plantName = typeof item === 'object' ? (item.name || item.description || JSON.stringify(item)) : item;
-                                return isPlantSuitableForWeather(plantName, lastWeatherData);
+                    
+                    // For debugging - log what's in currentSelections
+                    console.log('Selected items for prompt:', JSON.stringify(currentSelections));
+                    
+                    // Process each category of selections
+                    Object.entries(currentSelections).forEach(([category, selectedItems]) => {
+                        if (selectedItems && selectedItems.length > 0) {
+                            // Deep clone the items to avoid modification issues
+                            let itemsToProcess = JSON.parse(JSON.stringify(selectedItems));
+                            
+                            // Make sure we're only working with the actual selected items
+                            // by matching their IDs with what's in calendarData
+                            const availableItems = calendarData[activeMonth]?.[category] || [];
+                            
+                            // Filter to ensure we only have valid selected items
+                            itemsToProcess = itemsToProcess.filter(selectedItem => {
+                                // Check if this item exists in calendarData for this month and category
+                                return availableItems.some(item => {
+                                    // Deep comparison by checking if the items are equivalent
+                                    if (typeof selectedItem === 'object' && typeof item === 'object') {
+                                        return selectedItem.en === item.en;
+                                    }
+                                    return false;
+                                });
                             });
-                            if (filteredItems.length > 0) {
+                            
+                            // Filter based on weather suitability if that option is checked
+                            if (includeRelevantPlantsOnly.checked && lastWeatherData) {
+                                itemsToProcess = itemsToProcess.filter(item => {
+                                    // Extract a text representation of the item for weather suitability check
+                                    const plantName = typeof item === 'object' ? 
+                                        (item[currentLang] || item.en || JSON.stringify(item)) : String(item);
+                                    return isPlantSuitableForWeather(plantName, lastWeatherData);
+                                });
+                            }
+                            
+                            if (itemsToProcess.length > 0) {
                                 // Format each item to display readable text
-                                const formattedItems = filteredItems.map(item => {
+                                const formattedItems = itemsToProcess.map(item => {
                                     if (typeof item === 'object') {
                                         // Get the name in the current language or fall back to English
-                                        return item[currentLang] || item.en || JSON.stringify(item);
+                                        return (item[currentLang] || item.en || JSON.stringify(item))
+                                            .replace(/selected/gi, '') // Remove any "selected" text
+                                            .trim();
                                     }
-                                    return item;
+                                    return String(item).replace(/selected/gi, '').trim();
                                 });
-                                plantItems.push(`${categoryNames[category] || category}:\n${formattedItems.join('\n')}`);
+                                
+                                // Remove any empty or duplicate items
+                                const uniqueItems = [...new Set(formattedItems.filter(Boolean))];
+                                
+                                // Add the category with its items to the plantItems array
+                                if (uniqueItems.length > 0) {
+                                    plantItems.push(`${categoryNames[category] || category}:\n${uniqueItems.join('\n')}`);
+                                }
                             }
                         }
                     });
+                    
+                    // Create the final calendar section if we have any items
                     if (plantItems.length > 0) {
                         plantingCalendar = 'Selected Plants and Tasks:\n\n' + plantItems.join('\n\n');
+                    } else {
+                        // If filtering for weather resulted in no suitable plants
+                        if (includeRelevantPlantsOnly.checked) {
+                            plantingCalendar = 'Note: You have selected plants, but none are suitable for the current weather forecast.\n';
+                        } else {
+                            plantingCalendar = 'No plants or tasks selected yet. Please check items in the calendar that interest you.\n';
+                        }
                     }
-                }
-
-                // If no selections, add a note
-                if (!plantingCalendar) {
+                } else {
+                    // If no selections found for active month
                     plantingCalendar = 'No plants or tasks selected yet. Please check items in the calendar that interest you.\n';
                 }
+            } else {
+                // User has unchecked "Include selected plants and tasks"
+                plantingCalendar = '';
             }
 
             // Get user's custom notes
@@ -2880,22 +2936,20 @@ Location and Climate:
 ${locationInfo.replace(/Location:/g, "Location:").replace(/Latitude:/g, "\nLatitude:").replace(/Longitude:/g, "\nLongitude:")}
 
 Köppen Climate Zone: ${climateZone}
-${includeRelevantPlantsOnly.checked ? '(Recommendations filtered for current weather conditions)' : ''}
+${includeRelevantPlantsOnly.checked && includeCalendar.checked ? '(Recommendations filtered for current weather conditions)' : ''}
 
 Current Weather and Forecast:
 ${currentWeather}
 
 7-Day Forecast:
 ${forecastSummary}
-
-${plantingCalendar}
-
+${plantingCalendar ? '\n' + plantingCalendar + '\n' : ''}
 ${notes ? `Additional Notes:\n${notes}\n\n` : ''}Based on this information, please provide:
 1. Immediate tasks I should focus on this week
 2. What I should plant now or prepare for planting
 3. Potential weather-related precautions
 4. Long-term planning suggestions
-5. Any specific care instructions for my selected plants
+${includeCalendar.checked ? '5. Any specific care instructions for my selected plants' : '5. General gardening tips for this season and climate'}
 
 IMPORTANT: This is a current gardening request for the date specified above. Please use the weather forecast and season information provided and do not base your recommendations on outdated or previous years' gardening calendars. The forecast and plants listed are current and specific to my location and climate.`;
 
@@ -2987,7 +3041,21 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
 
         function isItemSelected(month, category, item) {
             const selections = getSelectedItems();
-            return selections[month]?.[category]?.includes(item) || false;
+            
+            // Check if we have any selections for this month and category
+            if (!selections[month] || !selections[month][category]) {
+                return false;
+            }
+            
+            // For object items (like plants), compare by their English name
+            if (typeof item === 'object' && item.en) {
+                return selections[month][category].some(selected => 
+                    typeof selected === 'object' && selected.en === item.en
+                );
+            }
+            
+            // For string items or other types, use direct includes check
+            return selections[month][category].includes(item) || false;
         }
 
         function toggleItemSelection(month, category, item, selected) {
@@ -2998,10 +3066,29 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             if (!selections[month][category]) selections[month][category] = [];
             
             const items = selections[month][category];
-            const index = items.indexOf(item);
+            
+            // For object items (like plants), find by comparing English name
+            let index = -1;
+            if (typeof item === 'object' && item.en) {
+                index = items.findIndex(existingItem => 
+                    typeof existingItem === 'object' && existingItem.en === item.en
+                );
+            } else {
+                // For string items or other types, use indexOf
+                index = items.indexOf(item);
+            }
             
             if (selected && index === -1) {
-                items.push(item);
+                // Store a clean copy without any DOM-related attributes
+                if (typeof item === 'object') {
+                    // We store only the essential data (language keys)
+                    const cleanItem = {};
+                    if (item.en) cleanItem.en = item.en;
+                    if (item.et) cleanItem.et = item.et;
+                    items.push(cleanItem);
+                } else {
+                    items.push(item);
+                }
             } else if (!selected && index !== -1) {
                 items.splice(index, 1);
             }
@@ -3014,6 +3101,9 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             
             // Update "Select All" checkbox status
             updateSelectAllCheckbox(month, category);
+            
+            // Log the updated selections for debugging
+            console.log('Updated selections:', JSON.stringify(selections));
         }
 
         // Function to update the select all checkbox based on individual item selections
