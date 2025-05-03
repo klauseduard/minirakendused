@@ -714,9 +714,45 @@
                 const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
                 const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
                 const key = `${round025(latNum)} ${round025(lonNum)}`;
-                userClimateZone = koppenGrid[key] || 'Unknown';
-                lookupKey = key;
-                foundZone = userClimateZone;
+                // Try exact match first
+                if (koppenGrid[key]) {
+                    userClimateZone = koppenGrid[key];
+                    lookupKey = key;
+                    foundZone = userClimateZone;
+                } else {
+                    // Find nearest neighbor
+                    const roundedLat = round025(latNum);
+                    const roundedLon = round025(lonNum);
+                    let minDistance = Infinity;
+                    let nearestZone = null;
+                    let nearestKey = null;
+                    
+                    // Search in nearby coordinates (±1 degree should be enough)
+                    for (const gridKey in koppenGrid) {
+                        const [gridLat, gridLon] = gridKey.split(' ').map(Number);
+                        if (Math.abs(gridLat - roundedLat) <= 1 && Math.abs(gridLon - roundedLon) <= 1) {
+                            const distance = Math.sqrt(
+                                Math.pow(gridLat - roundedLat, 2) + 
+                                Math.pow(gridLon - roundedLon, 2)
+                            );
+                            if (distance < minDistance) {
+                                minDistance = distance;
+                                nearestZone = koppenGrid[gridKey];
+                                nearestKey = gridKey;
+                            }
+                        }
+                    }
+                    
+                    if (nearestZone) {
+                        userClimateZone = nearestZone;
+                        lookupKey = `${key} (nearest: ${nearestKey}, dist: ${minDistance.toFixed(2)}°)`;
+                        foundZone = nearestZone;
+                    } else {
+                        userClimateZone = 'Unknown';
+                        lookupKey = key;
+                        foundZone = 'Unknown';
+                    }
+                }
             }
             renderClimateZoneUI(lookupKey, foundZone);
         }
