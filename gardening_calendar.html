@@ -470,6 +470,7 @@
                     <option value="in">Inches (in)</option>
                 </select>
             </div>
+            <div id="climateZoneInfo" style="margin-bottom: 10px;"></div>
             <div class="weather-placeholder" id="weatherPlaceholder">
                 Weather information for your location will appear here.
             </div>
@@ -653,6 +654,89 @@
         let lastWeatherLat = null;
         let lastWeatherLon = null;
 
+        // --- Köppen climate zone logic ---
+        let koppenGrid = null;
+        let userClimateZone = null;
+        let userClimateZoneOverride = null;
+        const climateZoneInfo = document.getElementById('climateZoneInfo');
+
+        // Load the grid JSON
+        fetch('gardening_calendar/data/koppen_grid_0.5deg.json')
+            .then(r => r.json())
+            .then(data => {
+                koppenGrid = data;
+                // If we already have a location, try to show zone
+                const cached = localStorage.getItem('gardening_last_location');
+                if (cached) {
+                    try {
+                        const loc = JSON.parse(cached);
+                        if (loc.type === 'coords' && loc.lat && loc.lon) {
+                            showClimateZone(loc.lat, loc.lon);
+                        }
+                    } catch (e) {}
+                }
+            });
+
+        // Helper: round to nearest 0.5
+        function round05(x) {
+            return (Math.round(x * 2) / 2).toFixed(2);
+        }
+
+        // Show climate zone info
+        function showClimateZone(lat, lon) {
+            if (!koppenGrid) {
+                climateZoneInfo.innerHTML = '';
+                return;
+            }
+            // Check for override
+            const override = localStorage.getItem('gardening_climate_zone_override');
+            if (override) {
+                userClimateZoneOverride = override;
+                userClimateZone = override;
+            } else {
+                const key = `${round05(lat)},${round05(lon)}`;
+                userClimateZone = koppenGrid[key] || 'Unknown';
+            }
+            renderClimateZoneUI();
+        }
+
+        // Render the climate zone UI
+        function renderClimateZoneUI() {
+            let html = '';
+            if (userClimateZone) {
+                html += `<strong>Climate zone:</strong> <span id="climateZoneCode">${userClimateZone}</span> `;
+                html += `<a href="https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification" target="_blank" style="font-size:0.95em;">(What is this?)</a>`;
+            }
+            html += `<br><label for="climateZoneOverride" style="font-size:0.95em;">Override zone:</label> <input id="climateZoneOverride" type="text" style="width:60px;" value="${userClimateZoneOverride || ''}" placeholder="e.g. Dfb"> <button id="setClimateZoneOverrideBtn" style="font-size:0.95em;">Set</button> <button id="clearClimateZoneOverrideBtn" style="font-size:0.95em;">Clear</button>`;
+            climateZoneInfo.innerHTML = html;
+            // Add listeners
+            document.getElementById('setClimateZoneOverrideBtn').onclick = function() {
+                const val = document.getElementById('climateZoneOverride').value.trim();
+                if (val) {
+                    localStorage.setItem('gardening_climate_zone_override', val);
+                    userClimateZoneOverride = val;
+                    userClimateZone = val;
+                    renderClimateZoneUI();
+                }
+            };
+            document.getElementById('clearClimateZoneOverrideBtn').onclick = function() {
+                localStorage.removeItem('gardening_climate_zone_override');
+                userClimateZoneOverride = null;
+                // Recompute from location
+                const cached = localStorage.getItem('gardening_last_location');
+                if (cached) {
+                    try {
+                        const loc = JSON.parse(cached);
+                        if (loc.type === 'coords' && loc.lat && loc.lon) {
+                            const key = `${round05(loc.lat)},${round05(loc.lon)}`;
+                            userClimateZone = koppenGrid[key] || 'Unknown';
+                        }
+                    } catch (e) {}
+                }
+                renderClimateZoneUI();
+            };
+        }
+
         // Helper: Convert temperature and precipitation
         function convertTemp(val, unit) {
             if (unit === 'F') return Math.round(val * 9/5 + 32);
@@ -823,6 +907,7 @@
             lastWeatherCoords = { lat, lon };
             lastWeatherAction = 'weather';
             fetchWeatherData(lat, lon);
+            showClimateZone(lat, lon);
         }
 
         // Weather code to icon, text, and color (Open-Meteo codes)
