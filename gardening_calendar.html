@@ -679,7 +679,9 @@
 
         // Helper: round to nearest 0.5
         function round05(x) {
-            return (Math.round(x * 2) / 2).toFixed(2);
+            // Ensure x is a number, round to nearest 0.5, always two decimals
+            const num = typeof x === 'string' ? parseFloat(x) : x;
+            return (Math.round(num * 2) / 2).toFixed(2);
         }
 
         // Show climate zone info
@@ -690,24 +692,35 @@
             }
             // Check for override
             const override = localStorage.getItem('gardening_climate_zone_override');
+            let lookupKey = '';
+            let foundZone = '';
             if (override) {
                 userClimateZoneOverride = override;
                 userClimateZone = override;
+                lookupKey = '(override)';
+                foundZone = override;
             } else {
-                const key = `${round05(lat)},${round05(lon)}`;
+                const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
+                const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
+                const key = `${round05(latNum)},${round05(lonNum)}`;
                 userClimateZone = koppenGrid[key] || 'Unknown';
+                lookupKey = key;
+                foundZone = userClimateZone;
             }
-            renderClimateZoneUI();
+            renderClimateZoneUI(lookupKey, foundZone);
         }
 
-        // Render the climate zone UI
-        function renderClimateZoneUI() {
+        // Render the climate zone UI (with debug info)
+        function renderClimateZoneUI(lookupKey = '', foundZone = '') {
             let html = '';
             if (userClimateZone) {
                 html += `<strong>Climate zone:</strong> <span id="climateZoneCode">${userClimateZone}</span> `;
                 html += `<a href="https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification" target="_blank" style="font-size:0.95em;">(What is this?)</a>`;
             }
             html += `<br><label for="climateZoneOverride" style="font-size:0.95em;">Override zone:</label> <input id="climateZoneOverride" type="text" style="width:60px;" value="${userClimateZoneOverride || ''}" placeholder="e.g. Dfb"> <button id="setClimateZoneOverrideBtn" style="font-size:0.95em;">Set</button> <button id="clearClimateZoneOverrideBtn" style="font-size:0.95em;">Clear</button>`;
+            if (lookupKey) {
+                html += `<div style="font-size:0.9em;color:#888;">Debug: lookup key = <code>${lookupKey}</code>, result = <code>${foundZone}</code></div>`;
+            }
             climateZoneInfo.innerHTML = html;
             // Add listeners
             document.getElementById('setClimateZoneOverrideBtn').onclick = function() {
@@ -716,7 +729,7 @@
                     localStorage.setItem('gardening_climate_zone_override', val);
                     userClimateZoneOverride = val;
                     userClimateZone = val;
-                    renderClimateZoneUI();
+                    renderClimateZoneUI('(override)', val);
                 }
             };
             document.getElementById('clearClimateZoneOverrideBtn').onclick = function() {
@@ -728,8 +741,12 @@
                     try {
                         const loc = JSON.parse(cached);
                         if (loc.type === 'coords' && loc.lat && loc.lon) {
-                            const key = `${round05(loc.lat)},${round05(loc.lon)}`;
+                            const latNum = typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat;
+                            const lonNum = typeof loc.lon === 'string' ? parseFloat(loc.lon) : loc.lon;
+                            const key = `${round05(latNum)},${round05(lonNum)}`;
                             userClimateZone = koppenGrid[key] || 'Unknown';
+                            renderClimateZoneUI(key, userClimateZone);
+                            return;
                         }
                     } catch (e) {}
                 }
