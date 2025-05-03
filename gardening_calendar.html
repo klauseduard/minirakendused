@@ -1689,7 +1689,47 @@
             for (let i = 0; i < data.daily.time.length; i++) {
                 const { nightMin, nightMax, dayMin, dayMax } = calcNightDayMinMax(hourlyByDay[i]);
                 const weatherIconTextColor = weatherCodeToIconTextColor(data.daily.weathercode[i]);
-                html += `<tr><td>${data.daily.time[i]}</td><td>${nightMin !== null ? convertTemp(nightMin, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${nightMax !== null ? convertTemp(nightMax, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${dayMin !== null ? convertTemp(dayMin, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${dayMax !== null ? convertTemp(dayMax, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol()}</td><td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td><td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td></tr>`;
+                
+                // Color-code the temperature cells
+                function getTempHtml(tempValue) {
+                    if (tempValue === null) return '-';
+                    const temp = convertTemp(tempValue, tempUnit);
+                    const tempColor = getTemperatureColor(temp, tempUnit);
+                    
+                    // Calculate contrasting text color (black or white) based on background color
+                    // Convert hex color to RGB to calculate luminance
+                    const hexToRgb = (hex) => {
+                        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                        const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+                        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+                        return result ? {
+                            r: parseInt(result[1], 16),
+                            g: parseInt(result[2], 16),
+                            b: parseInt(result[3], 16)
+                        } : {r: 0, g: 0, b: 0};
+                    };
+                    
+                    // Calculate relative luminance for accessibility contrast
+                    const rgb = hexToRgb(tempColor);
+                    
+                    // Use the original color but with reduced opacity for a softer look
+                    const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
+                    const textColor = '#333333';
+                    const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
+                    
+                    return `<span style="display:inline-block;background-color:${bgColor};color:${textColor};padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol()}</span>`;
+                }
+                
+                html += `<tr>
+                    <td>${data.daily.time[i]}</td>
+                    <td>${getTempHtml(nightMin)}</td>
+                    <td>${getTempHtml(nightMax)}</td>
+                    <td>${getTempHtml(dayMin)}</td>
+                    <td>${getTempHtml(dayMax)}</td>
+                    <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol()}</td>
+                    <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
+                    <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
+                </tr>`;
             }
             html += `</tbody></table>`;
             weatherSection.innerHTML = html;
@@ -1739,35 +1779,131 @@
             return result;
         }
 
+        // Shared temperature color mapping function
+        function getTemperatureColor(temp, tempUnit) {
+            // Define more granular temperature steps
+            const temperatureSteps = tempUnit === 'F' ? [
+                { threshold: 14, color: '#0d47a1' },   // Very cold (deep blue)
+                { threshold: 23, color: '#1565c0' },   // Freezing (deep blue-mid blue)
+                { threshold: 32, color: '#1976d2' },   // Freezing point (mid blue)
+                { threshold: 41, color: '#1e88e5' },   // Cold (blue)
+                { threshold: 50, color: '#42a5f5' },   // Cool (light blue)
+                { threshold: 59, color: '#64b5f6' },   // Cool-mild (pale blue)
+                { threshold: 64, color: '#81c784' },   // Mild (light green)
+                { threshold: 68, color: '#4caf50' },   // Mild-comfortable (medium green)
+                { threshold: 73, color: '#7cb342' },   // Comfortable (green-yellow)
+                { threshold: 77, color: '#9e9d24' },   // Warm (yellow-green)
+                { threshold: 82, color: '#ffb74d' },   // Warm-hot (light orange)
+                { threshold: 86, color: '#ff9800' },   // Hot (orange)
+                { threshold: 91, color: '#f57c00' },   // Very hot (dark orange)
+                { threshold: 95, color: '#e64a19' },   // Extremely hot (orange-red)
+                { threshold: 100, color: '#d32f2f' },  // Dangerous heat (red)
+                { threshold: Infinity, color: '#b71c1c' } // Extreme heat (deep red)
+            ] : [
+                { threshold: -20, color: '#0d47a1' },  // Extreme cold (deep blue)
+                { threshold: -15, color: '#1565c0' },  // Very cold (deep blue-mid blue)
+                { threshold: -10, color: '#1976d2' },  // Very cold (mid blue)
+                { threshold: -5, color: '#1e88e5' },   // Cold (blue)
+                { threshold: 0, color: '#42a5f5' },    // Freezing (light blue)
+                { threshold: 5, color: '#64b5f6' },    // Cool (pale blue)
+                { threshold: 10, color: '#81c784' },   // Cool-mild (light green)
+                { threshold: 15, color: '#4caf50' },   // Mild (medium green)
+                { threshold: 20, color: '#7cb342' },   // Comfortable (green-yellow)
+                { threshold: 23, color: '#9e9d24' },   // Warm (yellow-green)
+                { threshold: 26, color: '#ffb74d' },   // Warm-hot (light orange)
+                { threshold: 30, color: '#ff9800' },   // Hot (orange)
+                { threshold: 33, color: '#f57c00' },   // Very hot (dark orange)
+                { threshold: 36, color: '#e64a19' },   // Extremely hot (orange-red)
+                { threshold: 40, color: '#d32f2f' },   // Dangerous heat (red)
+                { threshold: Infinity, color: '#b71c1c' } // Extreme heat (deep red)
+            ];
+            
+            // Find the appropriate color based on temperature
+            for (const step of temperatureSteps) {
+                if (temp <= step.threshold) {
+                    return step.color;
+                }
+            }
+            return '#b71c1c'; // Fallback to deepest red
+        }
+
         // Render a mini SVG sparkline for a day's temperatures
         function renderSparkline(temps, dayIndex, tempUnit) {
             if (!temps || temps.length === 0) return '';
             const w = 60, h = 40;
             // Convert all temps for sparkline
             const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
+            
+            // Use absolute temperature ranges for consistent coloring
+            // -10°C (14°F) to 40°C (104°F) is a reasonable range for most weather
+            const absMinTemp = tempUnit === 'F' ? 14 : -10;
+            const absMaxTemp = tempUnit === 'F' ? 104 : 40;
+            
+            // Use local min/max for the height calculations only
             const min = Math.min(...convertedTemps);
             const max = Math.max(...convertedTemps);
             const range = max - min || 1;
-            const points = convertedTemps.map((t, i) => {
+            
+            // Create a smooth curve using cubic bezier curves
+            let path = '';
+            const allPoints = [];
+            let pathSegments = [];
+            
+            convertedTemps.forEach((t, i) => {
                 const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
                 const y = h - 2 - ((t - min) / range) * (h - 4);
-                return `${x.toFixed(1)},${y.toFixed(1)}`;
-            }).join(' ');
+                allPoints.push({ x, y, temp: t });
+            });
+            
+            // Build smooth path using cubic bezier curves
+            if (allPoints.length > 0) {
+                path = `M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                
+                for (let i = 0; i < allPoints.length - 1; i++) {
+                    const current = allPoints[i];
+                    const next = allPoints[i + 1];
+                    
+                    // Calculate control points for smooth curve
+                    const cpx1 = current.x + (next.x - current.x) / 3;
+                    const cpy1 = current.y;
+                    const cpx2 = current.x + 2 * (next.x - current.x) / 3;
+                    const cpy2 = next.y;
+                    
+                    const segment = `C${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`;
+                    path += ` ${segment}`;
+                    
+                    // Store segment with average temperature for coloring
+                    const avgTemp = (current.temp + next.temp) / 2;
+                    pathSegments.push({
+                        segment: segment,
+                        temp: avgTemp,
+                        startX: current.x,
+                        endX: next.x
+                    });
+                }
+            }
+            
             // Reference lines for 0 and 20 (in selected unit)
             const y0 = h - 2 - ((convertTemp(0, tempUnit) - min) / range) * (h - 4);
             const y20 = h - 2 - ((convertTemp(20, tempUnit) - min) / range) * (h - 4);
-            const gradientId = `temp-gradient-${Math.random().toString(36).substr(2, 8)}`;
+            
+            // Create multiple path elements with different colors based on temperature
+            let coloredPaths = '';
+            
+            if (allPoints.length > 0) {
+                coloredPaths += `<path d="M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                
+                pathSegments.forEach((segment, i) => {
+                    const color = getTemperatureColor(segment.temp, tempUnit);
+                    coloredPaths += `<path d="M ${segment.startX.toFixed(1)},${allPoints[i].y.toFixed(1)} ${segment.segment}" 
+                        fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
+                });
+            }
+            
             return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle;cursor:pointer;" data-day-index="${dayIndex}">
-                <defs>
-                    <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#d32f2f"/>
-                        <stop offset="50%" stop-color="#4a8e3a"/>
-                        <stop offset="100%" stop-color="#1976d2"/>
-                    </linearGradient>
-                </defs>
                 <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
                 <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
-                <polyline fill="none" stroke="url(#${gradientId})" stroke-width="2" points="${points}" />
+                ${coloredPaths}
             </svg>`;
         }
 
@@ -1777,31 +1913,79 @@
             const w = 340, h = 100;
             // Convert all temps for chart
             const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
+            
+            // Use absolute temperature ranges for consistent coloring
+            // -10°C (14°F) to 40°C (104°F) is a reasonable range for most weather
+            const absMinTemp = tempUnit === 'F' ? 14 : -10;
+            const absMaxTemp = tempUnit === 'F' ? 104 : 40;
+            
+            // Use local min/max for the height calculations only
             const min = Math.min(...convertedTemps);
             const max = Math.max(...convertedTemps);
             const range = max - min || 1;
-            const points = convertedTemps.map((t, i) => {
+            
+            // Create a smooth curve using cubic bezier curves
+            let path = '';
+            const allPoints = [];
+            let pathSegments = [];
+            
+            convertedTemps.forEach((t, i) => {
                 const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
                 const y = h - 20 - ((t - min) / range) * (h - 40);
-                return `${x.toFixed(1)},${y.toFixed(1)}`;
-            }).join(' ');
+                allPoints.push({ x, y, temp: t });
+            });
+            
+            // Build smooth path using cubic bezier curves
+            if (allPoints.length > 0) {
+                path = `M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                
+                for (let i = 0; i < allPoints.length - 1; i++) {
+                    const current = allPoints[i];
+                    const next = allPoints[i + 1];
+                    
+                    // Calculate control points for smooth curve
+                    const cpx1 = current.x + (next.x - current.x) / 3;
+                    const cpy1 = current.y;
+                    const cpx2 = current.x + 2 * (next.x - current.x) / 3;
+                    const cpy2 = next.y;
+                    
+                    const segment = `C${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`;
+                    path += ` ${segment}`;
+                    
+                    // Store segment with average temperature for coloring
+                    const avgTemp = (current.temp + next.temp) / 2;
+                    pathSegments.push({
+                        segment: segment,
+                        temp: avgTemp,
+                        startX: current.x,
+                        endX: next.x
+                    });
+                }
+            }
+            
             // Reference lines for 0 and 20 (in selected unit)
             const y0 = h - 20 - ((convertTemp(0, tempUnit) - min) / range) * (h - 40);
             const y20 = h - 20 - ((convertTemp(20, tempUnit) - min) / range) * (h - 40);
-            const gradientId = `temp-gradient-large-${Math.random().toString(36).substr(2, 8)}`;
             const minLabel = min + getTempUnitSymbol();
             const maxLabel = max + getTempUnitSymbol();
+            
+            // Create multiple path elements with different colors based on temperature
+            let coloredPaths = '';
+            
+            if (allPoints.length > 0) {
+                coloredPaths += `<path d="M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
+                
+                pathSegments.forEach((segment, i) => {
+                    const color = getTemperatureColor(segment.temp, tempUnit);
+                    coloredPaths += `<path d="M ${segment.startX.toFixed(1)},${allPoints[i].y.toFixed(1)} ${segment.segment}" 
+                        fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
+                });
+            }
+            
             return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-                <defs>
-                    <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stop-color="#d32f2f"/>
-                        <stop offset="50%" stop-color="#4a8e3a"/>
-                        <stop offset="100%" stop-color="#1976d2"/>
-                    </linearGradient>
-                </defs>
                 <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
                 <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
-                <polyline fill="none" stroke="url(#${gradientId})" stroke-width="3" points="${points}" />
+                ${coloredPaths}
                 <text x="2" y="${h - 22}" font-size="11" fill="#888">${minLabel}</text>
                 <text x="2" y="18" font-size="11" fill="#888">${maxLabel}</text>
             </svg>`;
@@ -1817,7 +2001,38 @@
             const precipUnit = precipUnitSelect.value;
             let hourlyTable = '<table class="weather-modal-hourly-table"><thead><tr><th>Hour</th><th>Temp (' + getTempUnitSymbol() + ')</th><th>Precip. (' + getPrecipUnitSymbol() + ')</th><th>Wind (km/h)</th></tr></thead><tbody>';
             for (let h = 0; h < temps.length; h++) {
-                hourlyTable += `<tr><td>${h}:00</td><td>${convertTemp(temps[h], tempUnit)}</td><td>${precips && precips[h] !== undefined ? convertPrecip(precips[h], precipUnit) : '-'}</td><td>${winds && winds[h] !== undefined ? Math.round(winds[h]) : '-'}</td></tr>`;
+                // Color-code the temperature cell
+                const temp = convertTemp(temps[h], tempUnit);
+                const tempColor = getTemperatureColor(temp, tempUnit);
+                
+                // Calculate contrasting text color (black or white) based on background color
+                const hexToRgb = (hex) => {
+                    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                    const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+                    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+                    return result ? {
+                        r: parseInt(result[1], 16),
+                        g: parseInt(result[2], 16),
+                        b: parseInt(result[3], 16)
+                    } : {r: 0, g: 0, b: 0};
+                };
+                
+                // Calculate relative luminance for accessibility contrast
+                const rgb = hexToRgb(tempColor);
+                
+                // Use the original color but with reduced opacity for a softer look
+                const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
+                const textColor = '#333333';
+                const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
+                
+                const tempHtml = `<span style="display:inline-block;background-color:${bgColor};color:${textColor};padding:2px 6px;border-radius:4px;font-weight:500;width:100%;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol()}</span>`;
+                
+                hourlyTable += `<tr>
+                    <td>${h}:00</td>
+                    <td>${tempHtml}</td>
+                    <td>${precips && precips[h] !== undefined ? convertPrecip(precips[h], precipUnit) : '-'}</td>
+                    <td>${winds && winds[h] !== undefined ? Math.round(winds[h]) : '-'}</td>
+                </tr>`;
             }
             hourlyTable += '</tbody></table>';
             // Modal HTML
