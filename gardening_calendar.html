@@ -957,44 +957,54 @@
         function renderClimateZoneUI(lookupKey = '', foundZone = '') {
             let html = '';
             if (userClimateZone) {
-                html += `<strong>Climate zone:</strong> <span id="climateZoneCode">${userClimateZone}</span> `;
-                html += `<a href="https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification" target="_blank" style="font-size:0.95em;">(What is this?)</a>`;
-            }
-            html += `<br><label for="climateZoneOverride" style="font-size:0.95em;">Override zone:</label> <input id="climateZoneOverride" type="text" style="width:60px;" value="${userClimateZoneOverride || ''}" placeholder="e.g. Dfb"> <button id="setClimateZoneOverrideBtn" style="font-size:0.95em;">Set</button> <button id="clearClimateZoneOverrideBtn" style="font-size:0.95em;">Clear</button>`;
-            if (lookupKey) {
-                html += `<div style="font-size:0.9em;color:#888;">Debug: lookup key = <code>${lookupKey}</code>, result = <code>${foundZone}</code></div>`;
+                html += `<div style="margin-top: 15px; padding: 10px 15px; background: var(--white); border-radius: 8px; box-shadow: 0 1px 3px var(--shadow);">`;
+                html += `<div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">`;
+                html += `<strong>Climate zone:</strong> <span id="climateZoneCode" style="background: var(--light-bg); padding: 2px 8px; border-radius: 4px; font-family: monospace;">${userClimateZone}</span>`;
+                html += `<a href="https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification" target="_blank" style="color: var(--primary-color); text-decoration: none; font-size: 0.95em;">(What is this?)</a>`;
+                html += `</div>`;
+                html += `<div style="display: flex; align-items: center; gap: 10px;">`;
+                html += `<label for="climateZoneOverride" style="font-size: 0.95em;">Override zone:</label>`;
+                html += `<input id="climateZoneOverride" type="text" style="padding: 4px 8px; border: 1px solid var(--secondary-color); border-radius: 4px; width: 60px;" value="${userClimateZoneOverride || ''}" placeholder="e.g. Dfb">`;
+                html += `<button id="setClimateZoneOverrideBtn" style="padding: 4px 10px; background: var(--secondary-color); color: white; border: none; border-radius: 4px; font-size: 0.95em; cursor: pointer;">Set</button>`;
+                html += `<button id="clearClimateZoneOverrideBtn" style="padding: 4px 10px; background: var(--accent-color); color: white; border: none; border-radius: 4px; font-size: 0.95em; cursor: pointer;">Clear</button>`;
+                html += `</div></div>`;
             }
             climateZoneInfo.innerHTML = html;
+
             // Add listeners
-            document.getElementById('setClimateZoneOverrideBtn').onclick = function() {
-                const val = document.getElementById('climateZoneOverride').value.trim();
-                if (val) {
-                    localStorage.setItem('gardening_climate_zone_override', val);
-                    userClimateZoneOverride = val;
-                    userClimateZone = val;
-                    renderClimateZoneUI('(override)', val);
-                }
-            };
-            document.getElementById('clearClimateZoneOverrideBtn').onclick = function() {
-                localStorage.removeItem('gardening_climate_zone_override');
-                userClimateZoneOverride = null;
-                // Recompute from location
-                const cached = localStorage.getItem('gardening_last_location');
-                if (cached) {
-                    try {
-                        const loc = JSON.parse(cached);
-                        if (loc.type === 'coords' && loc.lat && loc.lon) {
-                            const latNum = typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat;
-                            const lonNum = typeof loc.lon === 'string' ? parseFloat(loc.lon) : loc.lon;
-                            const key = `${round025(latNum)} ${round025(lonNum)}`;
-                            userClimateZone = koppenGrid[key] || 'Unknown';
-                            renderClimateZoneUI(key, userClimateZone);
-                            return;
-                        }
-                    } catch (e) {}
-                }
-                renderClimateZoneUI();
-            };
+            const setBtn = document.getElementById('setClimateZoneOverrideBtn');
+            const clearBtn = document.getElementById('clearClimateZoneOverrideBtn');
+            if (setBtn) {
+                setBtn.addEventListener('click', function() {
+                    const val = document.getElementById('climateZoneOverride').value.trim();
+                    if (val) {
+                        localStorage.setItem('gardening_climate_zone_override', val);
+                        userClimateZoneOverride = val;
+                        userClimateZone = val;
+                        renderClimateZoneUI();
+                    }
+                });
+            }
+            if (clearBtn) {
+                clearBtn.addEventListener('click', function() {
+                    localStorage.removeItem('gardening_climate_zone_override');
+                    userClimateZoneOverride = null;
+                    // Recompute from location
+                    const cached = localStorage.getItem('gardening_last_location');
+                    if (cached) {
+                        try {
+                            const loc = JSON.parse(cached);
+                            if (loc.type === 'coords' && loc.lat && loc.lon) {
+                                const latNum = typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat;
+                                const lonNum = typeof loc.lon === 'string' ? parseFloat(loc.lon) : loc.lon;
+                                showClimateZone(latNum, lonNum);
+                                return;
+                            }
+                        } catch (e) {}
+                    }
+                    renderClimateZoneUI();
+                });
+            }
         }
 
         // Helper: Convert temperature and precipitation
