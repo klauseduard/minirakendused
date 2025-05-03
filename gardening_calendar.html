@@ -702,7 +702,7 @@
             } else {
                 const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
                 const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
-                const key = `${round05(latNum)},${round05(lonNum)}`;
+                const key = `${round05(latNum)} ${round05(lonNum)}`;
                 userClimateZone = koppenGrid[key] || 'Unknown';
                 lookupKey = key;
                 foundZone = userClimateZone;
@@ -743,7 +743,7 @@
                         if (loc.type === 'coords' && loc.lat && loc.lon) {
                             const latNum = typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat;
                             const lonNum = typeof loc.lon === 'string' ? parseFloat(loc.lon) : loc.lon;
-                            const key = `${round05(latNum)},${round05(lonNum)}`;
+                            const key = `${round05(latNum)} ${round05(lonNum)}`;
                             userClimateZone = koppenGrid[key] || 'Unknown';
                             renderClimateZoneUI(key, userClimateZone);
                             return;
