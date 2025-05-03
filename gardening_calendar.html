@@ -91,10 +91,10 @@
 
         .location-row {
             display: grid;
-            grid-template-columns: 1fr auto auto;
+            grid-template-columns: minmax(250px, 520px) auto;
             gap: 15px;
             margin-bottom: 20px;
-            align-items: start;
+            align-items: center;
         }
 
         .units-row {
@@ -591,7 +591,37 @@
             border-radius: 30px;
             font-size: 1rem;
             outline: none;
-            min-width: 520px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        
+        .location-input-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+            width: 100%;
+            max-width: 520px;
+        }
+        
+        .location-clear-btn {
+            position: absolute;
+            right: 15px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #999;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+        }
+        
+        .location-clear-btn:hover {
+            background-color: rgba(0,0,0,0.05);
+            color: #666;
         }
         
         .location-btn {
@@ -910,8 +940,10 @@
                     <div class="location-input-group">
                         <label for="locationInput" class="visually-hidden">Location</label>
                         <input type="text" class="location-input" id="locationInput" 
-                            placeholder="Enter place name, village, postal code, or coordinates..." 
+                            placeholder="City or place name (e.g., Paris, Barcelona)" 
                             aria-label="Location">
+                        <button type="button" id="clearLocationBtn" class="location-clear-btn" 
+                            aria-label="Clear location" style="display: none;">×</button>
                     </div>
                     <button class="location-btn" id="useMyLocationBtn">Use my location</button>
                 </div>
@@ -2115,13 +2147,37 @@
                     const loc = JSON.parse(cached);
                     if (loc.type === 'query' && loc.value) {
                         locationInput.value = loc.value;
+                        // Show the clear button since we have text in the input
+                        clearLocationBtn.style.display = 'block';
                         geocodeLocation(loc.value);
                     } else if (loc.type === 'coords' && loc.lat && loc.lon) {
+                        // Clear the input when using coordinates
+                        locationInput.value = '';
+                        clearLocationBtn.style.display = 'none';
                         displayLocationInfo('Your location', loc.lat, loc.lon, '', '', '');
                     }
                 } catch (e) {}
             }
         });
+        
+        // Handle clear button logic and input events
+        const clearLocationBtn = document.getElementById('clearLocationBtn');
+        
+        // Show/hide clear button based on input content
+        locationInput.addEventListener('input', function() {
+            clearLocationBtn.style.display = this.value ? 'block' : 'none';
+        });
+        
+        // Clear input when clear button is clicked
+        clearLocationBtn.addEventListener('click', function() {
+            locationInput.value = '';
+            locationInput.focus();
+            clearLocationBtn.style.display = 'none';
+        });
+        
+        // We now handle the clear button visibility during page load in the DOMContentLoaded event
+        
+        // We're now using a single placeholder format for consistency
 
         // Geocoding API call
         async function geocodeLocation(query, isRetry = false) {
@@ -2167,6 +2223,9 @@
 
         // Handle 'Use my location' button
         useMyLocationBtn.addEventListener('click', function() {
+            // Clear the input field when using geolocation
+            locationInput.value = '';
+            
             weatherPlaceholder.textContent = 'Getting your location...';
             if (!navigator.geolocation) {
                 displayLocationError('Geolocation is not supported by your browser.', 'geocode');
