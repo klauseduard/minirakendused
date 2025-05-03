@@ -267,9 +267,45 @@
             margin-right: 10px;
         }
         
+        .task-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        
         .task-item::before {
             content: "✓";
             margin-right: 10px;
+        }
+        
+        .item-label {
+            width: 100%;
+            padding: 4px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .item-label:hover {
+            background: var(--light-bg);
+        }
+
+        .item-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+            margin: 0;
+        }
+
+        .item-text {
+            flex: 1;
+            padding: 2px 0;
         }
         
         .highlight {
@@ -1077,7 +1113,7 @@
                     <ul class="plant-list">
                         ${filteredItems.map(item => `
                             <li class="${isTaskCategory ? 'task-item' : 'plant-item'}" data-item-id="${encodeURIComponent(item)}">
-                                <label class="item-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <label class="item-label">
                                     <input type="checkbox" class="item-checkbox" 
                                         ${isItemSelected(month, category, item) ? 'checked' : ''}>
                                     <span class="item-text">${searchTerm ? highlightText(item, searchTerm) : item}</span>
