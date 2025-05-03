@@ -2898,14 +2898,14 @@
                     } else {
                         // If filtering for weather resulted in no suitable plants
                         if (includeRelevantPlantsOnly.checked) {
-                            plantingCalendar = 'Note: You have selected plants, but none are suitable for the current weather forecast.\n';
+                            plantingCalendar = 'Note: The user has selected plants in the calendar, but none are suitable for the current weather forecast based on filtering criteria.\n';
                         } else {
-                            plantingCalendar = 'No plants or tasks selected yet. Please check items in the calendar that interest you.\n';
+                            plantingCalendar = 'No plants or tasks have been selected in the calendar yet.\n';
                         }
                     }
                 } else {
                     // If no selections found for active month
-                    plantingCalendar = 'No plants or tasks selected yet. Please check items in the calendar that interest you.\n';
+                    plantingCalendar = 'No plants or tasks have been selected in the calendar yet.\n';
                 }
             } else {
                 // User has unchecked "Include selected plants and tasks"
