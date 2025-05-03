@@ -677,11 +677,11 @@
                 }
             });
 
-        // Helper: round to nearest 0.5
-        function round05(x) {
-            // Ensure x is a number, round to nearest 0.5, always two decimals
+        // Helper: round to nearest 0.25
+        function round025(x) {
+            // Ensure x is a number, round to nearest 0.25, always two decimals
             const num = typeof x === 'string' ? parseFloat(x) : x;
-            return (Math.round(num * 2) / 2).toFixed(2);
+            return (Math.round(num * 4) / 4).toFixed(2);
         }
 
         // Show climate zone info
@@ -702,7 +702,7 @@
             } else {
                 const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
                 const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
-                const key = `${round05(latNum)} ${round05(lonNum)}`;
+                const key = `${round025(latNum)},${round025(lonNum)}`;
                 userClimateZone = koppenGrid[key] || 'Unknown';
                 lookupKey = key;
                 foundZone = userClimateZone;
@@ -743,7 +743,7 @@
                         if (loc.type === 'coords' && loc.lat && loc.lon) {
                             const latNum = typeof loc.lat === 'string' ? parseFloat(loc.lat) : loc.lat;
                             const lonNum = typeof loc.lon === 'string' ? parseFloat(loc.lon) : loc.lon;
-                            const key = `${round05(latNum)} ${round05(lonNum)}`;
+                            const key = `${round025(latNum)},${round025(lonNum)}`;
                             userClimateZone = koppenGrid[key] || 'Unknown';
                             renderClimateZoneUI(key, userClimateZone);
                             return;
