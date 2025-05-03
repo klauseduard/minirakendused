@@ -1,6 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-R2CD8VG3XC"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        
+        gtag('config', 'G-R2CD8VG3XC', {
+            'page_path': '/minirakendused/gardening_calendar'
+        });
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spring Gardening and Planting Calendar</title>
@@ -2025,6 +2036,14 @@
 
         // Show modal with detailed chart and hourly temps
         function showWeatherModal(dayIndex, date, temps, precips, winds) {
+            // Track weather detail view in Google Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'view_weather_details', {
+                    'date': date,
+                    'day_index': dayIndex
+                });
+            }
+            
             // Remove any existing modal
             const oldModal = document.getElementById('weatherModalOverlay');
             if (oldModal) oldModal.remove();
@@ -2181,6 +2200,13 @@
 
         // Geocoding API call
         async function geocodeLocation(query, isRetry = false) {
+            // Track location search in Google Analytics
+            if (typeof gtag === 'function' && !isRetry) {
+                gtag('event', 'search_location', {
+                    'search_term': query
+                });
+            }
+            
             lastGeocodeQuery = query;
             lastWeatherAction = 'geocode';
             weatherPlaceholder.textContent = 'Looking up location...';
@@ -2258,10 +2284,24 @@
         // Save preferences to localStorage
         tempUnitSelect.addEventListener('change', () => {
             localStorage.setItem('gardening_temp_unit', tempUnitSelect.value);
+            // Track event in Google Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'change_preference', {
+                    'preference_type': 'temperature_unit',
+                    'value': tempUnitSelect.value
+                });
+            }
             if (lastWeatherData) renderWeatherData(lastWeatherData);
         });
         precipUnitSelect.addEventListener('change', () => {
             localStorage.setItem('gardening_precip_unit', precipUnitSelect.value);
+            // Track event in Google Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'change_preference', {
+                    'preference_type': 'precipitation_unit',
+                    'value': precipUnitSelect.value
+                });
+            }
             if (lastWeatherData) renderWeatherData(lastWeatherData);
         });
         // On page load, set unit preferences
@@ -2346,6 +2386,14 @@
         }
 
         function generatePrompt() {
+            // Track prompt generation in Google Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'generate_ai_prompt', {
+                    'include_calendar': includeCalendar.checked,
+                    'include_relevant_plants_only': includeRelevantPlantsOnly.checked
+                });
+            }
+            
             // Get current location info
             let locationInfo = '';
             const weatherLocationInfo = document.querySelector('.weather-location-info');
@@ -2460,6 +2508,13 @@ Please be specific and consider the weather forecast and climate zone in your re
 
         // Send prompt to AI assistant
         function sendToAiAssistant(assistant) {
+            // Track which AI assistant was selected in Google Analytics
+            if (typeof gtag === 'function') {
+                gtag('event', 'send_to_ai_assistant', {
+                    'assistant': assistant
+                });
+            }
+            
             const prompt = encodeURIComponent(generatedPrompt.textContent);
             let url = '';
             
