@@ -58,15 +58,104 @@
             max-width: 700px;
         }
         
+        .main-layout {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .top-controls {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .location-row {
+            display: grid;
+            grid-template-columns: 1fr auto auto;
+            gap: 15px;
+            margin-bottom: 20px;
+            align-items: start;
+        }
+
+        .units-row {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .unit-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .weather-display {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .search-bar {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .search-section-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
+        .search-container {
+            width: 100%;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 30px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        .search-box:focus {
+            border-color: var(--primary-color);
+        }
+
+        .month-navigation {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .month-nav-title {
+            font-size: 1.2rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+
         .calendar-nav {
             display: flex;
-            justify-content: center;
-            margin-bottom: 30px;
+            gap: 10px;
+            flex-wrap: wrap;
         }
-        
+
         .month-btn {
             padding: 12px 25px;
-            margin: 0 10px;
             background-color: var(--secondary-color);
             color: var(--white);
             border: none;
@@ -76,25 +165,37 @@
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 2px 5px var(--shadow);
+            min-width: 120px;
+            text-align: center;
         }
-        
+
         .month-btn:hover {
             background-color: var(--accent-color);
             transform: translateY(-2px);
         }
-        
+
         .month-btn.active {
             background-color: var(--accent-color);
             transform: translateY(-2px);
             box-shadow: 0 4px 8px var(--shadow);
         }
-        
+
+        @media (max-width: 768px) {
+            .calendar-nav {
+                justify-content: center;
+            }
+
+            .month-btn {
+                min-width: 140px;
+            }
+        }
+
         .calendar-content {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
             gap: 20px;
         }
-        
+
         .category-card {
             background-color: var(--white);
             border-radius: 10px;
@@ -171,29 +272,6 @@
             margin-right: 10px;
         }
         
-        .search-container {
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: center;
-        }
-        
-        .search-box {
-            width: 100%;
-            max-width: 500px;
-            padding: 12px 20px;
-            font-size: 1rem;
-            border: 2px solid var(--secondary-color);
-            border-radius: 30px;
-            outline: none;
-            transition: border-color 0.3s ease;
-        }
-        
-        .search-box:focus {
-            border-color: var(--primary-color);
-            outline: 3px solid #1976d2 !important;
-            outline-offset: 2px;
-        }
-        
         .highlight {
             background-color: #ffe066;
             padding: 2px;
@@ -218,16 +296,47 @@
         }
         
         @media (max-width: 768px) {
-            .calendar-nav {
-                flex-wrap: wrap;
+            .location-row {
+                grid-template-columns: 1fr;
             }
             
-            .month-btn {
-                margin: 5px;
+            .search-bar {
+                flex-direction: column;
+            }
+            
+            .search-container {
+                width: 100%;
+            }
+            
+            .ai-advice-btn {
+                width: 100%;
             }
             
             .mobile-warning {
                 display: block;
+            }
+        }
+
+        @media (max-width: 1024px) {
+            .main-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .action-bar {
+                flex-direction: column;
+            }
+
+            .search-container {
+                width: 100%;
+            }
+
+            .ai-advice-btn {
+                width: 100%;
+                justify-content: center;
             }
         }
 
@@ -443,6 +552,21 @@
             outline: 3px solid #1976d2 !important;
             outline-offset: 2px;
         }
+        .item-label {
+            width: 100%;
+            padding: 4px 0;
+        }
+        .item-label:hover {
+            background: var(--light-bg);
+        }
+        .item-checkbox {
+            width: 16px;
+            height: 16px;
+            accent-color: var(--primary-color);
+        }
+        .item-text {
+            flex: 1;
+        }
     </style>
 </head>
 <body>
@@ -451,50 +575,122 @@
             <h1>Spring Gardening and Planting Calendar</h1>
             <p class="description">Plan your garden tasks and sowing by month—with local weather forecasts.</p>
         </header>
-        <main>
-        <div class="weather-section">
-            <div class="weather-location-row">
-                <label for="locationInput" class="visually-hidden">Location</label>
-                <input type="text" class="location-input" id="locationInput" placeholder="Enter place name, village, postal code, or coordinates..." aria-label="Location">
-                <button class="location-btn" id="useMyLocationBtn">Use my location</button>
-            </div>
-            <div style="margin-bottom: 10px; display: flex; gap: 18px; align-items: center;">
-                <label for="tempUnitSelect" style="font-size:0.98em;">Temperature:</label>
-                <select id="tempUnitSelect" aria-label="Temperature unit">
-                    <option value="C">Celsius (°C)</option>
-                    <option value="F">Fahrenheit (°F)</option>
-                </select>
-                <label for="precipUnitSelect" style="font-size:0.98em;">Precipitation:</label>
-                <select id="precipUnitSelect" aria-label="Precipitation unit">
-                    <option value="mm">Millimeters (mm)</option>
-                    <option value="in">Inches (in)</option>
-                </select>
-            </div>
-            <div id="climateZoneInfo" style="margin-bottom: 10px;"></div>
-            <div class="weather-placeholder" id="weatherPlaceholder">
-                Weather information for your location will appear here.
-            </div>
-        </div>
-        
-        <div class="mobile-warning">
-            <p>For the best experience, we recommend using a device with a wider screen.</p>
-        </div>
-        
-        <div class="search-container">
-            <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
-            <input type="text" class="search-box" id="searchBox" placeholder="Search for plants or tasks..." aria-label="Search for plants or tasks">
-        </div>
-        
-        <div class="calendar-nav">
-            <button class="month-btn active" data-month="april">April</button>
-            <button class="month-btn" data-month="may">May</button>
-            <button class="month-btn" data-month="early_june">Early June</button>
-        </div>
-        
-        <div class="calendar-content" id="calendarContent">
-            <!-- Content will be added by JavaScript -->
-        </div>
+
+        <main class="main-layout">
+            <!-- Location and Units Controls -->
+            <section class="top-controls">
+                <div class="location-row">
+                    <div class="location-input-group">
+                        <label for="locationInput" class="visually-hidden">Location</label>
+                        <input type="text" class="location-input" id="locationInput" 
+                            placeholder="Enter place name, village, postal code, or coordinates..." 
+                            aria-label="Location">
+                    </div>
+                    <button class="location-btn" id="useMyLocationBtn">Use my location</button>
+                </div>
+                <div class="units-row">
+                    <div class="unit-group">
+                        <label for="tempUnitSelect">Temperature:</label>
+                        <select id="tempUnitSelect" aria-label="Temperature unit">
+                            <option value="C">Celsius (°C)</option>
+                            <option value="F">Fahrenheit (°F)</option>
+                        </select>
+                    </div>
+                    <div class="unit-group">
+                        <label for="precipUnitSelect">Precipitation:</label>
+                        <select id="precipUnitSelect" aria-label="Precipitation unit">
+                            <option value="mm">Millimeters (mm)</option>
+                            <option value="in">Inches (in)</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="climateZoneInfo"></div>
+            </section>
+
+            <!-- Weather Display -->
+            <section class="weather-display">
+                <div class="weather-placeholder" id="weatherPlaceholder">
+                    Weather information for your location will appear here.
+                </div>
+            </section>
+
+            <!-- Search Bar -->
+            <section class="search-bar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="search-section-title">Find Plants and Tasks</h2>
+                    <button id="aiAdviceBtn" class="ai-advice-btn" style="padding: 8px 16px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
+                        <span style="font-size: 1.2em;">🤖</span>
+                        <span>Generate AI gardening advice prompt</span>
+                    </button>
+                </div>
+                <div class="search-container">
+                    <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
+                    <input type="text" class="search-box" id="searchBox" 
+                        placeholder="Type to search for specific plants or garden tasks..." 
+                        aria-label="Search for plants or tasks">
+                </div>
+            </section>
+
+            <!-- Month Navigation -->
+            <section class="month-navigation">
+                <h2 class="month-nav-title">Select Growing Period</h2>
+                <div class="calendar-nav">
+                    <button class="month-btn active" data-month="april">April</button>
+                    <button class="month-btn" data-month="may">May</button>
+                    <button class="month-btn" data-month="early_june">Early June</button>
+                </div>
+            </section>
+
+            <!-- Calendar Content -->
+            <section class="calendar-content" id="calendarContent">
+                <!-- Content will be added by JavaScript -->
+            </section>
         </main>
+
+        <!-- Prompt Generator Modal -->
+        <div id="promptGeneratorModal" class="weather-modal-overlay" style="display: none;">
+            <div class="weather-modal" style="width: 90%; max-width: 800px;">
+                <button class="weather-modal-close" id="closePromptGeneratorBtn" aria-label="Close prompt generator">&times;</button>
+                <div class="weather-modal-title">AI Gardening Assistant</div>
+                <div style="margin: 20px 0;">
+                    <p style="margin-bottom: 15px; color: #666;">
+                        This tool will generate a comprehensive prompt based on your location, weather, and garden information. 
+                        You can use this prompt with any AI assistant to get personalized gardening advice.
+                    </p>
+                    <div style="margin-bottom: 15px;">
+                        <label for="customNotes" style="display: block; margin-bottom: 8px; font-weight: 500;">Your notes about your garden:</label>
+                        <textarea id="customNotes" rows="4" style="width: 100%; padding: 10px; border: 1px solid var(--secondary-color); border-radius: 8px; margin-bottom: 10px;" placeholder="Describe your garden's current state, what you've already done, or ask specific questions..."></textarea>
+                    </div>
+                    <div style="margin-bottom: 15px; padding: 12px; background: #fff3e0; border-radius: 8px;">
+                        <h3 style="margin-bottom: 10px; color: #e65100; font-size: 1rem;">Include in Prompt:</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <label style="display: block;">
+                                <input type="checkbox" id="includeCalendar" checked>
+                                Selected plants and tasks
+                                <span style="margin-left: 5px; color: #666; font-size: 0.9em;">
+                                    (Your checked items from the planting calendar)
+                                </span>
+                            </label>
+                            <label style="display: block;">
+                                <input type="checkbox" id="includeRelevantPlantsOnly" checked>
+                                Filter for weather conditions
+                                <span style="margin-left: 5px; color: #666; font-size: 0.9em;">
+                                    (Only include plants suitable for current forecast)
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+                        <button id="generatePromptBtn" class="location-btn">Generate Prompt</button>
+                        <button id="copyPromptBtn" class="location-btn" style="background: var(--accent-color);">Copy to Clipboard</button>
+                    </div>
+                    <div id="generatedPrompt" style="background: #f8faf5; border-radius: 8px; padding: 15px; white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto;">
+                        Click "Generate Prompt" to create a customized gardening prompt based on your location, weather, and calendar data.
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer>
             <p>Spring Gardening and Planting Calendar © 2025</p>
         </footer>
@@ -870,12 +1066,24 @@
                     </div>
                     <ul class="plant-list">
                         ${filteredItems.map(item => `
-                            <li class="${isTaskCategory ? 'task-item' : 'plant-item'}">
-                                ${searchTerm ? highlightText(item, searchTerm) : item}
+                            <li class="${isTaskCategory ? 'task-item' : 'plant-item'}" data-item-id="${encodeURIComponent(item)}">
+                                <label class="item-label" style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                    <input type="checkbox" class="item-checkbox" 
+                                        ${isItemSelected(month, category, item) ? 'checked' : ''}>
+                                    <span class="item-text">${searchTerm ? highlightText(item, searchTerm) : item}</span>
+                                </label>
                             </li>
                         `).join('')}
                     </ul>
                 `;
+
+                // Add event listeners for checkboxes
+                categoryCard.querySelectorAll('.item-checkbox').forEach(checkbox => {
+                    checkbox.addEventListener('change', (e) => {
+                        const item = decodeURIComponent(e.target.closest('li').dataset.itemId);
+                        toggleItemSelection(month, category, item, e.target.checked);
+                    });
+                });
                 
                 calendarContent.appendChild(categoryCard);
             });
@@ -1375,6 +1583,228 @@
         });
         // On page load, set unit preferences
         window.addEventListener('DOMContentLoaded', loadUnitPrefs);
+
+        // Prompt Generator Logic
+        const generatePromptBtn = document.getElementById('generatePromptBtn');
+        const copyPromptBtn = document.getElementById('copyPromptBtn');
+        const customNotes = document.getElementById('customNotes');
+        const generatedPrompt = document.getElementById('generatedPrompt');
+        const promptGeneratorModal = document.getElementById('promptGeneratorModal');
+        const closePromptGeneratorBtn = document.getElementById('closePromptGeneratorBtn');
+        const aiAdviceBtn = document.getElementById('aiAdviceBtn');
+        const includeCalendar = document.getElementById('includeCalendar');
+        const includeRelevantPlantsOnly = document.getElementById('includeRelevantPlantsOnly');
+
+        // Modal handling
+        function openPromptGenerator() {
+            promptGeneratorModal.style.display = 'flex';
+            customNotes.focus();
+            // Store active element to restore focus later
+            openPromptGenerator.previousActiveElement = document.activeElement;
+        }
+
+        function closePromptGenerator() {
+            promptGeneratorModal.style.display = 'none';
+            // Restore focus
+            if (openPromptGenerator.previousActiveElement) {
+                openPromptGenerator.previousActiveElement.focus();
+            }
+        }
+
+        // Add event listener for the AI advice button
+        aiAdviceBtn.addEventListener('click', openPromptGenerator);
+
+        // Close modal on escape or clicking outside
+        promptGeneratorModal.addEventListener('click', (e) => {
+            if (e.target === promptGeneratorModal) {
+                closePromptGenerator();
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && promptGeneratorModal.style.display === 'flex') {
+                closePromptGenerator();
+            }
+        });
+
+        closePromptGeneratorBtn.addEventListener('click', closePromptGenerator);
+
+        function isPlantSuitableForWeather(plant, weatherData) {
+            // Get temperature range for next 7 days
+            const next7Days = weatherData.daily.temperature_2m_max.slice(0, 7);
+            const maxTemp = Math.max(...next7Days);
+            const minTemp = Math.min(...weatherData.daily.temperature_2m_min.slice(0, 7));
+            const avgPrecip = weatherData.daily.precipitation_sum.slice(0, 7).reduce((a, b) => a + b, 0) / 7;
+
+            // Basic suitability rules (these could be made more sophisticated)
+            const coldSensitive = ['tomato', 'pepper', 'eggplant', 'cucumber', 'zucchini', 'pumpkin', 'melon', 'basil'];
+            const heatSensitive = ['lettuce', 'spinach', 'arugula', 'peas'];
+            const moistureSensitive = ['tomato', 'rosemary', 'thyme', 'sage'];
+
+            const plantLower = plant.toLowerCase();
+
+            // Check temperature suitability
+            if (coldSensitive.some(p => plantLower.includes(p)) && minTemp < 10) return false;
+            if (heatSensitive.some(p => plantLower.includes(p)) && maxTemp > 30) return false;
+            
+            // Check moisture suitability
+            if (moistureSensitive.some(p => plantLower.includes(p)) && avgPrecip > 10) return false;
+
+            return true;
+        }
+
+        function generatePrompt() {
+            // Get current location info
+            let locationInfo = '';
+            const weatherLocationInfo = document.querySelector('.weather-location-info');
+            if (weatherLocationInfo) {
+                locationInfo = weatherLocationInfo.textContent.trim();
+            }
+
+            // Get climate zone
+            let climateZone = '';
+            const climateZoneCode = document.getElementById('climateZoneCode');
+            if (climateZoneCode) {
+                climateZone = climateZoneCode.textContent.trim();
+            }
+
+            // Get current weather
+            let currentWeather = '';
+            const weatherCurrent = document.querySelector('.weather-current');
+            if (weatherCurrent) {
+                currentWeather = weatherCurrent.textContent.trim();
+            }
+
+            // Get forecast summary (next 7 days)
+            let forecastSummary = '';
+            const forecastTable = document.querySelector('.weather-forecast-table tbody');
+            if (forecastTable) {
+                const next7Days = Array.from(forecastTable.querySelectorAll('tr')).slice(0, 7);
+                forecastSummary = next7Days.map(row => {
+                    const cells = row.querySelectorAll('td');
+                    return `- ${cells[0].textContent}:\n  ${cells[6].textContent.split('\n')[1]}\n  Max: ${cells[4].textContent}, Precipitation: ${cells[5].textContent}`;
+                }).join('\n\n');
+            }
+
+            // Get current month's planting calendar with only selected items
+            let plantingCalendar = '';
+            if (includeCalendar.checked) {
+                const selections = getSelectedItems();
+                const currentSelections = selections[activeMonth];
+                
+                if (currentSelections && Object.keys(currentSelections).length > 0) {
+                    const plantItems = [];
+                    Object.entries(currentSelections).forEach(([category, items]) => {
+                        if (items.length > 0) {
+                            const filteredItems = items.filter(item => {
+                                if (!includeRelevantPlantsOnly.checked || !lastWeatherData) return true;
+                                return isPlantSuitableForWeather(item, lastWeatherData);
+                            });
+                            if (filteredItems.length > 0) {
+                                plantItems.push(`${categoryNames[category] || category}:\n${filteredItems.join('\n')}`);
+                            }
+                        }
+                    });
+                    if (plantItems.length > 0) {
+                        plantingCalendar = 'Selected Plants and Tasks:\n\n' + plantItems.join('\n\n');
+                    }
+                }
+
+                // If no selections, add a note
+                if (!plantingCalendar) {
+                    plantingCalendar = 'No plants or tasks selected yet. Please check items in the calendar that interest you.\n';
+                }
+            }
+
+            // Get user's custom notes
+            const notes = customNotes.value.trim();
+
+            // Construct the prompt
+            const prompt = `I need advice for my garden based on the following information:
+
+Location and Climate:
+${locationInfo}
+
+Köppen Climate Zone: ${climateZone}
+${includeRelevantPlantsOnly.checked ? '(Recommendations filtered for current weather conditions)' : ''}
+
+Current Weather and Forecast:
+${currentWeather}
+
+7-Day Forecast:
+${forecastSummary}
+
+${plantingCalendar}
+
+${notes ? `Additional Notes:\n${notes}\n\n` : ''}Based on this information, please provide:
+1. Immediate tasks I should focus on this week
+2. What I should plant now or prepare for planting
+3. Potential weather-related precautions
+4. Long-term planning suggestions
+5. Any specific care instructions for my selected plants
+
+Please be specific and consider the weather forecast and climate zone in your recommendations.`;
+
+            generatedPrompt.textContent = prompt;
+        }
+
+        function copyPrompt() {
+            navigator.clipboard.writeText(generatedPrompt.textContent)
+                .then(() => {
+                    const originalText = copyPromptBtn.textContent;
+                    copyPromptBtn.textContent = 'Copied!';
+                    setTimeout(() => {
+                        copyPromptBtn.textContent = originalText;
+                    }, 2000);
+                })
+                .catch(err => {
+                    console.error('Failed to copy text:', err);
+                    alert('Failed to copy to clipboard. Please select and copy the text manually.');
+                });
+        }
+
+        generatePromptBtn.addEventListener('click', generatePrompt);
+        copyPromptBtn.addEventListener('click', copyPrompt);
+
+        // Don't automatically generate on weather update anymore since it's in a modal
+        const originalRenderWeatherData = renderWeatherData;
+        renderWeatherData = function(data) {
+            originalRenderWeatherData.call(this, data);
+        };
+
+        // Selection storage functionality
+        function getSelectedItems() {
+            const stored = localStorage.getItem('gardening_selected_items');
+            return stored ? JSON.parse(stored) : {};
+        }
+
+        function isItemSelected(month, category, item) {
+            const selections = getSelectedItems();
+            return selections[month]?.[category]?.includes(item) || false;
+        }
+
+        function toggleItemSelection(month, category, item, selected) {
+            const selections = getSelectedItems();
+            
+            // Initialize nested structure if needed
+            if (!selections[month]) selections[month] = {};
+            if (!selections[month][category]) selections[month][category] = [];
+            
+            const items = selections[month][category];
+            const index = items.indexOf(item);
+            
+            if (selected && index === -1) {
+                items.push(item);
+            } else if (!selected && index !== -1) {
+                items.splice(index, 1);
+            }
+            
+            // Clean up empty arrays and objects
+            if (items.length === 0) delete selections[month][category];
+            if (Object.keys(selections[month]).length === 0) delete selections[month];
+            
+            localStorage.setItem('gardening_selected_items', JSON.stringify(selections));
+        }
     </script>
 </body>
 </html> 
