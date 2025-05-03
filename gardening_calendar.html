@@ -1614,7 +1614,7 @@
             if (country) locationParts.push(country);
             const locationString = locationParts.join(', ');
             weatherPlaceholder.innerHTML =
-                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br>` +
+                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br><br>` +
                 `<span style="font-size:0.97em;color:#666;">Latitude: ${lat}, Longitude: ${lon}</span></div>` +
                 `<div id="weatherDataSection">Loading weather data...</div>`;
             lastWeatherCoords = { lat, lon };
@@ -2415,7 +2415,7 @@
             const prompt = `I need advice for my garden based on the following information:
 
 Location and Climate:
-${locationInfo}
+${locationInfo.replace(/Location:/g, "Location:").replace(/Latitude:/g, "\nLatitude:")}
 
 Köppen Climate Zone: ${climateZone}
 ${includeRelevantPlantsOnly.checked ? '(Recommendations filtered for current weather conditions)' : ''}
