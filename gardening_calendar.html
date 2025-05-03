@@ -37,19 +37,35 @@
         
         header {
             text-align: center;
-            margin-bottom: 20px;
-            padding: 12px 10px 10px 10px;
+            margin: -20px -20px 20px -20px;  /* Negative margin to span full width */
+            padding: 15px 20px;
             background-color: var(--primary-color);
             color: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 4px 6px var(--shadow);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            box-shadow: 0 2px 8px var(--shadow);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+
+        /* Add transition for smooth shadow change on scroll */
+        header.scrolled {
+            box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
         }
         
         h1 {
             font-size: 2rem;
-            margin-bottom: 6px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
         }
-        
+
+        /* Compact header on scroll */
+        header.scrolled h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
         .description {
             font-size: 1rem;
             font-weight: 400;
@@ -61,6 +77,8 @@
         .main-layout {
             max-width: 1200px;
             margin: 0 auto;
+            position: relative;
+            z-index: 1;
         }
 
         .top-controls {
@@ -180,13 +198,122 @@
             box-shadow: 0 4px 8px var(--shadow);
         }
 
+        .scroll-indicator {
+            text-align: center;
+            padding: 15px;
+            color: var(--primary-color);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            margin-bottom: 25px;
+        }
+
+        .scroll-indicator:hover {
+            transform: translateY(2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .scroll-indicator-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .scroll-indicator-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--primary-color);
+        }
+
+        .scroll-arrow {
+            font-size: 1.5rem;
+            animation: bounce 2s infinite;
+            color: var(--secondary-color);
+        }
+
+        .scroll-to-top {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--secondary-color);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 5px var(--shadow);
+            opacity: 0;
+            transition: opacity 0.3s, transform 0.3s;
+            transform: translateY(20px);
+            z-index: 100;
+            border: none;
+        }
+
+        .scroll-to-top.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .scroll-to-top:hover {
+            background: var(--accent-color);
+        }
+
+        @keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
         @media (max-width: 768px) {
-            .calendar-nav {
-                justify-content: center;
+            .container {
+                padding: 0;  /* Remove padding on mobile */
             }
 
-            .month-btn {
-                min-width: 140px;
+            header {
+                margin: 0;  /* Remove negative margins on mobile */
+                padding: 10px;
+            }
+
+            header.scrolled {
+                padding: 8px;
+            }
+
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 12px;
+            }
+
+            header.scrolled h1 {
+                font-size: 1.3rem;
+                margin-bottom: 8px;
+            }
+
+            .quick-jump-menu {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .quick-jump-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+                min-width: calc(50% - 6px);
+            }
+
+            header.scrolled .quick-jump-btn {
+                padding: 4px 10px;
+                font-size: 0.85rem;
             }
         }
 
@@ -603,18 +730,122 @@
         .item-text {
             flex: 1;
         }
+        .quick-jump-menu {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            padding: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+
+        .quick-jump-title {
+            width: 100%;
+            text-align: center;
+            font-size: 0.95rem;
+            color: rgba(255, 255, 255, 0.9);
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .quick-jump-btn {
+            padding: 8px 16px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 20px;
+            color: white;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 140px;
+            justify-content: center;
+        }
+
+        .nav-icon {
+            font-size: 1.2em;
+            display: inline-block;
+            transform: translateY(-1px);
+        }
+
+        .quick-jump-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            border-color: rgba(255, 255, 255, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .quick-jump-btn:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+        }
+
+        .quick-jump-btn.active {
+            background: white;
+            color: var(--primary-color);
+            border-color: white;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                padding: 10px;
+                top: 0;
+                border-radius: 0;
+                margin: -20px -20px 20px -20px;
+                width: calc(100% + 40px);
+            }
+
+            h1 {
+                font-size: 1.6rem;
+                margin-bottom: 12px;
+            }
+
+            .quick-jump-menu {
+                padding: 8px;
+                gap: 6px;
+            }
+            
+            .quick-jump-btn {
+                padding: 6px 12px;
+                font-size: 0.9rem;
+                min-width: calc(50% - 6px);
+            }
+
+            .nav-icon {
+                font-size: 1.1em;
+            }
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Spring Gardening and Planting Calendar</h1>
-            <p class="description">Plan your garden tasks and sowing by month—with local weather forecasts.</p>
+            <div class="quick-jump-menu" id="quickJumpMenu">
+                <div class="quick-jump-title">Quick Navigation:</div>
+                <button class="quick-jump-btn" data-section="location-setup">
+                    <span class="nav-icon">📍</span> Location Setup
+                </button>
+                <button class="quick-jump-btn" data-section="weather-info">
+                    <span class="nav-icon">🌤️</span> Weather Info
+                </button>
+                <button class="quick-jump-btn" data-section="search-section">
+                    <span class="nav-icon">🔍</span> Search & Advice
+                </button>
+                <button class="quick-jump-btn" data-section="monthly-calendar">
+                    <span class="nav-icon">📅</span> Monthly Calendar
+                </button>
+            </div>
         </header>
 
         <main class="main-layout">
             <!-- Location and Units Controls -->
-            <section class="top-controls">
+            <section class="top-controls" id="location-setup">
                 <div class="location-row">
                     <div class="location-input-group">
                         <label for="locationInput" class="visually-hidden">Location</label>
@@ -644,14 +875,14 @@
             </section>
 
             <!-- Weather Display -->
-            <section class="weather-display">
+            <section class="weather-display" id="weather-info">
                 <div class="weather-placeholder" id="weatherPlaceholder">
                     Weather information for your location will appear here.
                 </div>
             </section>
 
             <!-- Search Bar -->
-            <section class="search-bar">
+            <section class="search-bar" id="search-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="search-section-title">Find Plants and Tasks</h2>
                     <button id="aiAdviceBtn" class="ai-advice-btn" style="padding: 8px 16px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
@@ -668,8 +899,10 @@
             </section>
 
             <!-- Month Navigation -->
-            <section class="month-navigation">
-                <h2 class="month-nav-title">Select Growing Period</h2>
+            <section class="month-navigation" id="monthly-calendar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h2 class="month-nav-title">Select Growing Period</h2>
+                </div>
                 <div class="calendar-nav">
                     <button class="month-btn active" data-month="april">April</button>
                     <button class="month-btn" data-month="may">May</button>
@@ -681,6 +914,10 @@
             <section class="calendar-content" id="calendarContent">
                 <!-- Content will be added by JavaScript -->
             </section>
+
+            <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top" style="display: none;">
+                ↑
+            </button>
         </main>
 
         <!-- Prompt Generator Modal -->
@@ -1651,6 +1888,13 @@
 
         function closePromptGenerator() {
             promptGeneratorModal.style.display = 'none';
+            // Reset the generated prompt
+            generatedPrompt.textContent = 'Click "Generate Prompt" to create a customized gardening prompt based on your location, weather, and calendar data.';
+            // Clear custom notes
+            customNotes.value = '';
+            // Reset checkboxes to default state
+            includeCalendar.checked = true;
+            includeRelevantPlantsOnly.checked = true;
             // Restore focus
             if (openPromptGenerator.previousActiveElement) {
                 openPromptGenerator.previousActiveElement.focus();
@@ -1851,6 +2095,119 @@ Please be specific and consider the weather forecast and climate zone in your re
             
             localStorage.setItem('gardening_selected_items', JSON.stringify(selections));
         }
+
+        // Add scroll-related event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const scrollToTop = document.getElementById('scrollToTop');
+            const calendarContent = document.getElementById('calendarContent');
+            const quickJumpMenu = document.getElementById('quickJumpMenu');
+            const header = document.querySelector('header');
+
+            // Handle header scroll state
+            function updateHeaderState() {
+                if (window.pageYOffset > 50) {
+                    header.classList.add('scrolled');
+                } else {
+                    header.classList.remove('scrolled');
+                }
+            }
+
+            // Throttle scroll event handling
+            let scrollTimeout;
+            window.addEventListener('scroll', () => {
+                if (!scrollTimeout) {
+                    scrollTimeout = setTimeout(() => {
+                        updateHeaderState();
+                        scrollTimeout = null;
+                    }, 10);
+                }
+            });
+
+            // Initial header state
+            updateHeaderState();
+
+            // Quick jump functionality
+            quickJumpMenu.addEventListener('click', (e) => {
+                const btn = e.target.closest('.quick-jump-btn');
+                if (!btn) return;
+                
+                // Remove active class from all buttons
+                quickJumpMenu.querySelectorAll('.quick-jump-btn').forEach(b => b.classList.remove('active'));
+                
+                const sectionId = btn.dataset.section;
+                const section = document.getElementById(sectionId);
+                
+                if (section) {
+                    // Add active class to clicked button
+                    btn.classList.add('active');
+                    
+                    // Scroll to section with offset for header
+                    const headerHeight = document.querySelector('header').offsetHeight;
+                    const sectionTop = section.getBoundingClientRect().top + window.pageYOffset;
+                    window.scrollTo({
+                        top: sectionTop - headerHeight - 20,
+                        behavior: 'smooth'
+                    });
+                }
+            });
+
+            // Track scroll position to highlight current section
+            let ticking = false;
+            window.addEventListener('scroll', () => {
+                if (!ticking) {
+                    window.requestAnimationFrame(() => {
+                        const headerHeight = document.querySelector('header').offsetHeight;
+                        const sections = [
+                            'location-setup',
+                            'weather-info',
+                            'search-section',
+                            'monthly-calendar'
+                        ].map(id => document.getElementById(id));
+                        
+                        // Find the current section in view
+                        const currentSection = sections.find(section => {
+                            if (!section) return false;
+                            const rect = section.getBoundingClientRect();
+                            return rect.top <= headerHeight + 50 && rect.bottom > headerHeight;
+                        });
+                        
+                        // Update active button
+                        const buttons = quickJumpMenu.querySelectorAll('.quick-jump-btn');
+                        buttons.forEach(btn => {
+                            const sectionId = btn.dataset.section;
+                            if (currentSection && currentSection.id === sectionId) {
+                                btn.classList.add('active');
+                            } else {
+                                btn.classList.remove('active');
+                            }
+                        });
+                        
+                        ticking = false;
+                    });
+                    ticking = true;
+                }
+            });
+
+            // Show/hide scroll to top button
+            window.addEventListener('scroll', () => {
+                if (window.pageYOffset > 300) {
+                    scrollToTop.style.display = 'flex';
+                    setTimeout(() => scrollToTop.classList.add('visible'), 10);
+                } else {
+                    scrollToTop.classList.remove('visible');
+                    setTimeout(() => {
+                        if (!scrollToTop.classList.contains('visible')) {
+                            scrollToTop.style.display = 'none';
+                        }
+                    }, 300);
+                }
+            });
+
+            // Smooth scroll to top
+            scrollToTop.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+        });
     </script>
 </body>
 </html> 
