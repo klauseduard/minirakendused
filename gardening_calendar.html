@@ -679,9 +679,20 @@
 
         // Helper: round to nearest 0.25
         function round025(x) {
-            // Ensure x is a number, round to nearest 0.25, always two decimals
+            // Ensure x is a number and round to either .25 or .75
             const num = typeof x === 'string' ? parseFloat(x) : x;
-            return (Math.round(num * 4) / 4).toFixed(2);
+            const decimal = num % 1;
+            const whole = Math.floor(num);
+            let rounded;
+            if (decimal < 0.375) {
+                rounded = 0.25;
+            } else if (decimal < 0.875) {
+                rounded = 0.75;
+            } else {
+                rounded = 0.25;
+                return (whole + 1 + rounded).toFixed(2);
+            }
+            return (whole + rounded).toFixed(2);
         }
 
         // Show climate zone info
