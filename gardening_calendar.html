@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spring Gardening and Planting Calendar</title>
+    <style>
+        :root {
+            --primary-color: #4a8e3a;
+            --secondary-color: #8bc34a;
+            --accent-color: #3e7d32;
+            --light-bg: #f1f8e9;
+            --dark-bg: #e8f5e9;
+            --white: #ffffff;
+            --black: #212121;
+            --shadow: rgba(0, 0, 0, 0.1);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-bg);
+            color: var(--black);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 12px 10px 10px 10px;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px var(--shadow);
+        }
+        
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 6px;
+        }
+        
+        .description {
+            font-size: 1rem;
+            font-weight: 400;
+            color: #224c2a;
+            margin: 0 auto;
+            max-width: 700px;
+        }
+        
+        .calendar-nav {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+        }
+        
+        .month-btn {
+            padding: 12px 25px;
+            margin: 0 10px;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 5px var(--shadow);
+        }
+        
+        .month-btn:hover {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+        }
+        
+        .month-btn.active {
+            background-color: var(--accent-color);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px var(--shadow);
+        }
+        
+        .calendar-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+        
+        .category-card {
+            background-color: var(--white);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: transform 0.3s ease;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .category-card:last-child {
+            grid-column: 1 / -1;
+        }
+
+        .garden-tasks-card {
+            grid-column: 1 / -1;
+        }
+        
+        .category-card .plant-list {
+            flex-grow: 1;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .category-icon {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+            background-color: var(--secondary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 1.2rem;
+        }
+        
+        .category-title {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+        }
+        
+        .plant-list {
+            list-style-type: none;
+        }
+        
+        .plant-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .plant-item:last-child {
+            border-bottom: none;
+        }
+        
+        .plant-item::before {
+            content: "🌱";
+            margin-right: 10px;
+        }
+        
+        .task-item::before {
+            content: "✓";
+            margin-right: 10px;
+        }
+        
+        .search-container {
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            padding: 12px 20px;
+            font-size: 1rem;
+            border: 2px solid var(--secondary-color);
+            border-radius: 30px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+        
+        .search-box:focus {
+            border-color: var(--primary-color);
+            outline: 3px solid #1976d2 !important;
+            outline-offset: 2px;
+        }
+        
+        .highlight {
+            background-color: #ffe066;
+            padding: 2px;
+            border-radius: 3px;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 20px;
+            font-size: 1.2rem;
+            color: #757575;
+            grid-column: 1 / -1;
+        }
+        
+        .mobile-warning {
+            display: none;
+            text-align: center;
+            padding: 10px;
+            background-color: #fff3e0;
+            margin-bottom: 20px;
+            border-radius: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .calendar-nav {
+                flex-wrap: wrap;
+            }
+            
+            .month-btn {
+                margin: 5px;
+            }
+            
+            .mobile-warning {
+                display: block;
+            }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 20px;
+            color: #757575;
+            font-size: 0.9rem;
+        }
+        
+        .weather-section {
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 2px 8px var(--shadow);
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+        
+        .weather-location-row {
+            margin-bottom: 10px;
+        }
+        
+        .weather-location-info {
+            margin-bottom: 18px;
+            font-size: 1.08em;
+        }
+        
+        .weather-forecast-table {
+            width: 100%;
+            font-size: 0.97em;
+            margin-top: 10px;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+            background: #f8faf5;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(74,142,58,0.07);
+        }
+        
+        .weather-forecast-table th, .weather-forecast-table td {
+            padding: 7px 14px;
+            text-align: center;
+        }
+        
+        .weather-forecast-table th {
+            background: #e8f5e9;
+            color: #3e7d32;
+            font-weight: 600;
+            border-bottom: 2px solid #c8e6c9;
+        }
+        
+        .weather-forecast-table td {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .weather-forecast-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .weather-forecast-table td svg {
+            display: block;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+        
+        .weather-current {
+            margin-bottom: 10px;
+            font-size: 1.08em;
+        }
+        
+        .location-input {
+            padding: 10px 16px;
+            border: 2px solid var(--secondary-color);
+            border-radius: 30px;
+            font-size: 1rem;
+            outline: none;
+            min-width: 520px;
+        }
+        
+        .location-btn {
+            padding: 10px 18px;
+            background-color: var(--secondary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 30px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .location-btn:hover {
+            background-color: var(--accent-color);
+        }
+        
+        .weather-placeholder {
+            color: #333;
+            font-size: 1.1rem;
+        }
+        
+        /* Modal for detailed weather */
+        .weather-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.25);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .weather-modal {
+            background: var(--light-bg);
+            border-radius: 14px;
+            box-shadow: 0 4px 24px var(--shadow);
+            padding: 28px 32px 24px 32px;
+            min-width: 340px;
+            max-width: 95vw;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .weather-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 16px;
+            font-size: 1.4em;
+            color: #7cb342;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .weather-modal-close:hover {
+            color: #388e3c;
+        }
+        .weather-modal-title {
+            font-size: 1.18em;
+            margin-bottom: 18px;
+            color: var(--primary-color);
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+        .weather-modal-chart {
+            margin-bottom: 18px;
+            background: var(--white);
+            border-radius: 10px;
+            box-shadow: 0 1px 4px var(--shadow);
+            padding: 12px 8px 8px 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .weather-modal-hourly-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 4px;
+            font-size: 0.98em;
+            background: #f8faf5;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(74,142,58,0.07);
+            margin-top: 8px;
+        }
+        .weather-modal-hourly-table th, .weather-modal-hourly-table td {
+            padding: 6px 12px;
+            text-align: center;
+        }
+        .weather-modal-hourly-table th {
+            background: #e8f5e9;
+            color: #3e7d32;
+            font-weight: 600;
+        }
+        .weather-modal-hourly-table td {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .weather-modal-hourly-table tr:last-child td {
+            border-bottom: none;
+        }
+        .weather-forecast-table tr:nth-child(even) td,
+        .weather-modal-hourly-table tr:nth-child(even) td {
+            background: #f1f8e9;
+        }
+        /* Visually hidden class for accessibility */
+        .visually-hidden {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            padding: 0 !important;
+            margin: -1px !important;
+            overflow: hidden !important;
+            clip: rect(0, 0, 0, 0) !important;
+            white-space: nowrap !important;
+            border: 0 !important;
+        }
+        .month-btn:focus, .location-btn:focus, .weather-modal-close:focus {
+            outline: 3px solid #1976d2 !important;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Spring Gardening and Planting Calendar</h1>
+            <p class="description">Plan your garden tasks and sowing by month—with local weather forecasts.</p>
+        </header>
+        <main>
+        <div class="weather-section">
+            <div class="weather-location-row">
+                <label for="locationInput" class="visually-hidden">Location</label>
+                <input type="text" class="location-input" id="locationInput" placeholder="Enter place name, village, postal code, or coordinates..." aria-label="Location">
+                <button class="location-btn" id="useMyLocationBtn">Use my location</button>
+            </div>
+            <div style="margin-bottom: 10px; display: flex; gap: 18px; align-items: center;">
+                <label for="tempUnitSelect" style="font-size:0.98em;">Temperature:</label>
+                <select id="tempUnitSelect" aria-label="Temperature unit">
+                    <option value="C">Celsius (°C)</option>
+                    <option value="F">Fahrenheit (°F)</option>
+                </select>
+                <label for="precipUnitSelect" style="font-size:0.98em;">Precipitation:</label>
+                <select id="precipUnitSelect" aria-label="Precipitation unit">
+                    <option value="mm">Millimeters (mm)</option>
+                    <option value="in">Inches (in)</option>
+                </select>
+            </div>
+            <div class="weather-placeholder" id="weatherPlaceholder">
+                Weather information for your location will appear here.
+            </div>
+        </div>
+        
+        <div class="mobile-warning">
+            <p>For the best experience, we recommend using a device with a wider screen.</p>
+        </div>
+        
+        <div class="search-container">
+            <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
+            <input type="text" class="search-box" id="searchBox" placeholder="Search for plants or tasks..." aria-label="Search for plants or tasks">
+        </div>
+        
+        <div class="calendar-nav">
+            <button class="month-btn active" data-month="april">April</button>
+            <button class="month-btn" data-month="may">May</button>
+            <button class="month-btn" data-month="early_june">Early June</button>
+        </div>
+        
+        <div class="calendar-content" id="calendarContent">
+            <!-- Content will be added by JavaScript -->
+        </div>
+        </main>
+        <footer>
+            <p>Spring Gardening and Planting Calendar © 2025</p>
+        </footer>
+    </div>
+
+    <script>
+        // Data in JSON format
+        const calendarData = {
+            "april": {
+                "direct_sowing": [
+                    "carrot",
+                    "parsnip",
+                    "radish",
+                    "turnip",
+                    "peas",
+                    "spinach",
+                    "arugula",
+                    "lettuce",
+                    "dill",
+                    "parsley"
+                ],
+                "seedling_start": [
+                    "cabbage",
+                    "cauliflower",
+                    "broccoli",
+                    "kale",
+                    "tomato",
+                    "pepper",
+                    "eggplant",
+                    "pumpkin",
+                    "zucchini",
+                    "melon",
+                    "basil",
+                    "thyme",
+                    "sage"
+                ],
+                "greenhouse": [
+                    "radish",
+                    "spinach",
+                    "lettuce",
+                    "dill"
+                ],
+                "garden_tasks": [
+                    "Pruning fruit trees and berry bushes (before bud break)",
+                    "Cleaning strawberry beds",
+                    "Turning compost",
+                    "Cleaning and preparing greenhouse",
+                    "Loosening and fertilizing beds"
+                ]
+            },
+            "may": {
+                "direct_sowing": [
+                    "carrot",
+                    "beetroot",
+                    "radish",
+                    "turnip",
+                    "parsnip",
+                    "dill",
+                    "parsley",
+                    "lettuce",
+                    "arugula",
+                    "spinach (new sowing)",
+                    "chard",
+                    "peas",
+                    "beans",
+                    "potato",
+                    "onion (sets or seeds)"
+                ],
+                "transplanting": [
+                    "cabbage",
+                    "cauliflower",
+                    "broccoli",
+                    "kale",
+                    "tomato (in greenhouse)",
+                    "pepper (in greenhouse)",
+                    "eggplant (in greenhouse)",
+                    "zucchini (late May)",
+                    "pumpkin (late May)"
+                ],
+                "greenhouse": [
+                    "tomato",
+                    "cucumber",
+                    "pepper",
+                    "eggplant",
+                    "zucchini",
+                    "basil"
+                ],
+                "garden_tasks": [
+                    "Checking fruit tree flower buds (thinning if needed)",
+                    "Planting containers and balcony plants",
+                    "Adding mulch to beds",
+                    "Weed control",
+                    "Adding green matter to compost"
+                ]
+            },
+            "early_june": {
+                "direct_sowing": [
+                    "beans (late varieties)",
+                    "zucchini (direct sowing)",
+                    "cucumber (direct sowing)"
+                ],
+                "transplanting": [
+                    "zucchini",
+                    "pumpkin",
+                    "cucumber (if soil is warm)"
+                ],
+                "greenhouse": [
+                    "Tomato maintenance and staking",
+                    "Fertilizing",
+                    "Ventilation",
+                    "Removing side shoots",
+                    "Succession planting (lettuce, radish, herbs)",
+                    "Cucumber staking"
+                ],
+                "garden_tasks": [
+                    "Removing row covers",
+                    "Monitoring watering schedule",
+                    "Weed control",
+                    "Covering strawberries with bird netting"
+                ]
+            }
+        };
+
+        // Category icons
+        const categoryIcons = {
+            "direct_sowing": "🌱",
+            "seedling_start": "🌿",
+            "transplanting": "🌿",
+            "greenhouse": "🏡",
+            "garden_tasks": "🧰"
+        };
+
+        // Category names
+        const categoryNames = {
+            "direct_sowing": "Direct Sowing",
+            "seedling_start": "Starting Seedlings",
+            "transplanting": "Transplanting",
+            "greenhouse": "Greenhouse",
+            "garden_tasks": "Garden Tasks"
+        };
+
+        // DOM elements
+        const calendarContent = document.getElementById('calendarContent');
+        const monthButtons = document.querySelectorAll('.month-btn');
+        const searchBox = document.getElementById('searchBox');
+
+        // Active month (default April)
+        let activeMonth = 'april';
+
+        // Track last actions for retry
+        let lastGeocodeQuery = null;
+        let lastWeatherCoords = null;
+        let lastWeatherAction = null; // 'geocode' or 'weather'
+
+        // Store last fetched weather data for re-rendering
+        let lastWeatherData = null;
+        let lastWeatherLat = null;
+        let lastWeatherLon = null;
+
+        // Helper: Convert temperature and precipitation
+        function convertTemp(val, unit) {
+            if (unit === 'F') return Math.round(val * 9/5 + 32);
+            return Math.round(val);
+        }
+        function convertPrecip(val, unit) {
+            if (unit === 'in') return (val / 25.4).toFixed(2);
+            return val;
+        }
+        function getTempUnitSymbol() {
+            return tempUnitSelect.value === 'F' ? '°F' : '°C';
+        }
+        function getPrecipUnitSymbol() {
+            return precipUnitSelect.value === 'in' ? 'in' : 'mm';
+        }
+
+        // Function to render calendar content
+        function renderCalendar(month, searchTerm = '') {
+            // Clear content
+            calendarContent.innerHTML = '';
+            
+            // Check if month has data
+            if (!calendarData[month]) {
+                calendarContent.innerHTML = '<div class="no-results">No data available for selected month.</div>';
+                return;
+            }
+            
+            // Show categories
+            const categories = Object.keys(calendarData[month]);
+            
+            // Filter for search
+            let hasResults = false;
+            let delay = 0;
+            
+            categories.forEach(category => {
+                const items = calendarData[month][category];
+                let filteredItems = items;
+                
+                // Apply filter if search term exists
+                if (searchTerm) {
+                    filteredItems = items.filter(item => 
+                        item.toLowerCase().includes(searchTerm.toLowerCase())
+                    );
+                }
+                
+                // Don't show category if no results after filtering
+                if (filteredItems.length === 0 && searchTerm) {
+                    return;
+                }
+                
+                hasResults = true;
+                
+                // Create category card
+                const categoryCard = document.createElement('div');
+                const categoryClass = category === 'garden_tasks' ? 'category-card garden-tasks-card' : 'category-card';
+                categoryCard.className = `${categoryClass} fade-in`;
+                categoryCard.style.animationDelay = `${delay}ms`;
+                delay += 100;
+                
+                // Icon and title
+                const isTaskCategory = category === 'garden_tasks';
+                
+                categoryCard.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-icon">${categoryIcons[category] || '🌿'}</div>
+                        <h2 class="category-title">${categoryNames[category] || category}</h2>
+                    </div>
+                    <ul class="plant-list">
+                        ${filteredItems.map(item => `
+                            <li class="${isTaskCategory ? 'task-item' : 'plant-item'}">
+                                ${searchTerm ? highlightText(item, searchTerm) : item}
+                            </li>
+                        `).join('')}
+                    </ul>
+                `;
+                
+                calendarContent.appendChild(categoryCard);
+            });
+            
+            // If no results found
+            if (!hasResults) {
+                calendarContent.innerHTML = '<div class="no-results">No results found for your search.</div>';
+            }
+        }
+
+        // Search function
+        function searchCalendar() {
+            const searchTerm = searchBox.value.trim();
+            renderCalendar(activeMonth, searchTerm);
+        }
+
+        // Text highlighting function
+        function highlightText(text, searchTerm) {
+            if (!searchTerm) return text;
+            
+            const regex = new RegExp(`(${escapeRegExp(searchTerm)})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+        // Escape special characters in regular expression
+        function escapeRegExp(string) {
+            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        }
+
+        // Listen for month button clicks
+        monthButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                // Remove active class from all buttons
+                monthButtons.forEach(btn => btn.classList.remove('active'));
+                
+                // Add active class to clicked button
+                button.classList.add('active');
+                
+                // Update active month
+                activeMonth = button.dataset.month;
+                
+                // Show calendar
+                searchBox.value = ''; // Reset search
+                renderCalendar(activeMonth);
+            });
+        });
+
+        // Listen for search input
+        searchBox.addEventListener('input', searchCalendar);
+
+        // Initial calendar display
+        renderCalendar(activeMonth);
+
+        // Weather/location handling
+        const locationInput = document.getElementById('locationInput');
+        const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+        const weatherPlaceholder = document.getElementById('weatherPlaceholder');
+
+        // Helper: Display error with optional retry
+        function displayLocationError(msg, retryType = null) {
+            let retryBtn = '';
+            if (retryType === 'geocode') {
+                retryBtn = '<button id="retryGeocodeBtn" style="margin-left:12px;">Retry</button>';
+            } else if (retryType === 'weather') {
+                retryBtn = '<button id="retryWeatherBtn" style="margin-left:12px;">Retry</button>';
+            }
+            weatherPlaceholder.innerHTML = `<div role="alert" style="color: #b71c1c;">${msg}${retryBtn}</div>`;
+            if (retryType === 'geocode') {
+                const btn = document.getElementById('retryGeocodeBtn');
+                if (btn) btn.onclick = () => {
+                    if (lastGeocodeQuery) geocodeLocation(lastGeocodeQuery, true);
+                };
+            } else if (retryType === 'weather') {
+                const btn = document.getElementById('retryWeatherBtn');
+                if (btn) btn.onclick = () => {
+                    if (lastWeatherCoords) fetchWeatherData(lastWeatherCoords.lat, lastWeatherCoords.lon, true);
+                };
+            }
+        }
+
+        // Helper: Display location and coordinates, then fetch and display weather
+        function displayLocationInfo(name, lat, lon, admin1, admin2, country) {
+            let locationParts = [];
+            if (name) locationParts.push(name);
+            if (admin2) locationParts.push(admin2);
+            if (admin1) locationParts.push(admin1);
+            if (country) locationParts.push(country);
+            const locationString = locationParts.join(', ');
+            weatherPlaceholder.innerHTML =
+                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br>` +
+                `<span style="font-size:0.97em;color:#666;">Latitude: ${lat}, Longitude: ${lon}</span></div>` +
+                `<div id="weatherDataSection">Loading weather data...</div>`;
+            lastWeatherCoords = { lat, lon };
+            lastWeatherAction = 'weather';
+            fetchWeatherData(lat, lon);
+        }
+
+        // Weather code to icon, text, and color (Open-Meteo codes)
+        function weatherCodeToIconTextColor(code) {
+            // Weather type to color mapping
+            const typeColors = {
+                sun:   { bg: '#fffde7', color: '#fbc02d' },
+                cloud: { bg: '#eceff1', color: '#607d8b' },
+                rain:  { bg: '#e3f2fd', color: '#1976d2' },
+                snow:  { bg: '#f3e5f5', color: '#7e57c2' },
+                storm: { bg: '#ffe0b2', color: '#e65100' },
+                fog:   { bg: '#f5f5f5', color: '#757575' },
+                unknown: { bg: '#eeeeee', color: '#888' }
+            };
+            // Map weather code to icon, text, and type
+            const map = {
+                0:  {icon: '☀️', text: 'Clear sky', type: 'sun'},
+                1:  {icon: '🌤️', text: 'Mainly clear', type: 'sun'},
+                2:  {icon: '⛅', text: 'Partly cloudy', type: 'cloud'},
+                3:  {icon: '☁️', text: 'Overcast', type: 'cloud'},
+                45: {icon: '🌫️', text: 'Fog', type: 'fog'},
+                48: {icon: '🌫️', text: 'Rime fog', type: 'fog'},
+                51: {icon: '🌦️', text: 'Light drizzle', type: 'rain'},
+                53: {icon: '🌦️', text: 'Drizzle', type: 'rain'},
+                55: {icon: '🌦️', text: 'Dense drizzle', type: 'rain'},
+                56: {icon: '🌧️', text: 'Freezing light drizzle', type: 'rain'},
+                57: {icon: '🌧️', text: 'Freezing drizzle', type: 'rain'},
+                61: {icon: '🌦️', text: 'Slight rain', type: 'rain'},
+                63: {icon: '🌧️', text: 'Rain', type: 'rain'},
+                65: {icon: '🌧️', text: 'Heavy rain', type: 'rain'},
+                66: {icon: '🌧️', text: 'Freezing light rain', type: 'rain'},
+                67: {icon: '🌧️', text: 'Freezing rain', type: 'rain'},
+                71: {icon: '🌨️', text: 'Slight snow fall', type: 'snow'},
+                73: {icon: '🌨️', text: 'Snow fall', type: 'snow'},
+                75: {icon: '❄️', text: 'Heavy snow fall', type: 'snow'},
+                77: {icon: '❄️', text: 'Snow grains', type: 'snow'},
+                80: {icon: '🌦️', text: 'Slight rain showers', type: 'rain'},
+                81: {icon: '🌧️', text: 'Rain showers', type: 'rain'},
+                82: {icon: '🌧️', text: 'Violent rain showers', type: 'rain'},
+                85: {icon: '🌨️', text: 'Slight snow showers', type: 'snow'},
+                86: {icon: '🌨️', text: 'Snow showers', type: 'snow'},
+                95: {icon: '⛈️', text: 'Thunderstorm', type: 'storm'},
+                96: {icon: '⛈️', text: 'Thunderstorm w/ hail', type: 'storm'},
+                99: {icon: '⛈️', text: 'Thunderstorm w/ heavy hail', type: 'storm'}
+            };
+            const entry = map[code] || {icon: '❓', text: 'Unknown', type: 'unknown'};
+            const color = typeColors[entry.type] || typeColors.unknown;
+            return { ...entry, ...color };
+        }
+
+        // Fetch weather data from Open-Meteo
+        async function fetchWeatherData(lat, lon, isRetry = false) {
+            lastWeatherCoords = { lat, lon };
+            lastWeatherAction = 'weather';
+            lastWeatherLat = lat;
+            lastWeatherLon = lon;
+            const weatherSection = document.getElementById('weatherDataSection');
+            if (!weatherSection) return;
+            weatherSection.textContent = 'Loading weather data...';
+            try {
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&hourly=temperature_2m,precipitation,windspeed_10m&forecast_days=16&timezone=auto`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Weather service error');
+                const data = await response.json();
+                lastWeatherData = data;
+                if (!data.current_weather || !data.daily || !data.hourly) {
+                    weatherSection.innerHTML = '<div role="alert" style="color: #b71c1c;">Weather data not available for this location.</div>';
+                    return;
+                }
+                renderWeatherData(data);
+            } catch (e) {
+                if (weatherSection) {
+                    weatherSection.innerHTML = '<div role="alert" style="color: #b71c1c;">Could not fetch weather data. <button id="retryWeatherBtn" style="margin-left:12px;">Retry</button></div>';
+                    const btn = document.getElementById('retryWeatherBtn');
+                    if (btn) btn.onclick = () => {
+                        if (lastWeatherCoords) fetchWeatherData(lastWeatherCoords.lat, lastWeatherCoords.lon, true);
+                    };
+                }
+            }
+        }
+
+        // Render weather data in selected units
+        function renderWeatherData(data) {
+            const weatherSection = document.getElementById('weatherDataSection');
+            if (!weatherSection) return;
+            const tempUnit = tempUnitSelect.value;
+            const precipUnit = precipUnitSelect.value;
+            // Display current weather
+            const currentIconTextColor = weatherCodeToIconTextColor(data.current_weather.weathercode);
+            let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol()}, Wind: ${data.current_weather.windspeed} km/h</div>`;
+            // Prepare hourly data grouped by day
+            const hourlyByDay = groupHourlyByDay(data.hourly, data.daily.time);
+            const hourlyPrecipByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.precipitation }, data.daily.time);
+            const hourlyWindByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.windspeed_10m }, data.daily.time);
+            // Display forecast table
+            html += `<div style="margin-top:10px;"><strong>16-day forecast:</strong></div>`;
+            html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
+            for (let i = 0; i < data.daily.time.length; i++) {
+                const { nightMin, nightMax, dayMin, dayMax } = calcNightDayMinMax(hourlyByDay[i]);
+                const weatherIconTextColor = weatherCodeToIconTextColor(data.daily.weathercode[i]);
+                html += `<tr><td>${data.daily.time[i]}</td><td>${nightMin !== null ? convertTemp(nightMin, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${nightMax !== null ? convertTemp(nightMax, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${dayMin !== null ? convertTemp(dayMin, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${dayMax !== null ? convertTemp(dayMax, tempUnit) + getTempUnitSymbol() : '-'}</td><td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol()}</td><td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td><td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td></tr>`;
+            }
+            html += `</tbody></table>`;
+            weatherSection.innerHTML = html;
+            // Add event listeners for sparklines
+            addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit);
+        }
+
+        // Calculate night and day min/max for a day's hourly temps
+        function calcNightDayMinMax(temps) {
+            if (!temps || temps.length !== 24) return { nightMin: null, nightMax: null, dayMin: null, dayMax: null };
+            // Night: 21:00–23:00 (21,22,23) and 00:00–05:00 (0,1,2,3,4,5)
+            const nightHours = [21,22,23,0,1,2,3,4,5];
+            const dayHours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
+            const nightTemps = nightHours.map(h => temps[h]).filter(t => t !== undefined);
+            const dayTemps = dayHours.map(h => temps[h]).filter(t => t !== undefined);
+            return {
+                nightMin: nightTemps.length ? Math.round(Math.min(...nightTemps)) : null,
+                nightMax: nightTemps.length ? Math.round(Math.max(...nightTemps)) : null,
+                dayMin: dayTemps.length ? Math.round(Math.min(...dayTemps)) : null,
+                dayMax: dayTemps.length ? Math.round(Math.max(...dayTemps)) : null
+            };
+        }
+
+        // Group hourly temperature data by day
+        function groupHourlyByDay(hourly, dailyDates) {
+            const result = [];
+            const hours = hourly.time;
+            const temps = hourly.temperature_2m;
+            let dayIndex = 0;
+            let currentDay = dailyDates[dayIndex];
+            let dayTemps = [];
+            for (let i = 0; i < hours.length; i++) {
+                if (hours[i].startsWith(currentDay)) {
+                    dayTemps.push(temps[i]);
+                } else {
+                    result.push(dayTemps);
+                    dayTemps = [];
+                    dayIndex++;
+                    currentDay = dailyDates[dayIndex];
+                    if (!currentDay) break;
+                    if (hours[i].startsWith(currentDay)) {
+                        dayTemps.push(temps[i]);
+                    }
+                }
+            }
+            if (dayTemps.length) result.push(dayTemps);
+            return result;
+        }
+
+        // Render a mini SVG sparkline for a day's temperatures
+        function renderSparkline(temps, dayIndex, tempUnit) {
+            if (!temps || temps.length === 0) return '';
+            const w = 60, h = 40;
+            // Convert all temps for sparkline
+            const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
+            const min = Math.min(...convertedTemps);
+            const max = Math.max(...convertedTemps);
+            const range = max - min || 1;
+            const points = convertedTemps.map((t, i) => {
+                const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
+                const y = h - 2 - ((t - min) / range) * (h - 4);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+            // Reference lines for 0 and 20 (in selected unit)
+            const y0 = h - 2 - ((convertTemp(0, tempUnit) - min) / range) * (h - 4);
+            const y20 = h - 2 - ((convertTemp(20, tempUnit) - min) / range) * (h - 4);
+            const gradientId = `temp-gradient-${Math.random().toString(36).substr(2, 8)}`;
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle;cursor:pointer;" data-day-index="${dayIndex}">
+                <defs>
+                    <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d32f2f"/>
+                        <stop offset="50%" stop-color="#4a8e3a"/>
+                        <stop offset="100%" stop-color="#1976d2"/>
+                    </linearGradient>
+                </defs>
+                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
+                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
+                <polyline fill="none" stroke="url(#${gradientId})" stroke-width="2" points="${points}" />
+            </svg>`;
+        }
+
+        // Render a larger SVG chart for modal
+        function renderLargeTempChart(temps, tempUnit) {
+            if (!temps || temps.length === 0) return '';
+            const w = 340, h = 100;
+            // Convert all temps for chart
+            const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
+            const min = Math.min(...convertedTemps);
+            const max = Math.max(...convertedTemps);
+            const range = max - min || 1;
+            const points = convertedTemps.map((t, i) => {
+                const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
+                const y = h - 20 - ((t - min) / range) * (h - 40);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            }).join(' ');
+            // Reference lines for 0 and 20 (in selected unit)
+            const y0 = h - 20 - ((convertTemp(0, tempUnit) - min) / range) * (h - 40);
+            const y20 = h - 20 - ((convertTemp(20, tempUnit) - min) / range) * (h - 40);
+            const gradientId = `temp-gradient-large-${Math.random().toString(36).substr(2, 8)}`;
+            const minLabel = min + getTempUnitSymbol();
+            const maxLabel = max + getTempUnitSymbol();
+            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
+                <defs>
+                    <linearGradient id="${gradientId}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#d32f2f"/>
+                        <stop offset="50%" stop-color="#4a8e3a"/>
+                        <stop offset="100%" stop-color="#1976d2"/>
+                    </linearGradient>
+                </defs>
+                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
+                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
+                <polyline fill="none" stroke="url(#${gradientId})" stroke-width="3" points="${points}" />
+                <text x="2" y="${h - 22}" font-size="11" fill="#888">${minLabel}</text>
+                <text x="2" y="18" font-size="11" fill="#888">${maxLabel}</text>
+            </svg>`;
+        }
+
+        // Show modal with detailed chart and hourly temps
+        function showWeatherModal(dayIndex, date, temps, precips, winds) {
+            // Remove any existing modal
+            const oldModal = document.getElementById('weatherModalOverlay');
+            if (oldModal) oldModal.remove();
+            // Build hourly table
+            const tempUnit = tempUnitSelect.value;
+            const precipUnit = precipUnitSelect.value;
+            let hourlyTable = '<table class="weather-modal-hourly-table"><thead><tr><th>Hour</th><th>Temp (' + getTempUnitSymbol() + ')</th><th>Precip. (' + getPrecipUnitSymbol() + ')</th><th>Wind (km/h)</th></tr></thead><tbody>';
+            for (let h = 0; h < temps.length; h++) {
+                hourlyTable += `<tr><td>${h}:00</td><td>${convertTemp(temps[h], tempUnit)}</td><td>${precips && precips[h] !== undefined ? convertPrecip(precips[h], precipUnit) : '-'}</td><td>${winds && winds[h] !== undefined ? Math.round(winds[h]) : '-'}</td></tr>`;
+            }
+            hourlyTable += '</tbody></table>';
+            // Modal HTML
+            const modalHtml = `
+                <div class="weather-modal-overlay" id="weatherModalOverlay" tabindex="-1">
+                    <div class="weather-modal" role="dialog" aria-modal="true" aria-labelledby="weatherModalTitle">
+                        <button class="weather-modal-close" id="weatherModalCloseBtn" aria-label="Close weather details">&times;</button>
+                        <div class="weather-modal-title" id="weatherModalTitle">Hourly Weather for ${date}</div>
+                        <div class="weather-modal-chart">${renderLargeTempChart(temps, tempUnit)}</div>
+                        ${hourlyTable}
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            // Focus management
+            const closeBtn = document.getElementById('weatherModalCloseBtn');
+            if (closeBtn) closeBtn.focus();
+            // Trap focus inside modal
+            const modalOverlay = document.getElementById('weatherModalOverlay');
+            const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+            const modal = modalOverlay.querySelector('.weather-modal');
+            const focusableEls = modal.querySelectorAll(focusableSelectors);
+            const firstFocusable = focusableEls[0];
+            const lastFocusable = focusableEls[focusableEls.length - 1];
+            modalOverlay.addEventListener('keydown', function(e) {
+                if (e.key === 'Tab') {
+                    if (focusableEls.length === 0) return;
+                    if (e.shiftKey) {
+                        if (document.activeElement === firstFocusable) {
+                            e.preventDefault();
+                            lastFocusable.focus();
+                        }
+                    } else {
+                        if (document.activeElement === lastFocusable) {
+                            e.preventDefault();
+                            firstFocusable.focus();
+                        }
+                    }
+                } else if (e.key === 'Escape') {
+                    modalOverlay.remove();
+                }
+            });
+            // Close logic
+            closeBtn.onclick = () => {
+                modalOverlay.remove();
+            };
+            modalOverlay.onclick = (e) => {
+                if (e.target.id === 'weatherModalOverlay') {
+                    modalOverlay.remove();
+                }
+            };
+        }
+
+        // Add event delegation for sparkline clicks after weather table is rendered
+        function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit) {
+            const table = document.querySelector('.weather-forecast-table');
+            if (!table) return;
+            table.addEventListener('click', function(e) {
+                const svg = e.target.closest('svg[data-day-index]');
+                if (svg) {
+                    const dayIndex = parseInt(svg.getAttribute('data-day-index'));
+                    if (!isNaN(dayIndex) && hourlyByDay[dayIndex]) {
+                        showWeatherModal(
+                            dayIndex,
+                            dailyDates[dayIndex],
+                            hourlyByDay[dayIndex],
+                            hourlyPrecipByDay ? hourlyPrecipByDay[dayIndex] : null,
+                            hourlyWindByDay ? hourlyWindByDay[dayIndex] : null
+                        );
+                    }
+                }
+            });
+        }
+
+        // On page load, check for cached location
+        window.addEventListener('DOMContentLoaded', () => {
+            const cached = localStorage.getItem('gardening_last_location');
+            if (cached) {
+                try {
+                    const loc = JSON.parse(cached);
+                    if (loc.type === 'query' && loc.value) {
+                        locationInput.value = loc.value;
+                        geocodeLocation(loc.value);
+                    } else if (loc.type === 'coords' && loc.lat && loc.lon) {
+                        displayLocationInfo('Your location', loc.lat, loc.lon, '', '', '');
+                    }
+                } catch (e) {}
+            }
+        });
+
+        // Geocoding API call
+        async function geocodeLocation(query, isRetry = false) {
+            lastGeocodeQuery = query;
+            lastWeatherAction = 'geocode';
+            weatherPlaceholder.textContent = 'Looking up location...';
+            // Cache the query
+            localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'query', value: query }));
+            try {
+                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Geocoding service error');
+                const data = await response.json();
+                if (!data.results || data.results.length === 0) {
+                    displayLocationError('Location not found. Please try a different name or postal code.', 'geocode');
+                    return;
+                }
+                const result = data.results[0];
+                displayLocationInfo(
+                    result.name,
+                    result.latitude,
+                    result.longitude,
+                    result.admin1,
+                    result.admin2,
+                    result.country
+                );
+            } catch (e) {
+                displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
+            }
+        }
+
+        // Handle location input (Enter or blur)
+        locationInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const query = locationInput.value.trim();
+                if (query) geocodeLocation(query);
+            }
+        });
+        locationInput.addEventListener('blur', function() {
+            const query = locationInput.value.trim();
+            if (query) geocodeLocation(query);
+        });
+
+        // Handle 'Use my location' button
+        useMyLocationBtn.addEventListener('click', function() {
+            weatherPlaceholder.textContent = 'Getting your location...';
+            if (!navigator.geolocation) {
+                displayLocationError('Geolocation is not supported by your browser.', 'geocode');
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(5);
+                    const lon = pos.coords.longitude.toFixed(5);
+                    // Cache the coordinates
+                    localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'coords', lat, lon }));
+                    displayLocationInfo('Your location', lat, lon, '', '', '');
+                },
+                (err) => {
+                    displayLocationError('Could not get your location. Please allow location access or enter a place name.', 'geocode');
+                }
+            );
+        });
+
+        // Unit preference logic
+        const tempUnitSelect = document.getElementById('tempUnitSelect');
+        const precipUnitSelect = document.getElementById('precipUnitSelect');
+        // Load preferences from localStorage
+        function loadUnitPrefs() {
+            const temp = localStorage.getItem('gardening_temp_unit');
+            const precip = localStorage.getItem('gardening_precip_unit');
+            if (temp && (temp === 'C' || temp === 'F')) tempUnitSelect.value = temp;
+            if (precip && (precip === 'mm' || precip === 'in')) precipUnitSelect.value = precip;
+        }
+        // Save preferences to localStorage
+        tempUnitSelect.addEventListener('change', () => {
+            localStorage.setItem('gardening_temp_unit', tempUnitSelect.value);
+            if (lastWeatherData) renderWeatherData(lastWeatherData);
+        });
+        precipUnitSelect.addEventListener('change', () => {
+            localStorage.setItem('gardening_precip_unit', precipUnitSelect.value);
+            if (lastWeatherData) renderWeatherData(lastWeatherData);
+        });
+        // On page load, set unit preferences
+        window.addEventListener('DOMContentLoaded', loadUnitPrefs);
+    </script>
+</body>
+</html> 
