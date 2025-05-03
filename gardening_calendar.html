@@ -101,8 +101,7 @@
         }
 
         .location-row {
-            display: grid;
-            grid-template-columns: minmax(250px, 520px) auto;
+            display: flex;
             gap: 15px;
             margin-bottom: 20px;
             align-items: center;
@@ -212,7 +211,7 @@
             flex-wrap: wrap;
         }
 
-        .month-btn {
+        .month-btn, .location-action-btn {
             padding: 12px 25px;
             background-color: var(--secondary-color);
             color: var(--white);
@@ -227,7 +226,7 @@
             text-align: center;
         }
 
-        .month-btn:hover {
+        .month-btn:hover, .location-action-btn:hover {
             background-color: var(--accent-color);
             transform: translateY(-2px);
         }
@@ -617,8 +616,30 @@
             position: relative;
             display: flex;
             align-items: center;
-            width: 100%;
-            max-width: 520px;
+            flex: 1;  /* Take most of the space */
+            min-width: 200px;
+        }
+        
+        .search-location-btn {
+            white-space: nowrap;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .geo-location-btn {
+            white-space: nowrap;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        
+        .search-icon, .location-icon {
+            font-size: 1.1em;
         }
         
         .location-clear-btn {
@@ -635,6 +656,7 @@
             width: 24px;
             height: 24px;
             border-radius: 50%;
+            opacity: 0.7;
         }
         
         .location-clear-btn:hover {
@@ -932,6 +954,19 @@
         @media (max-width: 768px) {
             .location-row {
                 grid-template-columns: 1fr;
+                gap: 12px;
+            }
+            
+            .location-row {
+                flex-direction: column;
+                gap: 10px;
+                align-items: stretch;
+            }
+            
+            .search-location-btn,
+            .geo-location-btn {
+                width: 100%;
+                min-width: 0;
             }
             
             .units-row {
@@ -1030,9 +1065,14 @@
                             placeholder="City or place name (e.g., Paris, Barcelona)" 
                             aria-label="Location">
                         <button type="button" id="clearLocationBtn" class="location-clear-btn" 
-                            aria-label="Clear location" style="display: none;">×</button>
+                            aria-label="Clear location">×</button>
                     </div>
-                    <button class="location-btn" id="useMyLocationBtn">Use my location</button>
+                    <button class="location-action-btn search-location-btn" id="searchLocationBtn">
+                        <span class="search-icon">🔍</span> Search
+                    </button>
+                    <button class="location-action-btn geo-location-btn" id="useMyLocationBtn">
+                        <span class="location-icon">📍</span> My Location
+                    </button>
                 </div>
                 <div class="units-row">
                     <div class="unit-group">
@@ -2462,13 +2502,13 @@
                     const loc = JSON.parse(cached);
                     if (loc.type === 'query' && loc.value) {
                         locationInput.value = loc.value;
-                        // Show the clear button since we have text in the input
-                        clearLocationBtn.style.display = 'block';
+                        // Update clear button opacity
+                        clearLocationBtn.style.opacity = '0.7';
                         geocodeLocation(loc.value);
                     } else if (loc.type === 'coords' && loc.lat && loc.lon) {
                         // Clear the input when using coordinates
                         locationInput.value = '';
-                        clearLocationBtn.style.display = 'none';
+                        clearLocationBtn.style.opacity = '0.2';
                         displayLocationInfo('Your location', loc.lat, loc.lon, '', '', '');
                     }
                 } catch (e) {}
@@ -2480,17 +2520,18 @@
         
         // Show/hide clear button based on input content
         locationInput.addEventListener('input', function() {
-            clearLocationBtn.style.display = this.value ? 'block' : 'none';
+            clearLocationBtn.style.opacity = this.value ? '0.7' : '0.2';
         });
         
         // Clear input when clear button is clicked
         clearLocationBtn.addEventListener('click', function() {
             locationInput.value = '';
             locationInput.focus();
-            clearLocationBtn.style.display = 'none';
+            clearLocationBtn.style.opacity = '0.2';
         });
         
-        // We now handle the clear button visibility during page load in the DOMContentLoaded event
+        // Set initial opacity for clear button
+        clearLocationBtn.style.opacity = locationInput.value ? '0.7' : '0.2';
         
         // We're now using a single placeholder format for consistency
 
@@ -2531,17 +2572,25 @@
             }
         }
 
-        // Handle location input (Enter or blur)
+        // Handle location input and search
+        const searchLocationBtn = document.getElementById('searchLocationBtn');
+        
+        // Search when clicking the search button
+        searchLocationBtn.addEventListener('click', function() {
+            const query = locationInput.value.trim();
+            if (query) geocodeLocation(query);
+        });
+        
+        // Search when pressing Enter
         locationInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter') {
                 const query = locationInput.value.trim();
                 if (query) geocodeLocation(query);
             }
         });
-        locationInput.addEventListener('blur', function() {
-            const query = locationInput.value.trim();
-            if (query) geocodeLocation(query);
-        });
+        
+        // We no longer search on blur to avoid unexpected behavior
+        // This makes the UX more explicit - users must press Enter or the Search button
 
         // Handle 'Use my location' button
         useMyLocationBtn.addEventListener('click', function() {
