@@ -3568,17 +3568,18 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                         behavior: 'smooth'
                     });
 
-                    // If it's the garden journal, make sure it's visible
+                    // If it's the garden journal, make sure it's visible and hide other sections
                     if (sectionId === 'garden-journal') {
                         document.querySelectorAll('section').forEach(s => {
                             s.style.display = s.id === 'garden-journal' ? 'block' : 'none';
                         });
                         renderJournal(); // Make sure journal content is up to date
                     } else {
-                        // For other sections, hide garden journal and show everything else
+                        // For all other sections, make garden journal hidden and restore visibility of all other sections
                         document.getElementById('garden-journal').style.display = 'none';
                         document.querySelectorAll('section:not(#garden-journal)').forEach(s => {
-                            s.style.display = 'block';
+                            // Remove any inline display style to revert to CSS rules
+                            s.style.removeProperty('display');
                         });
                     }
                 }
