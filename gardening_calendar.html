@@ -1409,6 +1409,92 @@
         </footer>
     </div>
 
+    <!-- Custom Confirmation Modal -->
+    <div id="customConfirmModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 450px; padding: 25px;">
+            <div id="confirmModalTitle" style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Confirm Action</div>
+            <div id="confirmModalMessage" style="margin-bottom: 25px; line-height: 1.5;">Message goes here</div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button id="confirmModalCancelBtn" class="button" style="background: #e0e0e0; color: #333; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Cancel</button>
+                <button id="confirmModalOkBtn" class="button" style="background: var(--primary-color); color: white; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options Modal -->
+    <div id="exportOptionsModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 450px; padding: 25px;">
+            <button class="weather-modal-close" id="exportModalCloseBtn" aria-label="Close export options">&times;</button>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Export Options</div>
+            <div style="margin-bottom: 25px; line-height: 1.5;">Choose how you would like to export your journal:</div>
+            
+            <div class="export-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; cursor: pointer;">
+                <div style="margin-right: 15px; font-size: 1.5rem;">📷</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 500;">Complete Export</div>
+                    <div style="font-size: 0.9rem; color: #666;">Include all entries with images (larger file size)</div>
+                </div>
+            </div>
+            
+            <div class="export-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;">
+                <div style="margin-right: 15px; font-size: 1.5rem;">📝</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 500;">Lightweight Export</div>
+                    <div style="font-size: 0.9rem; color: #666;">Text-only export without images (smaller file size)</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button id="exportOptionsCancelBtn" class="button" style="background: #e0e0e0; color: #333; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; margin-right: 12px;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Import Options Modal -->
+    <div id="importOptionsModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 450px; padding: 25px;">
+            <button class="weather-modal-close" id="importModalCloseBtn" aria-label="Close import options">&times;</button>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Import Options</div>
+            <div id="importStatsMessage" style="margin-bottom: 25px; line-height: 1.5;">Found entries to import.</div>
+            
+            <div class="import-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; cursor: pointer;">
+                <div style="margin-right: 15px; font-size: 1.5rem;">🔄</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 500;">Merge</div>
+                    <div style="font-size: 0.9rem; color: #666;">Add new entries and update existing ones</div>
+                </div>
+            </div>
+            
+            <div class="import-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;">
+                <div style="margin-right: 15px; font-size: 1.5rem;">♻️</div>
+                <div style="flex-grow: 1;">
+                    <div style="font-weight: 500;">Replace All</div>
+                    <div style="font-size: 0.9rem; color: #666;">Delete all existing entries and use imported ones</div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button id="importOptionsCancelBtn" class="button" style="background: #e0e0e0; color: #333; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 450px; padding: 25px;">
+            <button class="weather-modal-close" id="deleteModalCloseBtn" aria-label="Close delete confirmation">&times;</button>
+            <div style="font-size: 1.2rem; font-weight: 600; color: #d32f2f; margin-bottom: 15px;">Delete Entry</div>
+            <div style="margin-bottom: 25px; line-height: 1.5;">Are you sure you want to delete this journal entry? This action cannot be undone.</div>
+            <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                <button id="deleteConfirmCancelBtn" class="button" style="background: #e0e0e0; color: #333; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Cancel</button>
+                <button id="deleteConfirmBtn" class="button" style="background: #d32f2f; color: white; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image viewer modal -->
+    <!-- ... existing code ... -->
+
     <script>
         // Multi-language support
         const translations = {
@@ -3858,25 +3944,47 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             
             if (exportJournalBtn) {
                 exportJournalBtn.addEventListener('click', function() {
-                    // Show export options
-                    const exportOption = confirm(
-                        "Choose export option:\n\n" +
-                        "Click OK to export with images (larger file)\n" +
-                        "Click Cancel to export without images (smaller file)"
-                    );
-                    
-                    if (exportOption) {
-                        // Full export with images
-                        exportJournal(true);
-                    } else {
-                        // Lightweight export without images
-                        exportJournal(false);
-                    }
+                    // Show export options modal instead of confirm dialog
+                    showExportOptionsModal();
                 });
             }
             
             if (importJournalBtn) {
-                importJournalBtn.addEventListener('click', importJournal);
+                importJournalBtn.addEventListener('click', function() {
+                    // Create file input element
+                    const fileInput = document.createElement('input');
+                    fileInput.type = 'file';
+                    fileInput.accept = 'application/json';
+                    
+                    fileInput.onchange = (e) => {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            try {
+                                const importData = JSON.parse(event.target.result);
+                                
+                                // Validate data format
+                                if (!Array.isArray(importData)) {
+                                    throw new Error('Invalid format: Data should be an array of journal entries');
+                                }
+                                
+                                // Show import options modal
+                                showImportOptionsModal(importData);
+                                
+                            } catch (error) {
+                                console.error('Import error:', error);
+                                alert(`Error importing journal: ${error.message}`);
+                            }
+                        };
+                        
+                        reader.readAsText(file);
+                    };
+                    
+                    // Trigger file selection
+                    fileInput.click();
+                });
             }
         });
 
@@ -4043,10 +4151,7 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             journalTimeline.querySelectorAll('.delete-entry-btn').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const entryId = btn.dataset.entryId;
-                    if (confirm('Are you sure you want to delete this journal entry? This cannot be undone.')) {
-                        deleteJournalEntry(entryId);
-                        renderJournal();
-                    }
+                    showDeleteConfirmModal(entryId);
                 });
             });
             
@@ -4488,52 +4593,8 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                             throw new Error('Invalid format: Data should be an array of journal entries');
                         }
                         
-                        // Ask user how to handle the import
-                        const importAction = confirm(
-                            `Found ${importData.length} journal entries to import.\n\n` +
-                            'Click OK to MERGE with existing entries\n' +
-                            'Click Cancel to REPLACE all existing entries'
-                        );
-                        
-                        const existingEntries = getJournalEntries();
-                        
-                        if (importAction) {
-                            // Merge: Keep existing entries and add new ones
-                            const mergedEntries = [...existingEntries];
-                            
-                            // Track stats for user feedback
-                            let added = 0;
-                            let updated = 0;
-                            
-                            importData.forEach(importEntry => {
-                                const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
-                                
-                                if (existingIndex >= 0) {
-                                    // Update existing entry
-                                    mergedEntries[existingIndex] = importEntry;
-                                    updated++;
-                                } else {
-                                    // Add new entry
-                                    mergedEntries.push(importEntry);
-                                    added++;
-                                }
-                            });
-                            
-                            // Save merged entries
-                            saveJournalEntries(mergedEntries);
-                            
-                            // Show success message
-                            alert(`Import successful!\nAdded ${added} new entries\nUpdated ${updated} existing entries`);
-                        } else {
-                            // Replace: Delete all existing entries and use imported ones
-                            saveJournalEntries(importData);
-                            
-                            // Show success message
-                            alert(`Import successful!\nReplaced all entries with ${importData.length} imported entries`);
-                        }
-                        
-                        // Refresh the journal display
-                        renderJournal();
+                        // Show import options modal
+                        showImportOptionsModal(importData);
                         
                     } catch (error) {
                         console.error('Import error:', error);
@@ -4551,6 +4612,259 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
         // Export without images (lightweight version)
         function exportLightweightJournal() {
             exportJournal(false);
+        }
+
+        // Custom modal functions
+        function showCustomConfirmModal(title, message, onConfirm, confirmText = 'Confirm', cancelText = 'Cancel') {
+            const modal = document.getElementById('customConfirmModal');
+            const titleElement = document.getElementById('confirmModalTitle');
+            const messageElement = document.getElementById('confirmModalMessage');
+            const okBtn = document.getElementById('confirmModalOkBtn');
+            const cancelBtn = document.getElementById('confirmModalCancelBtn');
+            
+            // Set content
+            titleElement.textContent = title;
+            messageElement.textContent = message;
+            okBtn.textContent = confirmText;
+            cancelBtn.textContent = cancelText;
+            
+            // Set actions
+            okBtn.onclick = () => {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm(true);
+            };
+            
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+                if (onConfirm) onConfirm(false);
+            };
+            
+            // Show modal
+            modal.style.display = 'flex';
+        }
+        
+        function showExportOptionsModal() {
+            const modal = document.getElementById('exportOptionsModal');
+            const exportOptions = modal.querySelectorAll('.export-option');
+            const cancelBtn = document.getElementById('exportOptionsCancelBtn');
+            const closeBtn = document.getElementById('exportModalCloseBtn');
+            
+            // Clear any previous selections
+            exportOptions.forEach(option => {
+                option.style.borderColor = '#ddd';
+                option.style.backgroundColor = 'transparent';
+            });
+            
+            // Set click behavior for options
+            exportOptions[0].onclick = () => {
+                modal.style.display = 'none';
+                exportJournal(true); // Full export with images
+            };
+            
+            exportOptions[1].onclick = () => {
+                modal.style.display = 'none';
+                exportJournal(false); // Lightweight export without images
+            };
+            
+            // Add hover effects
+            exportOptions.forEach(option => {
+                option.onmouseover = () => {
+                    if (option.style.borderColor !== 'var(--primary-color)') {
+                        option.style.backgroundColor = '#f5f5f5';
+                    }
+                };
+                
+                option.onmouseout = () => {
+                    if (option.style.borderColor !== 'var(--primary-color)') {
+                        option.style.backgroundColor = 'transparent';
+                    }
+                };
+            });
+            
+            // Cancel and close buttons close the modal
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            // Click outside to close
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            // Show modal
+            modal.style.display = 'flex';
+            
+            // Setup escape key handler
+            const handleEscapeKey = (e) => {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                    document.removeEventListener('keydown', handleEscapeKey);
+                }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+        
+        function showImportOptionsModal(importData) {
+            const modal = document.getElementById('importOptionsModal');
+            const importOptions = modal.querySelectorAll('.import-option');
+            const cancelBtn = document.getElementById('importOptionsCancelBtn');
+            const closeBtn = document.getElementById('importModalCloseBtn');
+            const statsMessage = document.getElementById('importStatsMessage');
+            
+            // Update the stats message
+            statsMessage.textContent = `Found ${importData.length} journal ${importData.length === 1 ? 'entry' : 'entries'} to import.`;
+            
+            // Clear any previous selections
+            importOptions.forEach(option => {
+                option.style.borderColor = '#ddd';
+                option.style.backgroundColor = 'transparent';
+            });
+            
+            // Set click behavior for options
+            importOptions[0].onclick = () => {
+                // Merge option
+                modal.style.display = 'none';
+                handleImport(importData, true);
+            };
+            
+            importOptions[1].onclick = () => {
+                // Replace option
+                modal.style.display = 'none';
+                handleImport(importData, false);
+            };
+            
+            // Add hover effects
+            importOptions.forEach(option => {
+                option.onmouseover = () => {
+                    if (option.style.borderColor !== 'var(--primary-color)') {
+                        option.style.backgroundColor = '#f5f5f5';
+                    }
+                };
+                
+                option.onmouseout = () => {
+                    if (option.style.borderColor !== 'var(--primary-color)') {
+                        option.style.backgroundColor = 'transparent';
+                    }
+                };
+            });
+            
+            // Cancel and close buttons close the modal
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            // Click outside to close
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            // Show modal
+            modal.style.display = 'flex';
+            
+            // Setup escape key handler
+            const handleEscapeKey = (e) => {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                    document.removeEventListener('keydown', handleEscapeKey);
+                }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+        
+        function showDeleteConfirmModal(entryId) {
+            const modal = document.getElementById('deleteConfirmModal');
+            const confirmBtn = document.getElementById('deleteConfirmBtn');
+            const cancelBtn = document.getElementById('deleteConfirmCancelBtn');
+            const closeBtn = document.getElementById('deleteModalCloseBtn');
+            
+            // Set the delete action
+            confirmBtn.onclick = () => {
+                deleteJournalEntry(entryId);
+                renderJournal();
+                modal.style.display = 'none';
+            };
+            
+            // Cancel and close buttons close the modal
+            cancelBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            closeBtn.onclick = () => {
+                modal.style.display = 'none';
+            };
+            
+            // Click outside to close
+            modal.onclick = (e) => {
+                if (e.target === modal) {
+                    modal.style.display = 'none';
+                }
+            };
+            
+            // Show modal
+            modal.style.display = 'flex';
+            
+            // Setup escape key handler
+            const handleEscapeKey = (e) => {
+                if (e.key === 'Escape') {
+                    modal.style.display = 'none';
+                    document.removeEventListener('keydown', handleEscapeKey);
+                }
+            };
+            document.addEventListener('keydown', handleEscapeKey);
+        }
+        
+        function handleImport(importData, isMerge) {
+            const existingEntries = getJournalEntries();
+            
+            if (isMerge) {
+                // Merge: Keep existing entries and add new ones
+                const mergedEntries = [...existingEntries];
+                
+                // Track stats for user feedback
+                let added = 0;
+                let updated = 0;
+                
+                importData.forEach(importEntry => {
+                    const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
+                    
+                    if (existingIndex >= 0) {
+                        // Update existing entry
+                        mergedEntries[existingIndex] = importEntry;
+                        updated++;
+                    } else {
+                        // Add new entry
+                        mergedEntries.push(importEntry);
+                        added++;
+                    }
+                });
+                
+                // Save merged entries
+                saveJournalEntries(mergedEntries);
+                
+                // Show success message
+                alert(`Import successful!\nAdded ${added} new ${added === 1 ? 'entry' : 'entries'}\nUpdated ${updated} existing ${updated === 1 ? 'entry' : 'entries'}`);
+            } else {
+                // Replace: Delete all existing entries and use imported ones
+                saveJournalEntries(importData);
+                
+                // Show success message
+                alert(`Import successful!\nReplaced all entries with ${importData.length} imported ${importData.length === 1 ? 'entry' : 'entries'}`);
+            }
+            
+            // Refresh the journal display
+            renderJournal();
         }
     </script>
 </body>
