@@ -854,13 +854,14 @@
         .quick-jump-menu {
             display: flex;
             flex-wrap: wrap;
-            gap: 10px;
             justify-content: center;
-            padding: 15px;
+            padding: 15px 10px;
             max-width: 800px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
+            row-gap: 10px;
+            column-gap: 5px;
         }
 
         .quick-jump-title {
@@ -873,26 +874,38 @@
         }
 
         .quick-jump-btn {
-            padding: 8px 16px;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 20px;
             color: white;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             cursor: pointer;
             transition: all 0.2s ease;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 8px;
-            min-width: 120px;
             justify-content: center;
+            text-align: center;
+            padding: 6px 8px;
+            width: calc(20% - 4px);
+        }
+
+        @media (max-width: 799px) {
+            .quick-jump-btn {
+                width: calc(50% - 2.5px);
+                padding: 6px 8px;
+            }
         }
 
         .nav-icon {
-            font-size: 1.2em;
-            display: inline-block;
-            transform: translateY(-1px);
+            font-size: 1.1em;
+            display: block;
+            margin: 0 auto 2px auto;
+        }
+
+        .quick-jump-btn span:last-child {
+            display: block;
+            white-space: nowrap;
         }
 
         .quick-jump-btn:hover {
@@ -1056,19 +1069,24 @@
             <div class="quick-jump-menu" id="quickJumpMenu">
                 <div class="quick-jump-title">Quick Navigation:</div>
                 <button class="quick-jump-btn" data-section="location-setup">
-                    <span class="nav-icon">📍</span> Location Setup
+                    <span class="nav-icon">📍</span>
+                    <span>Location</span>
                 </button>
                 <button class="quick-jump-btn" data-section="weather-info">
-                    <span class="nav-icon">🌤️</span> Weather Info
+                    <span class="nav-icon">🌤️</span>
+                    <span>Weather</span>
                 </button>
                 <button class="quick-jump-btn" data-section="search-section">
-                    <span class="nav-icon">🔍</span> Search & Advice
+                    <span class="nav-icon">🔍</span>
+                    <span>Search</span>
                 </button>
                 <button class="quick-jump-btn" data-section="monthly-calendar">
-                    <span class="nav-icon">📅</span> Monthly Calendar
+                    <span class="nav-icon">📅</span>
+                    <span>Calendar</span>
                 </button>
                 <button class="quick-jump-btn" data-section="garden-journal">
-                    <span class="nav-icon">📔</span> Garden Journal
+                    <span class="nav-icon">📔</span>
+                    <span>Journal</span>
                 </button>
             </div>
         </header>
@@ -1156,10 +1174,20 @@
             <section class="garden-journal" id="garden-journal" style="display: none;">
                 <div class="journal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
                     <h2 class="journal-title" style="color: var(--primary-color); font-size: 1.4rem;">Garden Journal</h2>
-                    <button id="addJournalEntryBtn" class="journal-add-btn" style="padding: 8px 16px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
-                        <span style="font-size: 1.2em;">➕</span>
-                        <span>New Entry</span>
-                    </button>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="exportJournalBtn" class="journal-btn" style="padding: 8px 12px; background: var(--primary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
+                            <span style="font-size: 1.1em;">📤</span>
+                            <span>Export</span>
+                        </button>
+                        <button id="importJournalBtn" class="journal-btn" style="padding: 8px 12px; background: var(--primary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
+                            <span style="font-size: 1.1em;">📥</span>
+                            <span>Import</span>
+                        </button>
+                        <button id="addJournalEntryBtn" class="journal-add-btn" style="padding: 8px 12px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
+                            <span style="font-size: 1.1em;">➕</span>
+                            <span>New Entry</span>
+                        </button>
+                    </div>
                 </div>
                 
                 <div class="journal-tabs" style="display: flex; gap: 12px; margin-bottom: 20px;">
@@ -3856,6 +3884,33 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                 const journalBtn = document.querySelector('.quick-jump-btn[data-section="garden-journal"]');
                 if (journalBtn) journalBtn.click();
             }
+            
+            // Add event listeners for Export/Import buttons
+            const exportJournalBtn = document.getElementById('exportJournalBtn');
+            const importJournalBtn = document.getElementById('importJournalBtn');
+            
+            if (exportJournalBtn) {
+                exportJournalBtn.addEventListener('click', function() {
+                    // Show export options
+                    const exportOption = confirm(
+                        "Choose export option:\n\n" +
+                        "Click OK to export with images (larger file)\n" +
+                        "Click Cancel to export without images (smaller file)"
+                    );
+                    
+                    if (exportOption) {
+                        // Full export with images
+                        exportJournal(true);
+                    } else {
+                        // Lightweight export without images
+                        exportJournal(false);
+                    }
+                });
+            }
+            
+            if (importJournalBtn) {
+                importJournalBtn.addEventListener('click', importJournal);
+            }
         });
 
         // Check storage and populate plants on page load
@@ -4404,6 +4459,131 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             
             // Show modal
             journalEntryModal.style.display = 'flex';
+        }
+
+        // Export journal to JSON file
+        function exportJournal(includeImages = true) {
+            const entries = getJournalEntries();
+            
+            // If no entries, show message
+            if (entries.length === 0) {
+                alert('No journal entries to export.');
+                return;
+            }
+            
+            // Clone entries to avoid modifying the original data
+            let exportData = JSON.parse(JSON.stringify(entries));
+            
+            // Remove images if not including them
+            if (!includeImages) {
+                exportData = exportData.map(entry => {
+                    const entryCopy = {...entry};
+                    delete entryCopy.images;
+                    return entryCopy;
+                });
+            }
+            
+            // Create the export file
+            const dataStr = JSON.stringify(exportData, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            // Generate filename with timestamp
+            const date = new Date().toISOString().slice(0, 10);
+            const filename = `garden_journal_${date}${includeImages ? '_with_images' : '_no_images'}.json`;
+            
+            // Create download link and trigger download
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+        
+        // Import journal from JSON file
+        function importJournal() {
+            // Create file input element
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'application/json';
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importData = JSON.parse(event.target.result);
+                        
+                        // Validate data format
+                        if (!Array.isArray(importData)) {
+                            throw new Error('Invalid format: Data should be an array of journal entries');
+                        }
+                        
+                        // Ask user how to handle the import
+                        const importAction = confirm(
+                            `Found ${importData.length} journal entries to import.\n\n` +
+                            'Click OK to MERGE with existing entries\n' +
+                            'Click Cancel to REPLACE all existing entries'
+                        );
+                        
+                        const existingEntries = getJournalEntries();
+                        
+                        if (importAction) {
+                            // Merge: Keep existing entries and add new ones
+                            const mergedEntries = [...existingEntries];
+                            
+                            // Track stats for user feedback
+                            let added = 0;
+                            let updated = 0;
+                            
+                            importData.forEach(importEntry => {
+                                const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
+                                
+                                if (existingIndex >= 0) {
+                                    // Update existing entry
+                                    mergedEntries[existingIndex] = importEntry;
+                                    updated++;
+                                } else {
+                                    // Add new entry
+                                    mergedEntries.push(importEntry);
+                                    added++;
+                                }
+                            });
+                            
+                            // Save merged entries
+                            saveJournalEntries(mergedEntries);
+                            
+                            // Show success message
+                            alert(`Import successful!\nAdded ${added} new entries\nUpdated ${updated} existing entries`);
+                        } else {
+                            // Replace: Delete all existing entries and use imported ones
+                            saveJournalEntries(importData);
+                            
+                            // Show success message
+                            alert(`Import successful!\nReplaced all entries with ${importData.length} imported entries`);
+                        }
+                        
+                        // Refresh the journal display
+                        renderJournal();
+                        
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        alert(`Error importing journal: ${error.message}`);
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            // Trigger file selection
+            fileInput.click();
+        }
+        
+        // Export without images (lightweight version)
+        function exportLightweightJournal() {
+            exportJournal(false);
         }
     </script>
 </body>
