@@ -873,7 +873,7 @@
         }
 
         .quick-jump-btn {
-            padding: 8px 12px;
+            padding: 8px 16px;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 20px;
@@ -885,7 +885,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
-            min-width: 110px;
+            min-width: 120px;
             justify-content: center;
         }
 
@@ -912,20 +912,21 @@
             border-color: white;
         }
 
-        @media (min-width: 768px) {
+        @media (min-width: 800px) {
+            /* On larger screens, make sure all buttons fit in one row */
             .quick-jump-menu {
                 flex-wrap: nowrap;
-                gap: 8px;
             }
             
             .quick-jump-btn {
                 flex: 1;
-                min-width: 0;
                 padding: 8px 10px;
+                font-size: 0.9rem;
+                min-width: 0;
             }
         }
 
-        @media (max-width: 767px) {
+        @media (max-width: 799px) {
             header {
                 padding: 10px;
                 top: 0;
@@ -947,7 +948,8 @@
             .quick-jump-btn {
                 padding: 6px 12px;
                 font-size: 0.9rem;
-                min-width: calc(50% - 6px);
+                min-width: 0;
+                flex: 0 0 calc(50% - 6px);
             }
 
             .nav-icon {
