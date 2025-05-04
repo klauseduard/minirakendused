@@ -2097,8 +2097,16 @@
                 // Initial state: check if all items are selected
                 const categoryItems = calendarData[month][category] || [];
                 if (categoryItems.length > 0) {
-                    const allSelected = categoryItems.every(item => isItemSelected(month, category, item));
+                    // Check if ALL items in this category are selected
+                    let allSelected = true;
+                    for (let i = 0; i < categoryItems.length; i++) {
+                        if (!isItemSelected(month, category, categoryItems[i])) {
+                            allSelected = false;
+                            break;
+                        }
+                    }
                     checkbox.checked = allSelected;
+                    console.log(`Initializing "Select All" for ${category}: ${allSelected}`);
                 }
                 
                 // Add change event
@@ -3290,13 +3298,14 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             
             // For object items (like plants), compare by their English name
             if (typeof item === 'object' && item.en) {
-                return selections[month][category].some(selected => 
+                const matchFound = selections[month][category].some(selected => 
                     typeof selected === 'object' && selected.en === item.en
                 );
+                return matchFound;
             }
             
             // For string items or other types, use direct includes check
-            return selections[month][category].includes(item) || false;
+            return selections[month][category].includes(item);
         }
 
         function toggleItemSelection(month, category, item, selected) {
@@ -3323,7 +3332,7 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                 // Store a clean copy without any DOM-related attributes
                 if (typeof item === 'object') {
                     // We store only the essential data (language keys)
-                    const cleanItem = {};
+                    const cleanItem = { type: 'plant' };
                     if (item.en) cleanItem.en = item.en;
                     if (item.et) cleanItem.et = item.et;
                     items.push(cleanItem);
@@ -3331,6 +3340,8 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                     items.push(item);
                 }
             } else if (!selected && index !== -1) {
+                // Log details of the deselected item for debugging
+                console.log('Removing:', JSON.stringify(items[index]));
                 items.splice(index, 1);
             }
             
@@ -3338,13 +3349,15 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             if (items.length === 0) delete selections[month][category];
             if (Object.keys(selections[month]).length === 0) delete selections[month];
             
+            // Save to localStorage
             localStorage.setItem('gardening_selected_items', JSON.stringify(selections));
             
             // Update "Select All" checkbox status
             updateSelectAllCheckbox(month, category);
             
             // Log the updated selections for debugging
-            console.log('Updated selections:', JSON.stringify(selections));
+            console.log('Item operation:', selected ? 'select' : 'deselect', item.en || item);
+            console.log('Updated selections for', month, category, ':', JSON.stringify(selections[month]?.[category] || []));
         }
 
         // Function to update the select all checkbox based on individual item selections
@@ -3354,8 +3367,18 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             
             const categoryItems = calendarData[month][category] || [];
             if (categoryItems.length > 0) {
-                const allSelected = categoryItems.every(item => isItemSelected(month, category, item));
+                // Check if ALL items in this category are selected
+                let allSelected = true;
+                for (let i = 0; i < categoryItems.length; i++) {
+                    if (!isItemSelected(month, category, categoryItems[i])) {
+                        allSelected = false;
+                        break;
+                    }
+                }
                 selectAllCheckbox.checked = allSelected;
+                
+                // Add debug log to help identify issues
+                console.log(`Category: ${category}, All selected: ${allSelected}, Item count: ${categoryItems.length}`);
             }
         }
 
@@ -4826,45 +4849,45 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
         }
         
         function handleImport(importData, isMerge) {
-            const existingEntries = getJournalEntries();
-            
+                        const existingEntries = getJournalEntries();
+                        
             if (isMerge) {
-                // Merge: Keep existing entries and add new ones
-                const mergedEntries = [...existingEntries];
-                
-                // Track stats for user feedback
-                let added = 0;
-                let updated = 0;
-                
-                importData.forEach(importEntry => {
-                    const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
-                    
-                    if (existingIndex >= 0) {
-                        // Update existing entry
-                        mergedEntries[existingIndex] = importEntry;
-                        updated++;
-                    } else {
-                        // Add new entry
-                        mergedEntries.push(importEntry);
-                        added++;
-                    }
-                });
-                
-                // Save merged entries
-                saveJournalEntries(mergedEntries);
-                
-                // Show success message
+                            // Merge: Keep existing entries and add new ones
+                            const mergedEntries = [...existingEntries];
+                            
+                            // Track stats for user feedback
+                            let added = 0;
+                            let updated = 0;
+                            
+                            importData.forEach(importEntry => {
+                                const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
+                                
+                                if (existingIndex >= 0) {
+                                    // Update existing entry
+                                    mergedEntries[existingIndex] = importEntry;
+                                    updated++;
+                                } else {
+                                    // Add new entry
+                                    mergedEntries.push(importEntry);
+                                    added++;
+                                }
+                            });
+                            
+                            // Save merged entries
+                            saveJournalEntries(mergedEntries);
+                            
+                            // Show success message
                 alert(`Import successful!\nAdded ${added} new ${added === 1 ? 'entry' : 'entries'}\nUpdated ${updated} existing ${updated === 1 ? 'entry' : 'entries'}`);
-            } else {
-                // Replace: Delete all existing entries and use imported ones
-                saveJournalEntries(importData);
-                
-                // Show success message
+                        } else {
+                            // Replace: Delete all existing entries and use imported ones
+                            saveJournalEntries(importData);
+                            
+                            // Show success message
                 alert(`Import successful!\nReplaced all entries with ${importData.length} imported ${importData.length === 1 ? 'entry' : 'entries'}`);
-            }
-            
-            // Refresh the journal display
-            renderJournal();
+                        }
+                        
+                        // Refresh the journal display
+                        renderJournal();
         }
     </script>
 </body>
