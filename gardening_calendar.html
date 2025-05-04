@@ -854,14 +854,13 @@
         .quick-jump-menu {
             display: flex;
             flex-wrap: wrap;
+            gap: 10px;
             justify-content: center;
-            padding: 15px 10px;
+            padding: 15px;
             max-width: 800px;
             margin: 0 auto;
             background: rgba(255, 255, 255, 0.1);
             border-radius: 8px;
-            row-gap: 10px;
-            column-gap: 5px;
         }
 
         .quick-jump-title {
@@ -874,6 +873,7 @@
         }
 
         .quick-jump-btn {
+            padding: 8px 12px;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 20px;
@@ -884,28 +884,15 @@
             font-weight: 500;
             display: flex;
             align-items: center;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
             justify-content: center;
-            text-align: center;
-            padding: 6px 8px;
-            width: calc(20% - 4px);
-        }
-
-        @media (max-width: 799px) {
-            .quick-jump-btn {
-                width: calc(50% - 2.5px);
-                padding: 6px 8px;
-            }
         }
 
         .nav-icon {
-            font-size: 1.1em;
-            display: block;
-            margin: 0 auto 2px auto;
-        }
-
-        .quick-jump-btn span:last-child {
-            display: block;
-            white-space: nowrap;
+            font-size: 1.2em;
+            display: inline-block;
         }
 
         .quick-jump-btn:hover {
@@ -923,20 +910,6 @@
             background: white;
             color: var(--primary-color);
             border-color: white;
-        }
-
-        @media (min-width: 800px) {
-            /* On larger screens, make sure all buttons fit in one row */
-            .quick-jump-menu {
-                flex-wrap: nowrap;
-            }
-            
-            .quick-jump-btn {
-                flex: 1;
-                padding: 8px 10px;
-                font-size: 0.9rem;
-                min-width: 0;
-            }
         }
 
         @media (max-width: 799px) {
@@ -959,10 +932,9 @@
             }
             
             .quick-jump-btn {
-                padding: 6px 12px;
-                font-size: 0.9rem;
-                min-width: 0;
-                flex: 0 0 calc(50% - 6px);
+                padding: 6px 8px;
+                font-size: 0.85rem;
+                flex: 0 0 calc(50% - 3px);
             }
 
             .nav-icon {
@@ -1069,24 +1041,19 @@
             <div class="quick-jump-menu" id="quickJumpMenu">
                 <div class="quick-jump-title">Quick Navigation:</div>
                 <button class="quick-jump-btn" data-section="location-setup">
-                    <span class="nav-icon">📍</span>
-                    <span>Location</span>
+                    <span class="nav-icon">📍</span> Location
                 </button>
                 <button class="quick-jump-btn" data-section="weather-info">
-                    <span class="nav-icon">🌤️</span>
-                    <span>Weather</span>
+                    <span class="nav-icon">🌤️</span> Weather
                 </button>
                 <button class="quick-jump-btn" data-section="search-section">
-                    <span class="nav-icon">🔍</span>
-                    <span>Search</span>
+                    <span class="nav-icon">🔍</span> Search
                 </button>
                 <button class="quick-jump-btn" data-section="monthly-calendar">
-                    <span class="nav-icon">📅</span>
-                    <span>Calendar</span>
+                    <span class="nav-icon">📅</span> Calendar
                 </button>
                 <button class="quick-jump-btn" data-section="garden-journal">
-                    <span class="nav-icon">📔</span>
-                    <span>Journal</span>
+                    <span class="nav-icon">📔</span> Journal
                 </button>
             </div>
         </header>
