@@ -1,14 +1,8 @@
 // Journal Module for Garden Calendar
 // Contains all journal-related functionality
 
-// Journal entry types
-const journalEntryTypes = {
-    "planting": { icon: "🌱", name: "Planting" },
-    "care": { icon: "🌿", name: "Garden Care" },
-    "harvest": { icon: "🥕", name: "Harvest" },
-    "observation": { icon: "👁️", name: "Observation" },
-    "maintenance": { icon: "🧰", name: "Maintenance" }
-};
+// Import data module constants
+import { journalEntryTypes } from './data.js';
 
 // Core Journal Functions
 function getJournalEntries() {
@@ -585,7 +579,6 @@ function weatherCodeToIconTextColor(code) {
 
 // Export functions
 export {
-    journalEntryTypes,
     getJournalEntries,
     saveJournalEntries,
     createJournalEntry,
