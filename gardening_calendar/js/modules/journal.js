@@ -1,8 +1,14 @@
 // Journal Module for Garden Calendar
 // Contains all journal-related functionality
 
-// Import data module constants
-import { journalEntryTypes } from './data.js';
+// Journal entry types
+const journalEntryTypes = {
+    "planting": { icon: "🌱", name: "Planting" },
+    "care": { icon: "🌿", name: "Garden Care" },
+    "harvest": { icon: "🥕", name: "Harvest" },
+    "observation": { icon: "👁️", name: "Observation" },
+    "maintenance": { icon: "🧰", name: "Maintenance" }
+};
 
 // Core Journal Functions
 function getJournalEntries() {
@@ -61,6 +67,360 @@ function deleteJournalEntry(id) {
     }
     
     return false;
+}
+
+// Export journal to JSON file
+function exportJournal(includeImages = true) {
+    const entries = getJournalEntries();
+    
+    // If no entries, show message
+    if (entries.length === 0) {
+        alert('No journal entries to export.');
+        return;
+    }
+    
+    // Clone entries to avoid modifying the original data
+    let exportData = JSON.parse(JSON.stringify(entries));
+    
+    // Remove images if not including them
+    if (!includeImages) {
+        exportData = exportData.map(entry => {
+            const entryCopy = {...entry};
+            delete entryCopy.images;
+            return entryCopy;
+        });
+    }
+    
+    // Create the export file
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    // Generate filename with timestamp
+    const date = new Date().toISOString().slice(0, 10);
+    const filename = `garden_journal_${date}${includeImages ? '_with_images' : '_no_images'}.json`;
+    
+    // Create download link and trigger download
+    const link = document.createElement('a');
+    link.setAttribute('href', dataUri);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Show export options modal
+function showExportOptionsModal() {
+    const modal = document.getElementById('exportOptionsModal');
+    const exportOptions = modal.querySelectorAll('.export-option');
+    const cancelBtn = document.getElementById('exportOptionsCancelBtn');
+    const closeBtn = document.getElementById('exportModalCloseBtn');
+    
+    // Clear any previous selections
+    exportOptions.forEach(option => {
+        option.style.borderColor = '#ddd';
+        option.style.backgroundColor = 'transparent';
+    });
+    
+    // Set click behavior for options
+    exportOptions[0].onclick = () => {
+        modal.style.display = 'none';
+        exportJournal(true); // Full export with images
+    };
+    
+    exportOptions[1].onclick = () => {
+        modal.style.display = 'none';
+        exportJournal(false); // Lightweight export without images
+    };
+    
+    // Add hover effects
+    exportOptions.forEach(option => {
+        option.onmouseover = () => {
+            if (option.style.borderColor !== 'var(--primary-color)') {
+                option.style.backgroundColor = '#f5f5f5';
+            }
+        };
+        
+        option.onmouseout = () => {
+            if (option.style.borderColor !== 'var(--primary-color)') {
+                option.style.backgroundColor = 'transparent';
+            }
+        };
+    });
+    
+    // Cancel and close buttons close the modal
+    cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    // Click outside to close
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Setup escape key handler
+    const handleEscapeKey = (e) => {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+}
+
+// Show import options modal
+function showImportOptionsModal(importData) {
+    const modal = document.getElementById('importOptionsModal');
+    const importOptions = modal.querySelectorAll('.import-option');
+    const cancelBtn = document.getElementById('importOptionsCancelBtn');
+    const closeBtn = document.getElementById('importModalCloseBtn');
+    const statsMessage = document.getElementById('importStatsMessage');
+    
+    // Update the stats message
+    statsMessage.textContent = `Found ${importData.length} journal ${importData.length === 1 ? 'entry' : 'entries'} to import.`;
+    
+    // Clear any previous selections
+    importOptions.forEach(option => {
+        option.style.borderColor = '#ddd';
+        option.style.backgroundColor = 'transparent';
+    });
+    
+    // Set click behavior for options
+    importOptions[0].onclick = () => {
+        // Merge option
+        modal.style.display = 'none';
+        handleImport(importData, true);
+    };
+    
+    importOptions[1].onclick = () => {
+        // Replace option
+        modal.style.display = 'none';
+        handleImport(importData, false);
+    };
+    
+    // Add hover effects
+    importOptions.forEach(option => {
+        option.onmouseover = () => {
+            if (option.style.borderColor !== 'var(--primary-color)') {
+                option.style.backgroundColor = '#f5f5f5';
+            }
+        };
+        
+        option.onmouseout = () => {
+            if (option.style.borderColor !== 'var(--primary-color)') {
+                option.style.backgroundColor = 'transparent';
+            }
+        };
+    });
+    
+    // Cancel and close buttons close the modal
+    cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    // Click outside to close
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Setup escape key handler
+    const handleEscapeKey = (e) => {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+}
+
+// Handle import of journal entries
+function handleImport(importData, isMerge) {
+    const existingEntries = getJournalEntries();
+    
+    if (isMerge) {
+        // Merge: Keep existing entries and add new ones
+        const mergedEntries = [...existingEntries];
+        
+        // Track stats for user feedback
+        let added = 0;
+        let updated = 0;
+        
+        importData.forEach(importEntry => {
+            const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
+            
+            if (existingIndex >= 0) {
+                // Update existing entry
+                mergedEntries[existingIndex] = importEntry;
+                updated++;
+            } else {
+                // Add new entry
+                mergedEntries.push(importEntry);
+                added++;
+            }
+        });
+        
+        // Save merged entries
+        saveJournalEntries(mergedEntries);
+        
+        // Show success message
+        alert(`Import successful!\nAdded ${added} new ${added === 1 ? 'entry' : 'entries'}\nUpdated ${updated} existing ${updated === 1 ? 'entry' : 'entries'}`);
+    } else {
+        // Replace: Delete all existing entries and use imported ones
+        saveJournalEntries(importData);
+        
+        // Show success message
+        alert(`Import successful!\nReplaced all entries with ${importData.length} imported ${importData.length === 1 ? 'entry' : 'entries'}`);
+    }
+    
+    // Refresh the journal display
+    if (typeof renderJournal === 'function') {
+        renderJournal();
+    }
+}
+
+// Function to open the journal entry modal (new or edit)
+function openJournalEntryModal(entryId = null) {
+    // Get required DOM elements
+    const journalEntryForm = document.getElementById('journalEntryForm');
+    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+    const harvestMetricsContainer = document.getElementById('harvestMetricsContainer');
+    
+    // Reset form
+    journalEntryForm.reset();
+    document.getElementById('journalEntryId').value = '';
+    photoPreviewContainer.innerHTML = '';
+    document.getElementById('journalEntryModalTitle').textContent = 'Add Journal Entry';
+    
+    // Set today's date as default
+    document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
+    
+    // Hide harvest metrics by default
+    harvestMetricsContainer.style.display = 'none';
+    
+    // If editing an existing entry
+    if (entryId) {
+        const entries = getJournalEntries();
+        const entry = entries.find(e => e.id === entryId);
+        
+        if (entry) {
+            // Set form title
+            document.getElementById('journalEntryModalTitle').textContent = 'Edit Journal Entry';
+            
+            // Set form values
+            document.getElementById('journalEntryId').value = entry.id;
+            document.getElementById('entryDate').value = entry.date;
+            document.getElementById('entryType').value = entry.type;
+            document.getElementById('entryNotes').value = entry.notes || '';
+            document.getElementById('entryLocation').value = entry.location || '';
+            
+            // Handle plants
+            if (entry.plants && entry.plants.length > 0) {
+                document.getElementById('entryPlants').value = entry.plants.join(', ');
+            }
+            
+            // Show harvest metrics if relevant
+            if (entry.type === 'harvest' && entry.metrics) {
+                harvestMetricsContainer.style.display = 'block';
+                document.getElementById('harvestWeight').value = entry.metrics.weight || '';
+                document.getElementById('harvestQuantity').value = entry.metrics.quantity || '';
+            }
+            
+            // Show photos if available
+            if (entry.images && entry.images.length > 0) {
+                entry.images.forEach(imgData => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'photo-preview';
+                    
+                    const img = document.createElement('img');
+                    img.src = imgData.thumbnail || imgData.data;
+                    img.onclick = () => showImageLightbox(imgData.data, entry.id);
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.className = 'photo-remove-btn';
+                    removeBtn.onclick = () => {
+                        imgContainer.remove();
+                    };
+                    
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(removeBtn);
+                    photoPreviewContainer.appendChild(imgContainer);
+                });
+            }
+        }
+    }
+    
+    // Show the modal
+    const modal = document.getElementById('journalEntryModal');
+    modal.style.display = 'flex';
+    
+    // Setup escape key handler
+    const handleEscapeKey = (e) => {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+}
+
+// Function to handle photo selection
+function handlePhotoSelection(input) {
+    if (!input.files || input.files.length === 0) return;
+    
+    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+    
+    Array.from(input.files).forEach(file => {
+        if (!file.type.match('image.*')) {
+            alert('Please select image files only.');
+            return;
+        }
+        
+        fileToBase64(file).then(base64 => {
+            compressImage(base64, 1200, 0.7).then(compressed => {
+                generateThumbnail(compressed, 150).then(thumbnail => {
+                    const imgContainer = document.createElement('div');
+                    imgContainer.className = 'photo-preview';
+                    
+                    const img = document.createElement('img');
+                    img.src = thumbnail;
+                    img.dataset.fullImage = compressed;
+                    img.onclick = () => showImageLightbox(compressed);
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.innerHTML = '&times;';
+                    removeBtn.className = 'photo-remove-btn';
+                    removeBtn.onclick = () => {
+                        imgContainer.remove();
+                    };
+                    
+                    imgContainer.appendChild(img);
+                    imgContainer.appendChild(removeBtn);
+                    photoPreviewContainer.appendChild(imgContainer);
+                });
+            });
+        });
+    });
+    
+    // Reset the file input so the change event fires again if selecting the same file
+    input.value = '';
 }
 
 // Storage and Image Utilities
@@ -577,8 +937,9 @@ function weatherCodeToIconTextColor(code) {
     };
 }
 
-// Export the new functions
+// Export functions
 export {
+    journalEntryTypes,
     getJournalEntries,
     saveJournalEntries,
     createJournalEntry,
@@ -597,8 +958,125 @@ export {
     showImportOptionsModal,
     showExportOptionsModal,
     exportJournal,
-    openJournalEntryModal
+    handleImport,
+    openJournalEntryModal,
+    handlePhotoSelection
 };
 
-// Open the journal entry modal for adding or editing entries
-function openJournalEntryModal(entryId = null) {
+// Initialize module - will add all event listeners
+export function initJournal() {
+    console.log("Journal module initialized");
+    
+    // Add event listeners for journal features
+    const addJournalEntryBtn = document.getElementById('addJournalEntryBtn');
+    const emptyJournalAddBtn = document.getElementById('emptyJournalAddBtn');
+    const exportJournalBtn = document.getElementById('exportJournalBtn');
+    const importJournalBtn = document.getElementById('importJournalBtn');
+    const journalTabs = document.querySelectorAll('.journal-tab');
+    const journalSection = document.getElementById('garden-journal');
+    
+    // Render journal if we're already on that tab
+    if (journalSection && journalSection.style.display !== 'none') {
+        renderJournal();
+    }
+    
+    // Watch for visibility changes on the journal section
+    // This ensures the journal renders when it becomes visible
+    // from the navigation menu clicks
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.attributeName === 'style' && 
+                journalSection.style.display !== 'none') {
+                renderJournal();
+            }
+        });
+    });
+    
+    // Start observing the journal section for style changes
+    if (journalSection) {
+        observer.observe(journalSection, { attributes: true });
+    }
+    
+    // Add journal entry buttons
+    if (addJournalEntryBtn) {
+        addJournalEntryBtn.addEventListener('click', () => openJournalEntryModal());
+    }
+    
+    if (emptyJournalAddBtn) {
+        emptyJournalAddBtn.addEventListener('click', () => openJournalEntryModal());
+    }
+    
+    // Export/Import buttons
+    if (exportJournalBtn) {
+        exportJournalBtn.addEventListener('click', function() {
+            showExportOptionsModal();
+        });
+    }
+    
+    if (importJournalBtn) {
+        importJournalBtn.addEventListener('click', function() {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'application/json';
+            
+            fileInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    try {
+                        const importData = JSON.parse(event.target.result);
+                        
+                        // Validate data format
+                        if (!Array.isArray(importData)) {
+                            throw new Error('Invalid format: Data should be an array of journal entries');
+                        }
+                        
+                        // Show import options modal
+                        showImportOptionsModal(importData);
+                        
+                    } catch (error) {
+                        console.error('Import error:', error);
+                        alert(`Error importing journal: ${error.message}`);
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            fileInput.click();
+        });
+    }
+    
+    // Tab switching
+    journalTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            // Remove active class from all tabs
+            journalTabs.forEach(t => t.classList.remove('active'));
+            
+            // Add active class to clicked tab
+            tab.classList.add('active');
+            
+            // Show corresponding content
+            const view = tab.dataset.view;
+            document.getElementById('journalTimeline').style.display = view === 'timeline' ? 'block' : 'none';
+            document.getElementById('journalGallery').style.display = view === 'gallery' ? 'block' : 'none';
+            document.getElementById('journalCalendar').style.display = view === 'calendar' ? 'block' : 'none';
+            
+            // If showing the gallery, make sure it's rendered
+            if (view === 'gallery') {
+                renderGallery();
+            } else if (view === 'calendar') {
+                renderJournalCalendar();
+            }
+        });
+    });
+    
+    // Check for journal-related hash to show journal 
+    if (window.location.hash === '#garden-journal') {
+        // Find and click the journal tab to activate it
+        const journalBtn = document.querySelector('.quick-jump-btn[data-section="garden-journal"]');
+        if (journalBtn) journalBtn.click();
+    }
+} 
