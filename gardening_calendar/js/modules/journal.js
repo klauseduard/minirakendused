@@ -723,3 +723,750 @@ export function initJournal() {
 // - exportJournal()
 
 // These will be added/adjusted in future updates as we proceed with refactoring 
+
+// Temporarily adding the modal functions here until we fully refactor the UI module
+// Show import options modal
+function showImportOptionsModal(importData) {
+    const modal = document.getElementById('importOptionsModal');
+    const statsMessage = document.getElementById('importStatsMessage');
+    
+    if (!modal || !statsMessage) {
+        console.error('Import modal elements not found');
+        return;
+    }
+    
+    // Display stats about the import data
+    statsMessage.textContent = `Found ${importData.length} entries to import.`;
+    modal.style.display = 'flex';
+    
+    // Set up event listeners
+    const closeBtn = document.getElementById('importModalCloseBtn');
+    const cancelBtn = document.getElementById('importOptionsCancelBtn');
+    
+    // Close/cancel buttons
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    // Handle options click
+    const options = modal.querySelectorAll('.import-option');
+    options.forEach(option => {
+        option.onclick = (e) => {
+            const isMerge = e.currentTarget === options[0];
+            
+            if (isMerge) {
+                // Merge mode: Keep existing entries, add new ones
+                const currentEntries = getJournalEntries();
+                
+                // Map existing entries by ID for quick lookup
+                const existingIds = {};
+                currentEntries.forEach(entry => {
+                    existingIds[entry.id] = true;
+                });
+                
+                // Add only entries that don't exist yet
+                let newEntries = [...currentEntries];
+                let addedCount = 0;
+                let updatedCount = 0;
+                
+                importData.forEach(importEntry => {
+                    if (!importEntry.id) {
+                        // Generate a new ID if missing
+                        importEntry.id = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
+                        newEntries.push(importEntry);
+                        addedCount++;
+                    } else if (existingIds[importEntry.id]) {
+                        // Update existing entry
+                        const index = newEntries.findIndex(e => e.id === importEntry.id);
+                        if (index !== -1) {
+                            newEntries[index] = importEntry;
+                            updatedCount++;
+                        }
+                    } else {
+                        // New entry with ID
+                        newEntries.push(importEntry);
+                        addedCount++;
+                    }
+                });
+                
+                saveJournalEntries(newEntries);
+                alert(`Import complete: ${addedCount} entries added, ${updatedCount} entries updated.`);
+            } else {
+                // Replace mode: Delete all existing and use imported
+                saveJournalEntries(importData);
+                alert(`Import complete: Replaced journal with ${importData.length} entries.`);
+            }
+            
+            // Close modal and reload journal
+            modal.style.display = 'none';
+            renderJournal();
+        };
+    });
+}
+
+// Add showExportOptionsModal function too for completeness
+function showExportOptionsModal() {
+    const modal = document.getElementById('exportOptionsModal');
+    
+    if (!modal) {
+        console.error('Export modal element not found');
+        return;
+    }
+    
+    modal.style.display = 'flex';
+    
+    // Set up event listeners
+    const closeBtn = document.getElementById('exportModalCloseBtn');
+    const cancelBtn = document.getElementById('exportOptionsCancelBtn');
+    
+    // Close/cancel buttons
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    // Handle options click
+    const options = modal.querySelectorAll('.export-option');
+    options.forEach(option => {
+        option.onclick = (e) => {
+            const isComplete = e.currentTarget === options[0];
+            
+            if (isComplete) {
+                // Complete export with images
+                exportJournal(false);
+            } else {
+                // Lightweight export without images
+                exportJournal(true);
+            }
+            
+            // Close modal
+            modal.style.display = 'none';
+        };
+    });
+}
+
+// Export journal function to save journal entries
+function exportJournal(lightweight = false) {
+    const entries = getJournalEntries();
+    
+    // For lightweight export, remove photo data to reduce file size
+    let exportData = entries;
+    if (lightweight) {
+        exportData = entries.map(entry => {
+            const { photos, ...entryWithoutPhotos } = entry;
+            return {
+                ...entryWithoutPhotos,
+                photos: photos ? photos.map(photo => ({ 
+                    id: photo.id,
+                    thumbnail: null, // Remove thumbnail data
+                    caption: photo.caption || '' 
+                })) : []
+            };
+        });
+    }
+    
+    // Create JSON file
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    // Create download link
+    const exportName = lightweight ? 
+        'garden_journal_lightweight.json' : 
+        'garden_journal_complete.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportName);
+    linkElement.style.display = 'none';
+    
+    // Add to body, click and remove
+    document.body.appendChild(linkElement);
+    linkElement.click();
+    document.body.removeChild(linkElement);
+}
+
+// Export the new functions
+export {
+    getJournalEntries,
+    saveJournalEntries,
+    createJournalEntry,
+    updateJournalEntry,
+    deleteJournalEntry,
+    getStorageUsage,
+    fileToBase64,
+    compressImage,
+    generateThumbnail,
+    renderJournal,
+    renderTimeline,
+    renderGallery,
+    renderJournalCalendar,
+    showImageLightbox,
+    weatherCodeToIconTextColor,
+    showImportOptionsModal,
+    showExportOptionsModal,
+    exportJournal,
+    openJournalEntryModal
+};
+
+// Open the journal entry modal for adding or editing entries
+function openJournalEntryModal(entryId = null) {
+    // Get DOM elements
+    const modal = document.getElementById('journalEntryModal');
+    const form = document.getElementById('journalEntryForm');
+    const modalTitle = document.getElementById('journalEntryModalTitle');
+    const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+    const harvestMetricsContainer = document.getElementById('harvestMetricsContainer');
+    
+    if (!modal || !form) {
+        console.error('Journal entry modal elements not found');
+        return;
+    }
+    
+    // Set default date to today
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get editable elements
+    const idInput = document.getElementById('journalEntryId');
+    const dateInput = document.getElementById('entryDate');
+    const typeSelect = document.getElementById('entryType');
+    const locationInput = document.getElementById('entryLocation');
+    const notesInput = document.getElementById('entryNotes');
+    const plantsSelect = document.getElementById('entryPlants');
+    const quantityInput = document.getElementById('harvestQuantity');
+    const unitSelect = document.getElementById('harvestUnit');
+    const qualityInput = document.getElementById('harvestQuality');
+    
+    // Get quality rating text element
+    const qualityRatingText = document.getElementById('qualityRatingText');
+    
+    // Clear form
+    form.reset();
+    if (photoPreviewContainer) photoPreviewContainer.innerHTML = '';
+    idInput.value = '';
+    dateInput.value = today;
+    
+    // Populate plants dropdown from calendar data if available
+    if (plantsSelect && window.calendarData) {
+        plantsSelect.innerHTML = '';
+        
+        // Get unique plants from all months
+        const plants = new Set();
+        for (const month in window.calendarData) {
+            for (const category in window.calendarData[month]) {
+                if (category !== 'garden_tasks') { // Exclude tasks, only include plants
+                    window.calendarData[month][category].forEach(plant => {
+                        const plantName = plant.en || JSON.stringify(plant);
+                        plants.add(plantName);
+                    });
+                }
+            }
+        }
+        
+        // Sort plants alphabetically
+        const sortedPlants = Array.from(plants).sort();
+        
+        // Add empty option
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = 'Select plants...';
+        plantsSelect.appendChild(emptyOption);
+        
+        // Add all plants as options
+        sortedPlants.forEach(plant => {
+            const option = document.createElement('option');
+            option.value = plant;
+            option.textContent = plant;
+            plantsSelect.appendChild(option);
+        });
+    }
+    
+    // If editing an existing entry
+    if (entryId) {
+        // Set modal title
+        modalTitle.textContent = 'Edit Journal Entry';
+        
+        // Find the entry
+        const entries = getJournalEntries();
+        const entry = entries.find(e => e.id === entryId);
+        
+        if (entry) {
+            // Populate form with entry data
+            idInput.value = entry.id;
+            dateInput.value = entry.date;
+            typeSelect.value = entry.type;
+            locationInput.value = entry.location || '';
+            notesInput.value = entry.notes || '';
+            
+            // Handle plants selection (multi-select)
+            if (entry.plants && plantsSelect) {
+                entry.plants.forEach(plant => {
+                    const options = plantsSelect.options;
+                    for (let i = 0; i < options.length; i++) {
+                        if (options[i].value === plant) {
+                            options[i].selected = true;
+                            break;
+                        }
+                    }
+                });
+            }
+            
+            // Handle harvest metrics
+            if (entry.type === 'harvest') {
+                harvestMetricsContainer.style.display = 'block';
+                if (entry.harvest) {
+                    quantityInput.value = entry.harvest.quantity || '';
+                    unitSelect.value = entry.harvest.unit || 'kg';
+                    qualityInput.value = entry.harvest.quality || 3;
+                    
+                    // Update quality rating text
+                    updateQualityText(entry.harvest.quality || 3);
+                }
+            } else {
+                harvestMetricsContainer.style.display = 'none';
+            }
+            
+            // Display existing photos
+            if (entry.photos && entry.photos.length > 0 && photoPreviewContainer) {
+                entry.photos.forEach(photo => {
+                    if (photo.thumbnail) {
+                        // Create preview element
+                        const previewContainer = document.createElement('div');
+                        previewContainer.className = 'photo-preview';
+                        previewContainer.setAttribute('data-photo-id', photo.id);
+                        
+                        const img = document.createElement('img');
+                        img.src = photo.thumbnail;
+                        img.alt = 'Photo thumbnail';
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'remove-photo-btn';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.onclick = function() {
+                            previewContainer.remove();
+                        };
+                        
+                        const captionInput = document.createElement('input');
+                        captionInput.type = 'text';
+                        captionInput.className = 'photo-caption-input';
+                        captionInput.placeholder = 'Add caption...';
+                        captionInput.value = photo.caption || '';
+                        
+                        previewContainer.appendChild(img);
+                        previewContainer.appendChild(removeBtn);
+                        previewContainer.appendChild(captionInput);
+                        photoPreviewContainer.appendChild(previewContainer);
+                    }
+                });
+            }
+        }
+    } else {
+        // New entry
+        modalTitle.textContent = 'Add Journal Entry';
+    }
+    
+    // Show/hide harvest metrics based on entry type
+    typeSelect.onchange = function() {
+        if (this.value === 'harvest') {
+            harvestMetricsContainer.style.display = 'block';
+        } else {
+            harvestMetricsContainer.style.display = 'none';
+        }
+    };
+    
+    // Update quality rating text when slider changes
+    if (qualityInput && qualityRatingText) {
+        qualityInput.oninput = function() {
+            updateQualityText(this.value);
+        };
+        
+        // Initialize quality text
+        updateQualityText(qualityInput.value);
+    }
+    
+    // Helper function to update quality text
+    function updateQualityText(value) {
+        const qualityLabels = {
+            1: 'Poor',
+            2: 'Fair',
+            3: 'Good',
+            4: 'Very Good',
+            5: 'Excellent'
+        };
+        qualityRatingText.textContent = qualityLabels[value] || 'Good';
+    }
+    
+    // Set up photo upload handling
+    const photoInput = document.getElementById('photoInput');
+    const photoUploadContainer = document.getElementById('photoUploadContainer');
+    const dragDropText = document.getElementById('dragDropText');
+    
+    if (photoInput && photoUploadContainer) {
+        // File input change handler
+        photoInput.onchange = function(e) {
+            handlePhotoSelection(e.target.files);
+        };
+        
+        // Drag and drop functionality
+        photoUploadContainer.ondragover = function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--primary-color)';
+            this.style.backgroundColor = 'rgba(var(--primary-rgb), 0.05)';
+        };
+        
+        photoUploadContainer.ondragleave = function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--secondary-color)';
+            this.style.backgroundColor = '';
+        };
+        
+        photoUploadContainer.ondrop = function(e) {
+            e.preventDefault();
+            this.style.borderColor = 'var(--secondary-color)';
+            this.style.backgroundColor = '';
+            
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handlePhotoSelection(e.dataTransfer.files);
+            }
+        };
+    }
+    
+    // Photo selection handler
+    function handlePhotoSelection(files) {
+        if (!files || files.length === 0) return;
+        
+        // Check if adding these files would exceed the limit
+        const existingPreviews = photoPreviewContainer.querySelectorAll('.photo-preview');
+        if (existingPreviews.length + files.length > 5) {
+            alert('Maximum 5 photos per entry. Please remove some photos before adding more.');
+            return;
+        }
+        
+        // Process each file
+        Array.from(files).forEach(file => {
+            if (!file.type.startsWith('image/')) {
+                console.error('Not an image file:', file.name);
+                return;
+            }
+            
+            // Generate a unique ID for this photo
+            const photoId = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
+            
+            // Read file and generate thumbnail
+            fileToBase64(file).then(base64 => {
+                // Compress the image
+                return compressImage(base64);
+            }).then(compressedImage => {
+                // Create thumbnail
+                return generateThumbnail(compressedImage, 200);
+            }).then(thumbnail => {
+                // Create preview element
+                const previewContainer = document.createElement('div');
+                previewContainer.className = 'photo-preview';
+                previewContainer.setAttribute('data-photo-id', photoId);
+                
+                const img = document.createElement('img');
+                img.src = thumbnail;
+                img.alt = 'Photo thumbnail';
+                
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'remove-photo-btn';
+                removeBtn.innerHTML = '&times;';
+                removeBtn.onclick = function() {
+                    previewContainer.remove();
+                };
+                
+                const captionInput = document.createElement('input');
+                captionInput.type = 'text';
+                captionInput.className = 'photo-caption-input';
+                captionInput.placeholder = 'Add caption...';
+                
+                previewContainer.appendChild(img);
+                previewContainer.appendChild(removeBtn);
+                previewContainer.appendChild(captionInput);
+                photoPreviewContainer.appendChild(previewContainer);
+                
+                // Hide drag/drop text if we have photos
+                if (dragDropText) {
+                    dragDropText.style.display = 'none';
+                }
+                
+                // Check if we should show storage warning
+                checkStorageUsage();
+            }).catch(err => {
+                console.error('Error processing image:', err);
+            });
+        });
+    }
+    
+    // Check storage usage and show warning if needed
+    function checkStorageUsage() {
+        const storageWarning = document.getElementById('storageWarning');
+        if (!storageWarning) return;
+        
+        const usage = getStorageUsage();
+        if (usage.percentUsed > 80) {
+            storageWarning.style.display = 'block';
+            storageWarning.textContent = `Storage usage: ${usage.percentUsed.toFixed(1)}% (${usage.usedMB.toFixed(1)}MB/${usage.limitMB}MB)`;
+        } else {
+            storageWarning.style.display = 'none';
+        }
+    }
+    
+    // Initially check storage
+    checkStorageUsage();
+    
+    // Form submission
+    form.onsubmit = function(e) {
+        e.preventDefault();
+        
+        // Get form values
+        const entryData = {
+            id: idInput.value || null, // If empty, a new ID will be generated
+            date: dateInput.value,
+            type: typeSelect.value,
+            location: locationInput.value,
+            notes: notesInput.value,
+            timestamp: Date.now()
+        };
+        
+        // Get selected plants
+        if (plantsSelect) {
+            entryData.plants = Array.from(plantsSelect.selectedOptions).map(option => option.value);
+        }
+        
+        // Get harvest metrics if applicable
+        if (typeSelect.value === 'harvest') {
+            entryData.harvest = {
+                quantity: parseFloat(quantityInput.value) || 0,
+                unit: unitSelect.value,
+                quality: parseInt(qualityInput.value) || 3
+            };
+        }
+        
+        // Get photos
+        const photoPreviews = photoPreviewContainer.querySelectorAll('.photo-preview');
+        if (photoPreviews.length > 0) {
+            entryData.photos = [];
+            photoPreviews.forEach(preview => {
+                const photoId = preview.getAttribute('data-photo-id');
+                const img = preview.querySelector('img');
+                const captionInput = preview.querySelector('.photo-caption-input');
+                
+                entryData.photos.push({
+                    id: photoId,
+                    thumbnail: img.src,
+                    caption: captionInput ? captionInput.value : ''
+                });
+            });
+        }
+        
+        // Save the entry
+        if (entryData.id) {
+            // Update existing entry
+            updateJournalEntry(entryData.id, entryData);
+        } else {
+            // Create new entry
+            createJournalEntry(entryData);
+        }
+        
+        // Close modal and refresh journal
+        modal.style.display = 'none';
+        renderJournal();
+        
+        return false;
+    };
+    
+    // Close button
+    const closeBtn = document.getElementById('closeJournalEntryBtn');
+    if (closeBtn) {
+        closeBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+    
+    // Cancel button
+    const cancelBtn = document.getElementById('cancelJournalEntryBtn');
+    if (cancelBtn) {
+        cancelBtn.onclick = function() {
+            modal.style.display = 'none';
+        };
+    }
+    
+    // Show modal
+    modal.style.display = 'flex';
+}
+
+// Temporarily adding the modal functions here until we fully refactor the UI module
+// Show import options modal
+function showImportOptionsModal(importData) {
+    const modal = document.getElementById('importOptionsModal');
+    const statsMessage = document.getElementById('importStatsMessage');
+    
+    if (!modal || !statsMessage) {
+        console.error('Import modal elements not found');
+        return;
+    }
+    
+    // Display stats about the import data
+    statsMessage.textContent = `Found ${importData.length} entries to import.`;
+    modal.style.display = 'flex';
+    
+    // Set up event listeners
+    const closeBtn = document.getElementById('importModalCloseBtn');
+    const cancelBtn = document.getElementById('importOptionsCancelBtn');
+    
+    // Close/cancel buttons
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    // Handle options click
+    const options = modal.querySelectorAll('.import-option');
+    options.forEach(option => {
+        option.onclick = (e) => {
+            const isMerge = e.currentTarget === options[0];
+            
+            if (isMerge) {
+                // Merge mode: Keep existing entries, add new ones
+                const currentEntries = getJournalEntries();
+                
+                // Map existing entries by ID for quick lookup
+                const existingIds = {};
+                currentEntries.forEach(entry => {
+                    existingIds[entry.id] = true;
+                });
+                
+                // Add only entries that don't exist yet
+                let newEntries = [...currentEntries];
+                let addedCount = 0;
+                let updatedCount = 0;
+                
+                importData.forEach(importEntry => {
+                    if (!importEntry.id) {
+                        // Generate a new ID if missing
+                        importEntry.id = Date.now() + '-' + Math.random().toString(36).substring(2, 10);
+                        newEntries.push(importEntry);
+                        addedCount++;
+                    } else if (existingIds[importEntry.id]) {
+                        // Update existing entry
+                        const index = newEntries.findIndex(e => e.id === importEntry.id);
+                        if (index !== -1) {
+                            newEntries[index] = importEntry;
+                            updatedCount++;
+                        }
+                    } else {
+                        // New entry with ID
+                        newEntries.push(importEntry);
+                        addedCount++;
+                    }
+                });
+                
+                saveJournalEntries(newEntries);
+                alert(`Import complete: ${addedCount} entries added, ${updatedCount} entries updated.`);
+            } else {
+                // Replace mode: Delete all existing and use imported
+                saveJournalEntries(importData);
+                alert(`Import complete: Replaced journal with ${importData.length} entries.`);
+            }
+            
+            // Close modal and reload journal
+            modal.style.display = 'none';
+            renderJournal();
+        };
+    });
+}
+
+// Add showExportOptionsModal function too for completeness
+function showExportOptionsModal() {
+    const modal = document.getElementById('exportOptionsModal');
+    
+    if (!modal) {
+        console.error('Export modal element not found');
+        return;
+    }
+    
+    modal.style.display = 'flex';
+    
+    // Set up event listeners
+    const closeBtn = document.getElementById('exportModalCloseBtn');
+    const cancelBtn = document.getElementById('exportOptionsCancelBtn');
+    
+    // Close/cancel buttons
+    if (closeBtn) {
+        closeBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    if (cancelBtn) {
+        cancelBtn.onclick = () => modal.style.display = 'none';
+    }
+    
+    // Handle options click
+    const options = modal.querySelectorAll('.export-option');
+    options.forEach(option => {
+        option.onclick = (e) => {
+            const isComplete = e.currentTarget === options[0];
+            
+            if (isComplete) {
+                // Complete export with images
+                exportJournal(false);
+            } else {
+                // Lightweight export without images
+                exportJournal(true);
+            }
+            
+            // Close modal
+            modal.style.display = 'none';
+        };
+    });
+}
+
+// Export journal function to save journal entries
+function exportJournal(lightweight = false) {
+    const entries = getJournalEntries();
+    
+    // For lightweight export, remove photo data to reduce file size
+    let exportData = entries;
+    if (lightweight) {
+        exportData = entries.map(entry => {
+            const { photos, ...entryWithoutPhotos } = entry;
+            return {
+                ...entryWithoutPhotos,
+                photos: photos ? photos.map(photo => ({ 
+                    id: photo.id,
+                    thumbnail: null, // Remove thumbnail data
+                    caption: photo.caption || '' 
+                })) : []
+            };
+        });
+    }
+    
+    // Create JSON file
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+    
+    // Create download link
+    const exportName = lightweight ? 
+        'garden_journal_lightweight.json' : 
+        'garden_journal_complete.json';
+    
+    const linkElement = document.createElement('a');
+    linkElement.setAttribute('href', dataUri);
+    linkElement.setAttribute('download', exportName);
+    linkElement.style.display = 'none';
+    
+    // Add to body, click and remove
+    document.body.appendChild(linkElement);
+    linkElement.click();
+    document.body.removeChild(linkElement);
+} 
