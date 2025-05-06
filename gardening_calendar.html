@@ -484,6 +484,9 @@
     <!-- Import storage module -->
     <script type="module" src="gardening_calendar/js/storage-loader.js"></script>
     
+    <!-- Import UI module -->
+    <script type="module" src="gardening_calendar/js/ui-loader.js"></script>
+    
     <!-- Add our refactored journal module after data is loaded -->
     <script type="module" src="gardening_calendar/js/journal-init.js"></script>
 
@@ -1462,9 +1465,6 @@
                 });
             }
             
-            // Remove any existing modal
-            const oldModal = document.getElementById('weatherModalOverlay');
-            if (oldModal) oldModal.remove();
             // Build hourly table
             const tempUnit = tempUnitSelect.value;
             const precipUnit = precipUnitSelect.value;
@@ -1504,55 +1504,21 @@
                 </tr>`;
             }
             hourlyTable += '</tbody></table>';
-            // Modal HTML
-            const modalHtml = `
-                <div class="weather-modal-overlay" id="weatherModalOverlay" tabindex="-1">
-                    <div class="weather-modal" role="dialog" aria-modal="true" aria-labelledby="weatherModalTitle">
-                        <button class="weather-modal-close" id="weatherModalCloseBtn" aria-label="Close weather details">&times;</button>
-                        <div class="weather-modal-title" id="weatherModalTitle">Hourly Weather for ${date}</div>
-                        <div class="weather-modal-chart">${renderLargeTempChart(temps, tempUnit)}</div>
-                        ${hourlyTable}
-                    </div>
-                </div>
+            
+            // Create modal content
+            const modalContent = `
+                <div class="weather-modal-chart">${renderLargeTempChart(temps, tempUnit)}</div>
+                ${hourlyTable}
             `;
-            document.body.insertAdjacentHTML('beforeend', modalHtml);
-            // Focus management
-            const closeBtn = document.getElementById('weatherModalCloseBtn');
-            if (closeBtn) closeBtn.focus();
-            // Trap focus inside modal
-            const modalOverlay = document.getElementById('weatherModalOverlay');
-            const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-            const modal = modalOverlay.querySelector('.weather-modal');
-            const focusableEls = modal.querySelectorAll(focusableSelectors);
-            const firstFocusable = focusableEls[0];
-            const lastFocusable = focusableEls[focusableEls.length - 1];
-            modalOverlay.addEventListener('keydown', function(e) {
-                if (e.key === 'Tab') {
-                    if (focusableEls.length === 0) return;
-                    if (e.shiftKey) {
-                        if (document.activeElement === firstFocusable) {
-                            e.preventDefault();
-                            lastFocusable.focus();
-                        }
-                    } else {
-                        if (document.activeElement === lastFocusable) {
-                            e.preventDefault();
-                            firstFocusable.focus();
-                        }
-                    }
-                } else if (e.key === 'Escape') {
-                    modalOverlay.remove();
-                }
+            
+            // Use the UI module's showModal function
+            showModal(`Hourly Weather for ${date}`, modalContent, {
+                maxWidth: '800px',
+                id: 'weatherModalOverlay',
+                showCloseButton: true,
+                closeOnEscape: true,
+                closeOnOutsideClick: true
             });
-            // Close logic
-            closeBtn.onclick = () => {
-                modalOverlay.remove();
-            };
-            modalOverlay.onclick = (e) => {
-                if (e.target.id === 'weatherModalOverlay') {
-                    modalOverlay.remove();
-                }
-            };
         }
 
         // Add event delegation for sparkline clicks after weather table is rendered
@@ -1753,394 +1719,8 @@
         const copyPromptBtn = document.getElementById('copyPromptBtn');
         const customNotes = document.getElementById('customNotes');
         const generatedPrompt = document.getElementById('generatedPrompt');
-        const promptGeneratorModal = document.getElementById('promptGeneratorModal');
-        const closePromptGeneratorBtn = document.getElementById('closePromptGeneratorBtn');
-        const aiAdviceBtn = document.getElementById('aiAdviceBtn');
         const includeCalendar = document.getElementById('includeCalendar');
         const includeRelevantPlantsOnly = document.getElementById('includeRelevantPlantsOnly');
-
-        // Modal handling
-        function openPromptGenerator() {
-            promptGeneratorModal.style.display = 'flex';
-            customNotes.focus();
-            // Store active element to restore focus later
-            openPromptGenerator.previousActiveElement = document.activeElement;
-        }
-
-        function closePromptGenerator() {
-            promptGeneratorModal.style.display = 'none';
-            // Reset the generated prompt
-            generatedPrompt.textContent = 'Click "Generate Prompt" to create a customized gardening prompt based on your location, weather, and calendar data.';
-            // Hide AI assistants section
-            document.getElementById('promptDestinationSection').style.display = 'none';
-            // Clear custom notes
-            customNotes.value = '';
-            // Reset checkboxes to default state
-            includeCalendar.checked = true;
-            includeRelevantPlantsOnly.checked = true;
-            // Restore focus
-            if (openPromptGenerator.previousActiveElement) {
-                openPromptGenerator.previousActiveElement.focus();
-            }
-        }
-
-        // Add event listener for the AI advice button
-        aiAdviceBtn.addEventListener('click', openPromptGenerator);
-
-        // Close modal on escape or clicking outside
-        promptGeneratorModal.addEventListener('click', (e) => {
-            if (e.target === promptGeneratorModal) {
-                closePromptGenerator();
-            }
-        });
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && promptGeneratorModal.style.display === 'flex') {
-                closePromptGenerator();
-            }
-        });
-
-        closePromptGeneratorBtn.addEventListener('click', closePromptGenerator);
-
-        function isPlantSuitableForWeather(plant, weatherData) {
-            // Get temperature range for next 7 days
-            const next7Days = weatherData.daily.temperature_2m_max.slice(0, 7);
-            const maxTemp = Math.max(...next7Days);
-            const minTemp = Math.min(...weatherData.daily.temperature_2m_min.slice(0, 7));
-            const avgPrecip = weatherData.daily.precipitation_sum.slice(0, 7).reduce((a, b) => a + b, 0) / 7;
-
-            // Basic suitability rules (these could be made more sophisticated)
-            const coldSensitive = ['tomato', 'pepper', 'eggplant', 'cucumber', 'zucchini', 'pumpkin', 'melon', 'basil'];
-            const heatSensitive = ['lettuce', 'spinach', 'arugula', 'peas'];
-            const moistureSensitive = ['tomato', 'rosemary', 'thyme', 'sage'];
-
-            // Ensure we have a string to work with
-            const plantText = typeof plant === 'string' ? plant : '';
-            const plantLower = plantText.toLowerCase();
-
-            // Skip checks if we don't have valid plant text
-            if (!plantLower) return true;
-
-            // Check temperature suitability
-            if (coldSensitive.some(p => plantLower.includes(p)) && minTemp < 10) return false;
-            if (heatSensitive.some(p => plantLower.includes(p)) && maxTemp > 30) return false;
-            
-            // Check moisture suitability
-            if (moistureSensitive.some(p => plantLower.includes(p)) && avgPrecip > 10) return false;
-
-            return true;
-        }
-
-        function generatePrompt() {
-            // Track prompt generation in Google Analytics
-            if (typeof gtag === 'function') {
-                gtag('event', 'generate_ai_prompt', {
-                    'include_calendar': includeCalendar.checked,
-                    'include_relevant_plants_only': includeRelevantPlantsOnly.checked
-                });
-            }
-            
-            // Get current location info
-            let locationInfo = '';
-            const weatherLocationInfo = document.querySelector('.weather-location-info');
-            if (weatherLocationInfo) {
-                locationInfo = weatherLocationInfo.textContent.trim();
-            }
-
-            // Get climate zone
-            let climateZone = '';
-            const climateZoneCode = document.getElementById('climateZoneCode');
-            if (climateZoneCode) {
-                climateZone = climateZoneCode.textContent.trim();
-            }
-
-            // Get current weather
-            let currentWeather = '';
-            const weatherCurrent = document.querySelector('.weather-current');
-            if (weatherCurrent) {
-                currentWeather = weatherCurrent.textContent.trim();
-            }
-
-            // Get forecast summary (next 7 days)
-            let forecastSummary = '';
-            const forecastTable = document.querySelector('.weather-forecast-table tbody');
-            if (forecastTable) {
-                const next7Days = Array.from(forecastTable.querySelectorAll('tr')).slice(0, 7);
-                forecastSummary = next7Days.map(row => {
-                    const cells = row.querySelectorAll('td');
-                    const date = cells[0].textContent;
-                    
-                    // Extract weather condition and clean it up
-                    let weatherText = cells[6].textContent.trim();
-                    // Split by newline and get only the weather condition text (usually the second line)
-                    let weatherParts = weatherText.split('\n').map(part => part.trim()).filter(part => part);
-                    // Find the weather condition (not a temperature and not containing "selected")
-                    let weatherCondition = weatherParts.find(part => 
-                        !part.includes('°') && !part.toLowerCase().includes('selected')
-                    ) || "Not available";
-                    
-                    // Clean temperature information
-                    const nightMinTemp = cells[1].textContent.trim().replace(/selected/gi, '');
-                    const nightMaxTemp = cells[2].textContent.trim().replace(/selected/gi, '');
-                    const dayMinTemp = cells[3].textContent.trim().replace(/selected/gi, '');
-                    const dayMaxTemp = cells[4].textContent.trim().replace(/selected/gi, '');
-                    const precipitation = cells[5].textContent.trim().replace(/selected/gi, '');
-                    
-                    // Build detailed forecast string
-                    let dayForecast = `- ${date}:\n  Weather: ${weatherCondition}`;
-                    
-                    // Only add temps if they're not just "-"
-                    if (nightMinTemp !== '-' && nightMaxTemp !== '-') {
-                        dayForecast += `\n  Night: ${nightMinTemp} to ${nightMaxTemp}`;
-                    }
-                    
-                    if (dayMinTemp !== '-' && dayMaxTemp !== '-') {
-                        dayForecast += `\n  Day: ${dayMinTemp} to ${dayMaxTemp}`;
-                    }
-                    
-                    dayForecast += `\n  Precipitation: ${precipitation}`;
-                    
-                    return dayForecast;
-                }).join('\n\n');
-            }
-
-            // Get current month's planting calendar with only selected items
-            let plantingCalendar = '';
-            
-            // Only include plant information if the includeCalendar checkbox is checked
-            if (includeCalendar.checked) {
-                // Retrieve the user's selected items from localStorage
-                const selections = getSelectedItems();
-                // Get only the selections for the current active month
-                const currentSelections = selections[activeMonth];
-                
-                if (currentSelections && Object.keys(currentSelections).length > 0) {
-                    const plantItems = [];
-                    
-                    // For debugging - log what's in currentSelections
-                    console.log('Selected items for prompt:', JSON.stringify(currentSelections));
-                    
-                    // Process each category of selections
-                    Object.entries(currentSelections).forEach(([category, selectedItems]) => {
-                        if (selectedItems && selectedItems.length > 0) {
-                            // Deep clone the items to avoid modification issues
-                            let itemsToProcess = JSON.parse(JSON.stringify(selectedItems));
-                            
-                            // Make sure we're only working with the actual selected items
-                            // by matching their IDs with what's in calendarData
-                            const availableItems = calendarData[activeMonth]?.[category] || [];
-                            
-                            // Filter to ensure we only have valid selected items
-                            itemsToProcess = itemsToProcess.filter(selectedItem => {
-                                // Check if this item exists in calendarData for this month and category
-                                return availableItems.some(item => {
-                                    // Deep comparison by checking if the items are equivalent
-                                    if (typeof selectedItem === 'object' && typeof item === 'object') {
-                                        return selectedItem.en === item.en;
-                                    }
-                                    return false;
-                                });
-                            });
-                            
-                            // Filter based on weather suitability if that option is checked
-                            if (includeRelevantPlantsOnly.checked && lastWeatherData) {
-                                itemsToProcess = itemsToProcess.filter(item => {
-                                    // Extract a text representation of the item for weather suitability check
-                                    const plantName = typeof item === 'object' ? 
-                                        (item[currentLang] || item.en || JSON.stringify(item)) : String(item);
-                                    return isPlantSuitableForWeather(plantName, lastWeatherData);
-                                });
-                            }
-                            
-                            if (itemsToProcess.length > 0) {
-                                // Format each item to display readable text
-                                const formattedItems = itemsToProcess.map(item => {
-                                    if (typeof item === 'object') {
-                                        // Get the name in the current language or fall back to English
-                                        return (item[currentLang] || item.en || JSON.stringify(item))
-                                            .replace(/selected/gi, '') // Remove any "selected" text
-                                            .trim();
-                                    }
-                                    return String(item).replace(/selected/gi, '').trim();
-                                });
-                                
-                                // Remove any empty or duplicate items
-                                const uniqueItems = [...new Set(formattedItems.filter(Boolean))];
-                                
-                                // Add the category with its items to the plantItems array
-                                if (uniqueItems.length > 0) {
-                                    plantItems.push(`${categoryNames[category] || category}:\n${uniqueItems.join('\n')}`);
-                                }
-                            }
-                        }
-                    });
-                    
-                    // Create the final calendar section if we have any items
-                    if (plantItems.length > 0) {
-                        plantingCalendar = 'Selected Plants and Tasks:\n\n' + plantItems.join('\n\n');
-                    } else {
-                        // If filtering for weather resulted in no suitable plants
-                        if (includeRelevantPlantsOnly.checked) {
-                            plantingCalendar = 'Note: The user has selected plants in the calendar, but none are suitable for the current weather forecast based on filtering criteria.\n';
-                        } else {
-                            plantingCalendar = 'No plants or tasks have been selected in the calendar yet.\n';
-                        }
-                    }
-                } else {
-                    // If no selections found for active month
-                    plantingCalendar = 'No plants or tasks have been selected in the calendar yet.\n';
-                }
-            } else {
-                // User has unchecked "Include selected plants and tasks"
-                plantingCalendar = '';
-            }
-
-            // Get user's custom notes
-            const notes = customNotes.value.trim();
-
-            // Get current date
-            const currentDate = new Date();
-            const dateOptions = { year: 'numeric', month: 'long', day: 'numeric' };
-            const formattedDate = currentDate.toLocaleDateString(undefined, dateOptions);
-            const currentSeason = (() => {
-                const month = currentDate.getMonth();
-                if (month >= 2 && month <= 4) return "Spring";
-                if (month >= 5 && month <= 7) return "Summer";
-                if (month >= 8 && month <= 10) return "Fall";
-                return "Winter";
-            })();
-
-            // Construct the prompt
-            const prompt = `I need advice for my garden based on the following information:
-
-Current Date: ${formattedDate} (${currentSeason})
-
-Location and Climate:
-${locationInfo.replace(/Location:/g, "Location:").replace(/Latitude:/g, "\nLatitude:").replace(/Longitude:/g, "\nLongitude:")}
-
-Köppen Climate Zone: ${climateZone}
-${includeRelevantPlantsOnly.checked && includeCalendar.checked ? '(Recommendations filtered for current weather conditions)' : ''}
-
-Current Weather and Forecast:
-${currentWeather}
-
-7-Day Forecast:
-${forecastSummary}
-${plantingCalendar ? '\n' + plantingCalendar + '\n' : ''}
-${notes ? `Additional Notes:\n${notes}\n\n` : ''}Based on this information, please provide:
-1. Immediate tasks I should focus on this week
-2. What I should plant now or prepare for planting
-3. Potential weather-related precautions
-4. Long-term planning suggestions
-${includeCalendar.checked ? '5. Any specific care instructions for my selected plants' : '5. General gardening tips for this season and climate'}
-
-IMPORTANT: This is a current gardening request for the date specified above. Please use the weather forecast and season information provided and do not base your recommendations on outdated or previous years' gardening calendars. The forecast and plants listed are current and specific to my location and climate.`;
-
-            generatedPrompt.textContent = prompt;
-            
-            // Show AI assistants section
-            document.getElementById('promptDestinationSection').style.display = 'block';
-        }
-
-        function copyPrompt() {
-            navigator.clipboard.writeText(generatedPrompt.textContent)
-                .then(() => {
-                    const originalText = copyPromptBtn.textContent;
-                    copyPromptBtn.textContent = 'Copied!';
-                    setTimeout(() => {
-                        copyPromptBtn.textContent = originalText;
-                    }, 2000);
-                })
-                .catch(err => {
-                    console.error('Failed to copy text:', err);
-                    alert('Failed to copy to clipboard. Please select and copy the text manually.');
-                });
-        }
-
-        // Send prompt to AI assistant
-        function sendToAiAssistant(assistant) {
-            // Track which AI assistant was selected in Google Analytics
-            if (typeof gtag === 'function') {
-                gtag('event', 'send_to_ai_assistant', {
-                    'assistant': assistant
-                });
-            }
-            
-            const prompt = encodeURIComponent(generatedPrompt.textContent);
-            let url = '';
-            
-            switch(assistant) {
-                case 'chatgpt':
-                    url = `https://chat.openai.com?prompt=${prompt}`;
-                    break;
-                case 'claude':
-                    url = `https://claude.ai/new?q=${prompt}`;
-                    break;
-                case 'gemini':
-                    url = `https://gemini.google.com/app`;
-                    break;
-                case 'copilot':
-                    url = `https://copilot.microsoft.com/?q=${prompt}`;
-                    break;
-                case 'mistral':
-                    url = `https://chat.mistral.ai/chat`;
-                    break;
-                case 'deepseek':
-                    url = `https://chat.deepseek.com`;
-                    break;
-                default:
-                    alert('Selected AI assistant is not supported.');
-                    return;
-            }
-            
-            // Open in a new tab
-            window.open(url, '_blank');
-        }
-
-        // Set up event listeners
-        generatePromptBtn.addEventListener('click', generatePrompt);
-        copyPromptBtn.addEventListener('click', copyPrompt);
-        
-        // AI assistant buttons
-        document.querySelector('.ai-assistants-grid').addEventListener('click', (e) => {
-            const btn = e.target.closest('.ai-assistant-btn');
-            if (btn) {
-                const assistant = btn.dataset.assistant;
-                sendToAiAssistant(assistant);
-            }
-        });
-
-        // Don't automatically generate on weather update anymore since it's in a modal
-        const originalRenderWeatherData = renderWeatherData;
-        renderWeatherData = function(data) {
-            originalRenderWeatherData.call(this, data);
-        };
-
-        // Selection storage functionality moved to storage.js module
-        // These functions are now provided globally through storage-loader.js
-        
-        // Function to update the select all checkbox based on individual item selections
-        function updateSelectAllCheckbox(month, category) {
-            const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-category="${category}"]`);
-            if (!selectAllCheckbox) return;
-            
-            const categoryItems = calendarData[month][category] || [];
-            if (categoryItems.length > 0) {
-                // Check if ALL items in this category are selected
-                let allSelected = true;
-                for (let i = 0; i < categoryItems.length; i++) {
-                    // Use the globally available isItemSelected function from storage module
-                    if (!isItemSelected(month, category, categoryItems[i])) {
-                        allSelected = false;
-                        break;
-                    }
-                }
-                selectAllCheckbox.checked = allSelected;
-                
-                // Add debug log to help identify issues
-                console.log(`Category: ${category}, All selected: ${allSelected}, Item count: ${categoryItems.length}`);
-            }
-        }
 
         // Garden Journal functionality
         // ----------------------------
@@ -2188,14 +1768,8 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                     // Scroll to the target section with offset for header
                     const targetSection = document.getElementById(sectionId);
                     if (targetSection) {
-                        // Get header height for offset (approximately 100px, or calculated from actual header)
-                        const headerOffset = 200; // Adjust this value based on your header height
-                        const targetPosition = targetSection.getBoundingClientRect().top + window.pageYOffset - headerOffset;
-                        
-                        window.scrollTo({
-                            top: targetPosition,
-                            behavior: 'smooth'
-                        });
+                        // Use the UI module's scrollToElement function
+                        scrollToElement(targetSection, 200);
                     }
                 }
             });

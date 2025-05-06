@@ -22,14 +22,20 @@ The refactoring process is partially complete. Here's the current status:
     - `/gardening_calendar/js/modules/storage.js` has been created with all localStorage functions
     - `storage-loader.js` exposes the functions globally for backward compatibility
     - HTML modified to use the global storage functions
-  - **3.3 UI Utilities** ❌ PENDING
+  - **3.3 UI Utilities** ✅ COMPLETED
+    - `/gardening_calendar/js/modules/ui.js` has been created with common UI functions
+    - `ui-loader.js` exposes the functions globally for backward compatibility
+    - Functions include modal handling, confirmation dialogs, notifications, and scroll utilities
   - **3.4 Weather Functionality** ❌ PENDING
     - *Need to add timezone-awareness in weather data processing*
     - *Need to fix day/night calculations to respect local sunrise/sunset times*
   - **3.5 Calendar Functionality** ❌ PENDING
   - **3.6 Climate Zone Logic** ❌ PENDING
   - **3.7 Search Functionality** ❌ PENDING
-  - **3.8 Prompt Generator** ❌ PENDING
+  - **3.8 Prompt Generator** ✅ COMPLETED
+    - Moved prompt generation logic and modal handling to the UI module
+    - `isPlantSuitableForWeather()` function to filter plants by weather conditions
+    - Clipboard copy functionality and AI assistant integration
 
 - **Step 4: Create Main Entry Point** ❌ PENDING
   - Still using individual module loaders rather than a unified main.js
