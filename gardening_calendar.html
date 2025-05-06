@@ -481,6 +481,9 @@
     <!-- Import data module first to ensure data is available-->
     <script type="module" src="gardening_calendar/js/data-loader.js"></script>
     
+    <!-- Import storage module -->
+    <script type="module" src="gardening_calendar/js/storage-loader.js"></script>
+    
     <!-- Add our refactored journal module after data is loaded -->
     <script type="module" src="gardening_calendar/js/journal-init.js"></script>
 
@@ -889,6 +892,8 @@
                         const itemJson = decodeURIComponent(e.target.closest('li').dataset.itemId);
                         const item = JSON.parse(itemJson);
                         toggleItemSelection(month, category, item, e.target.checked);
+                        // Update the "Select All" checkbox status
+                        updateSelectAllCheckbox(month, category);
                     });
                 });
                 
@@ -938,6 +943,9 @@
                             toggleItemSelection(month, category, item, isChecked);
                         }
                     });
+                    
+                    // Update the "Select All" checkbox status once after all items are processed
+                    updateSelectAllCheckbox(month, category);
                 });
             });
         }
@@ -1694,18 +1702,19 @@
         const tempUnitSelect = document.getElementById('tempUnitSelect');
         const precipUnitSelect = document.getElementById('precipUnitSelect');
         
-        // Load preferences from localStorage
+        // Load preferences from localStorage using the storage module
         function loadUnitPrefs() {
-            const temp = localStorage.getItem('gardening_temp_unit');
-            const precip = localStorage.getItem('gardening_precip_unit');
+            // Use the storage module utility functions
+            const temp = storageUtils.getTemperatureUnit();
+            const precip = storageUtils.getPrecipitationUnit();
             
-            if (temp && (temp === 'C' || temp === 'F')) tempUnitSelect.value = temp;
-            if (precip && (precip === 'mm' || precip === 'in')) precipUnitSelect.value = precip;
+            tempUnitSelect.value = temp;
+            precipUnitSelect.value = precip;
         }
         
         // Save preferences to localStorage
         tempUnitSelect.addEventListener('change', () => {
-            localStorage.setItem('gardening_temp_unit', tempUnitSelect.value);
+            storageUtils.saveTemperatureUnit(tempUnitSelect.value);
             // Track event in Google Analytics
             if (typeof gtag === 'function') {
                 gtag('event', 'change_preference', {
@@ -1717,7 +1726,7 @@
         });
         
         precipUnitSelect.addEventListener('change', () => {
-            localStorage.setItem('gardening_precip_unit', precipUnitSelect.value);
+            storageUtils.savePrecipitationUnit(precipUnitSelect.value);
             // Track event in Google Analytics
             if (typeof gtag === 'function') {
                 gtag('event', 'change_preference', {
@@ -2107,84 +2116,9 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
             originalRenderWeatherData.call(this, data);
         };
 
-        // Selection storage functionality
-        function getSelectedItems() {
-            const stored = localStorage.getItem('gardening_selected_items');
-            return stored ? JSON.parse(stored) : {};
-        }
-
-        function isItemSelected(month, category, item) {
-            const selections = getSelectedItems();
-            
-            // Check if we have any selections for this month and category
-            if (!selections[month] || !selections[month][category]) {
-                return false;
-            }
-            
-            // For object items (like plants), compare by their English name
-            if (typeof item === 'object' && item.en) {
-                const matchFound = selections[month][category].some(selected => 
-                    typeof selected === 'object' && selected.en === item.en
-                );
-                return matchFound;
-            }
-            
-            // For string items or other types, use direct includes check
-            return selections[month][category].includes(item);
-        }
-
-        function toggleItemSelection(month, category, item, selected) {
-            const selections = getSelectedItems();
-            
-            // Initialize nested structure if needed
-            if (!selections[month]) selections[month] = {};
-            if (!selections[month][category]) selections[month][category] = [];
-            
-            const items = selections[month][category];
-            
-            // For object items (like plants), find by comparing English name
-            let index = -1;
-            if (typeof item === 'object' && item.en) {
-                index = items.findIndex(existingItem => 
-                    typeof existingItem === 'object' && existingItem.en === item.en
-                );
-            } else {
-                // For string items or other types, use indexOf
-                index = items.indexOf(item);
-            }
-            
-            if (selected && index === -1) {
-                // Store a clean copy without any DOM-related attributes
-                if (typeof item === 'object') {
-                    // We store only the essential data (language keys)
-                    const cleanItem = { type: 'plant' };
-                    if (item.en) cleanItem.en = item.en;
-                    if (item.et) cleanItem.et = item.et;
-                    items.push(cleanItem);
-                } else {
-                    items.push(item);
-                }
-            } else if (!selected && index !== -1) {
-                // Log details of the deselected item for debugging
-                console.log('Removing:', JSON.stringify(items[index]));
-                items.splice(index, 1);
-            }
-            
-            // Clean up empty arrays and objects
-            if (items.length === 0) delete selections[month][category];
-            if (Object.keys(selections[month]).length === 0) delete selections[month];
-            
-            // Save to localStorage
-            localStorage.setItem('gardening_selected_items', JSON.stringify(selections));
-            
-            // Update "Select All" checkbox status
-            updateSelectAllCheckbox(month, category);
-            
-            // Log the updated selections for debugging
-            console.log('Item operation:', selected ? 'select' : 'deselect', item.en || item);
-            console.log('Updated selections for', month, category, ':', JSON.stringify(selections[month]?.[category] || []));
-        }
-
+        // Selection storage functionality moved to storage.js module
+        // These functions are now provided globally through storage-loader.js
+        
         // Function to update the select all checkbox based on individual item selections
         function updateSelectAllCheckbox(month, category) {
             const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-category="${category}"]`);
@@ -2195,6 +2129,7 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
                 // Check if ALL items in this category are selected
                 let allSelected = true;
                 for (let i = 0; i < categoryItems.length; i++) {
+                    // Use the globally available isItemSelected function from storage module
                     if (!isItemSelected(month, category, categoryItems[i])) {
                         allSelected = false;
                         break;
