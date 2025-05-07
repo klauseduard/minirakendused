@@ -87,6 +87,12 @@ window.createJournalEntry = journalModule.createJournalEntry;
 window.updateJournalEntry = journalModule.updateJournalEntry;
 window.deleteJournalEntry = journalModule.deleteJournalEntry;
 
+// Custom entries module exports
+window.initCustomEntries = customEntriesModule.initCustomEntries;
+window.openCustomPlantModal = customEntriesModule.openPlantModal;
+window.openCustomTaskModal = customEntriesModule.openTaskModal;
+window.loadCustomEntries = customEntriesModule.loadCustomEntries;
+
 /**
  * Initialize all modules in the correct order
  */

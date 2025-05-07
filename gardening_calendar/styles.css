@@ -1236,16 +1236,60 @@ footer {
     background-color: rgba(var(--primary-rgb), 0.05);
     border-left: 3px solid var(--primary-color);
     padding-left: 5px !important;
+    position: relative;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.custom-item:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.custom-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.custom-item:hover .custom-item-actions {
+    opacity: 1;
+}
+
+.custom-item-edit-btn,
+.custom-item-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--primary-color);
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.custom-item-edit-btn:hover,
+.custom-item-delete-btn:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    transform: scale(1.1);
+}
+
+.custom-item-delete-btn {
+    color: #d32f2f;
+}
+
+.custom-item-delete-btn:hover {
+    background-color: rgba(211, 47, 47, 0.1);
 }
 
 .edit-custom-item-btn {
     opacity: 0.5;
     transition: opacity 0.2s, transform 0.1s;
-}
-
-.edit-custom-item-btn:hover {
-    opacity: 1;
-    transform: scale(1.1);
 }
 
 /* Form Styling */
@@ -1289,4 +1333,62 @@ footer {
     .custom-add-btn {
         justify-content: center;
     }
+}
+
+/* Journal Entry Modal Photo Preview Styles */
+.photo-preview {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 5px;
+    display: inline-block;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+.photo-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+
+.photo-preview img:hover {
+    transform: scale(1.05);
+}
+
+.photo-remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 20px;
+    height: 20px;
+    background-color: rgba(255, 0, 0, 0.7);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+
+.photo-remove-btn:hover {
+    background-color: rgba(255, 0, 0, 0.9);
+}
+
+#photoPreviewContainer {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+#imageLightbox {
+    z-index: 10000;
 } 

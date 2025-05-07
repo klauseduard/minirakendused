@@ -345,13 +345,37 @@ function openJournalEntryModal(entryId = null) {
             // Show photos if available
             if (entry.images && entry.images.length > 0) {
                 entry.images.forEach(imgData => {
+                    // Create container for the image preview
                     const imgContainer = document.createElement('div');
                     imgContainer.className = 'photo-preview';
                     
+                    // Create image element
                     const img = document.createElement('img');
-                    img.src = imgData.thumbnail || imgData.data;
-                    img.onclick = () => showImageLightbox(imgData.data, entry.id);
                     
+                    // Handle different image data formats (string or object)
+                    let imageSource, fullImageSource;
+                    if (typeof imgData === 'string') {
+                        // If it's just a string, use it for both thumbnail and full image
+                        imageSource = imgData;
+                        fullImageSource = imgData;
+                    } else if (typeof imgData === 'object') {
+                        // If it's an object with data and thumbnail properties
+                        imageSource = imgData.thumbnail || imgData.data || '';
+                        fullImageSource = imgData.data || imgData.thumbnail || '';
+                    } else {
+                        // Skip invalid image data
+                        console.warn('Invalid image data format:', imgData);
+                        return;
+                    }
+                    
+                    // Set image source and storage
+                    img.src = imageSource;
+                    img.dataset.fullImage = fullImageSource;
+                    
+                    // Set click handler for lightbox view
+                    img.onclick = () => showImageLightbox(fullImageSource, entry.id);
+                    
+                    // Add remove button
                     const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '&times;';
                     removeBtn.className = 'photo-remove-btn';
@@ -359,6 +383,7 @@ function openJournalEntryModal(entryId = null) {
                         imgContainer.remove();
                     };
                     
+                    // Add elements to the container
                     imgContainer.appendChild(img);
                     imgContainer.appendChild(removeBtn);
                     photoPreviewContainer.appendChild(imgContainer);
@@ -396,14 +421,17 @@ function handlePhotoSelection(input) {
         fileToBase64(file).then(base64 => {
             compressImage(base64, 1200, 0.7).then(compressed => {
                 generateThumbnail(compressed, 150).then(thumbnail => {
+                    // Create image container
                     const imgContainer = document.createElement('div');
                     imgContainer.className = 'photo-preview';
                     
+                    // Create and set up image
                     const img = document.createElement('img');
                     img.src = thumbnail;
                     img.dataset.fullImage = compressed;
                     img.onclick = () => showImageLightbox(compressed);
                     
+                    // Create remove button
                     const removeBtn = document.createElement('button');
                     removeBtn.innerHTML = '&times;';
                     removeBtn.className = 'photo-remove-btn';
@@ -411,10 +439,20 @@ function handlePhotoSelection(input) {
                         imgContainer.remove();
                     };
                     
+                    // Add elements to container
                     imgContainer.appendChild(img);
                     imgContainer.appendChild(removeBtn);
                     photoPreviewContainer.appendChild(imgContainer);
+                    
+                    // Log success
+                    console.log('Photo added successfully:', {
+                        thumbnail: thumbnail.substring(0, 50) + '...',
+                        fullSize: compressed.substring(0, 50) + '...'
+                    });
                 });
+            }).catch(error => {
+                console.error('Error processing image:', error);
+                alert('Error processing image. Please try again with a different image.');
             });
         });
     });
@@ -611,9 +649,11 @@ function renderTimeline() {
             html += `<div style="margin-top: 15px;">
                 <div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
             
-            entry.images.forEach((imgSrc, index) => {
+            entry.images.forEach((img, index) => {
+                // Handle both string format and object format for backward compatibility
+                const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
                 html += `<div class="journal-image" style="width: 100px; height: 100px; cursor: pointer;" data-full-img="${imgSrc}" data-entry-id="${entry.id}" data-img-index="${index}">
-                    <img src="${imgSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">
+                    <img src="${typeof img === 'string' ? img : (img.thumbnail || img.data)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">
                 </div>`;
             });
             
@@ -658,9 +698,12 @@ function renderGallery() {
     const allImages = [];
     entries.forEach(entry => {
         if (entry.images && entry.images.length > 0) {
-            entry.images.forEach((imgSrc, index) => {
+            entry.images.forEach((img, index) => {
+                // Handle both string format and object format for backward compatibility
+                const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
                 allImages.push({
                     src: imgSrc,
+                    thumbnail: typeof img === 'string' ? img : (img.thumbnail || img.data),
                     date: entry.date,
                     entryId: entry.id,
                     imgIndex: index
@@ -694,7 +737,7 @@ function renderGallery() {
             
             html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}">
                 <div style="position: relative; padding-bottom: 100%;">
-                    <img src="${img.src}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
+                    <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px 8px; font-size: 0.8rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">${formattedDate}</div>
                 </div>
             </div>`;
@@ -830,7 +873,65 @@ function renderJournalCalendar() {
     });
 }
 
+// Function to show delete confirmation modal
+function showDeleteConfirmModal(entryId) {
+    const modal = document.getElementById('deleteConfirmModal');
+    const cancelBtn = document.getElementById('deleteConfirmCancelBtn');
+    const confirmBtn = document.getElementById('deleteConfirmBtn');
+    const closeBtn = document.getElementById('deleteModalCloseBtn');
+    
+    // Set up confirm button action
+    confirmBtn.onclick = () => {
+        // Delete the entry
+        if (deleteJournalEntry(entryId)) {
+            // Update the journal display
+            renderJournal();
+            // Show success message
+            alert('Journal entry deleted successfully.');
+        }
+        // Hide modal
+        modal.style.display = 'none';
+    };
+    
+    // Cancel and close buttons close the modal
+    cancelBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    closeBtn.onclick = () => {
+        modal.style.display = 'none';
+    };
+    
+    // Click outside to close
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    };
+    
+    // Show modal
+    modal.style.display = 'flex';
+    
+    // Setup escape key handler
+    const handleEscapeKey = (e) => {
+        if (e.key === 'Escape') {
+            modal.style.display = 'none';
+            document.removeEventListener('keydown', handleEscapeKey);
+        }
+    };
+    document.addEventListener('keydown', handleEscapeKey);
+}
+
 function showImageLightbox(imgSrc, entryId = null) {
+    // Ensure we have a valid image source
+    if (!imgSrc) {
+        console.error('No image source provided to lightbox');
+        return;
+    }
+    
+    // Handle both string and object formats
+    const imageUrl = typeof imgSrc === 'object' ? (imgSrc.data || imgSrc.thumbnail) : imgSrc;
+    
     // Remove any existing lightbox
     const oldLightbox = document.getElementById('imageLightbox');
     if (oldLightbox) oldLightbox.remove();
@@ -865,7 +966,7 @@ function showImageLightbox(imgSrc, entryId = null) {
     
     // Add image
     const img = document.createElement('img');
-    img.src = imgSrc;
+    img.src = imageUrl;
     img.style.maxWidth = '90%';
     img.style.maxHeight = '90%';
     img.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.3)';
@@ -1078,5 +1179,121 @@ export function initJournal() {
         // Find and click the journal tab to activate it
         const journalBtn = document.querySelector('.quick-jump-btn[data-section="garden-journal"]');
         if (journalBtn) journalBtn.click();
+    }
+    
+    // Set up journal entry form handlers
+    const journalEntryForm = document.getElementById('journalEntryForm');
+    const journalEntryModalCloseBtn = document.getElementById('journalEntryModalCloseBtn');
+    const journalEntryCancelBtn = document.getElementById('journalEntryCancelBtn');
+    const photoSelectBtn = document.getElementById('photoSelectBtn');
+    const entryTypeSelect = document.getElementById('entryType');
+    const entryPhotosInput = document.getElementById('entryPhotos');
+    const journalEntryModal = document.getElementById('journalEntryModal');
+    
+    // Type change shows/hides harvest metrics
+    if (entryTypeSelect) {
+        entryTypeSelect.addEventListener('change', function() {
+            const harvestMetricsContainer = document.getElementById('harvestMetricsContainer');
+            if (harvestMetricsContainer) {
+                harvestMetricsContainer.style.display = this.value === 'harvest' ? 'block' : 'none';
+            }
+        });
+    }
+    
+    // Photo selection
+    if (photoSelectBtn && entryPhotosInput) {
+        photoSelectBtn.addEventListener('click', function() {
+            entryPhotosInput.click();
+        });
+        
+        entryPhotosInput.addEventListener('change', function() {
+            handlePhotoSelection(this);
+        });
+    }
+    
+    // Form submission
+    if (journalEntryForm) {
+        journalEntryForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Get form data
+            const entryId = document.getElementById('journalEntryId').value;
+            const entryData = {
+                date: document.getElementById('entryDate').value,
+                type: document.getElementById('entryType').value,
+                notes: document.getElementById('entryNotes').value,
+                location: document.getElementById('entryLocation').value,
+                plants: document.getElementById('entryPlants').value.split(',').map(p => p.trim()).filter(p => p)
+            };
+            
+            // Add harvest metrics if applicable
+            if (entryData.type === 'harvest') {
+                entryData.metrics = {
+                    weight: document.getElementById('harvestWeight').value,
+                    quantity: document.getElementById('harvestQuantity').value
+                };
+            }
+            
+            // Add photos if any
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            if (photoPreviewContainer) {
+                const photoElements = photoPreviewContainer.querySelectorAll('.photo-preview img');
+                if (photoElements.length > 0) {
+                    entryData.images = [];
+                    photoElements.forEach(img => {
+                        // Get full image and thumbnail
+                        const fullImage = img.dataset.fullImage || img.src;
+                        const thumbnail = img.src;
+                        
+                        // Skip if the image data is invalid
+                        if (!fullImage) {
+                            console.warn('Skipping image with no data');
+                            return;
+                        }
+                        
+                        // Always store images in the same format (object with data and thumbnail)
+                        entryData.images.push({
+                            data: fullImage,
+                            thumbnail: thumbnail
+                        });
+                    });
+                }
+            }
+            
+            // Create or update entry
+            if (entryId) {
+                updateJournalEntry(entryId, entryData);
+            } else {
+                createJournalEntry(entryData);
+            }
+            
+            // Update view
+            renderJournal();
+            
+            // Close modal
+            journalEntryModal.style.display = 'none';
+        });
+    }
+    
+    // Close modal buttons
+    if (journalEntryModalCloseBtn) {
+        journalEntryModalCloseBtn.addEventListener('click', function() {
+            journalEntryModal.style.display = 'none';
+        });
+    }
+    
+    if (journalEntryCancelBtn) {
+        journalEntryCancelBtn.addEventListener('click', function() {
+            journalEntryModal.style.display = 'none';
+        });
+    }
+    
+    // Click outside to close
+    if (journalEntryModal) {
+        journalEntryModal.addEventListener('click', function(e) {
+            if (e.target === journalEntryModal) {
+                journalEntryModal.style.display = 'none';
+            }
+        });
     }
 } 

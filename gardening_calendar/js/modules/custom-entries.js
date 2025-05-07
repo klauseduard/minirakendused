@@ -696,11 +696,29 @@ function deleteTaskEntry() {
 /**
  * Load custom entries from storage and add to calendar data
  */
-function loadCustomEntries() {
+export function loadCustomEntries() {
     const entries = getCustomEntries();
     
     // If we have entries, add them to the calendar data
     window.calendarData = window.calendarData || {};
+    
+    // First, clean all custom entries from calendar data
+    Object.keys(window.calendarData).forEach(month => {
+        // Clean custom plants from all categories
+        Object.keys(window.calendarData[month] || {}).forEach(category => {
+            if (window.calendarData[month][category] && Array.isArray(window.calendarData[month][category])) {
+                window.calendarData[month][category] = window.calendarData[month][category].filter(
+                    item => !item.custom
+                );
+            }
+        });
+        
+        // Reset custom categories to empty arrays
+        if (window.calendarData[month]) {
+            window.calendarData[month]['custom_plants'] = [];
+            window.calendarData[month]['custom_tasks'] = [];
+        }
+    });
     
     // Load plants
     if (entries.plants && entries.plants.length > 0) {
@@ -758,6 +776,8 @@ function loadCustomEntries() {
             }
         });
     }
+    
+    console.log('Custom entries loaded and calendar data updated');
 }
 
 // Expose the custom entries API
