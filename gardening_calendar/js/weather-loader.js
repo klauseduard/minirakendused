@@ -31,8 +31,12 @@ window.displayLocationInfo = function(name, lat, lon, admin1, admin2, country) {
     originalDisplayLocationInfo(name, lat, lon, admin1, admin2, country);
     
     // Then update climate zone if that function exists
+    console.log(`Weather-loader: displayLocationInfo called with lat=${lat}, lon=${lon}`);
     if (typeof window.showClimateZone === 'function') {
+        console.log('Calling window.showClimateZone function');
         window.showClimateZone(lat, lon);
+    } else {
+        console.error('window.showClimateZone function not found!');
     }
 };
 

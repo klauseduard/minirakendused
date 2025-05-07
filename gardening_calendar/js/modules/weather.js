@@ -623,6 +623,12 @@ export function displayLocationError(message, errorType) {
  * @param {string} country - Country
  */
 export function displayLocationInfo(name, lat, lon, admin1, admin2, country) {
+    console.log(`weather.js displayLocationInfo - lat: ${lat}, lon: ${lon}`);
+    
+    // Store coordinates for reference
+    lastWeatherLat = lat;
+    lastWeatherLon = lon;
+    
     const weatherPlaceholder = document.getElementById('weatherPlaceholder');
     if (weatherPlaceholder) {
         let locationParts = [];
@@ -653,10 +659,11 @@ export async function geocodeLocation(query) {
     lastWeatherAction = 'geocode';
     weatherPlaceholder.textContent = 'Looking up location...';
     
-    // Cache the query
-    localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'query', value: query }));
+    // Clear any previous location cache first to prevent override
+    localStorage.removeItem('gardening_last_location');
     
     try {
+        console.log(`Geocoding location: ${query}`);
         const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Geocoding service error');
@@ -668,15 +675,42 @@ export async function geocodeLocation(query) {
         }
         
         const result = data.results[0];
-        displayLocationInfo(
-            result.name,
-            result.latitude,
-            result.longitude,
-            result.admin1,
-            result.admin2,
-            result.country
-        );
+        console.log(`Geocoding result: ${result.name} at ${result.latitude}, ${result.longitude}`);
+        
+        // Create a location string
+        let locationParts = [];
+        if (result.name) locationParts.push(result.name);
+        if (result.admin2) locationParts.push(result.admin2);
+        if (result.admin1) locationParts.push(result.admin1);
+        if (result.country) locationParts.push(result.country);
+        const locationString = locationParts.join(', ');
+        
+        // Save coordinates and location name in the cache
+        localStorage.setItem('gardening_last_location', JSON.stringify({ 
+            type: 'coords', 
+            lat: result.latitude, 
+            lon: result.longitude,
+            locationName: locationString // Store the location name
+        }));
+        
+        // Directly call functions instead of using displayLocationInfo to prevent location override
+        if (weatherPlaceholder) {
+            weatherPlaceholder.innerHTML =
+                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br><br>` +
+                `<span style="font-size:0.97em;color:#666;">Latitude: ${result.latitude}, Longitude: ${result.longitude}</span></div>` +
+                `<div id="weatherDataSection">Loading weather data...</div>`;
+        }
+        
+        // Fetch weather directly
+        fetchWeatherData(result.latitude, result.longitude);
+        
+        // Directly update climate zone if the function exists
+        if (typeof window.showClimateZone === 'function') {
+            console.log(`Directly calling showClimateZone with ${result.latitude}, ${result.longitude}`);
+            window.showClimateZone(result.latitude, result.longitude);
+        }
     } catch (e) {
+        console.error('Error during geocoding:', e);
         displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
     }
 }
@@ -730,9 +764,34 @@ export function initWeather() {
             (pos) => {
                 const lat = pos.coords.latitude.toFixed(5);
                 const lon = pos.coords.longitude.toFixed(5);
-                // Cache the coordinates
-                localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'coords', lat, lon }));
-                displayLocationInfo('Your location', lat, lon, '', '', '');
+                
+                // Clear previous cache first
+                localStorage.removeItem('gardening_last_location');
+                
+                // Then add new cache with explicit "Your location" name
+                localStorage.setItem('gardening_last_location', JSON.stringify({ 
+                    type: 'coords', 
+                    lat, 
+                    lon,
+                    locationName: 'Your location' // Explicitly mark this as the user's location
+                }));
+                
+                // Directly update UI without going through displayLocationInfo
+                if (weatherPlaceholder) {
+                    weatherPlaceholder.innerHTML =
+                        `<div class="weather-location-info"><strong>Location:</strong> Your location<br><br>` +
+                        `<span style="font-size:0.97em;color:#666;">Latitude: ${lat}, Longitude: ${lon}</span></div>` +
+                        `<div id="weatherDataSection">Loading weather data...</div>`;
+                }
+                
+                // Fetch weather directly 
+                fetchWeatherData(lat, lon);
+                
+                // Directly update climate zone
+                if (typeof window.showClimateZone === 'function') {
+                    console.log(`Directly calling showClimateZone with ${lat}, ${lon} from geolocation`);
+                    window.showClimateZone(lat, lon);
+                }
             },
             (err) => {
                 displayLocationError('Could not get your location. Please allow location access or enter a place name.', 'geocode');
@@ -771,13 +830,37 @@ export function initWeather() {
     
     // Try to restore last location on init
     try {
-        const lastLocation = JSON.parse(localStorage.getItem('gardening_last_location'));
-        if (lastLocation) {
-            if (lastLocation.type === 'coords') {
-                displayLocationInfo('Your location', lastLocation.lat, lastLocation.lon, '', '', '');
-            } else if (lastLocation.type === 'query' && lastLocation.value) {
-                locationInput.value = lastLocation.value;
-                geocodeLocation(lastLocation.value);
+        // Only restore location if explicitly requested
+        const shouldRestoreLocation = true; // You can change this to localStorage.getItem('gardening_restore_location') === 'true'
+        
+        if (shouldRestoreLocation) {
+            const lastLocation = JSON.parse(localStorage.getItem('gardening_last_location'));
+            if (lastLocation) {
+                console.log('Restoring last location from storage:', lastLocation);
+                if (lastLocation.type === 'coords') {
+                    // Get the location name (default to "Your location" if not stored)
+                    const locationName = lastLocation.locationName || 'Your location';
+                    
+                    // Directly update UI without going through displayLocationInfo
+                    if (weatherPlaceholder) {
+                        weatherPlaceholder.innerHTML =
+                            `<div class="weather-location-info"><strong>Location:</strong> ${locationName}<br><br>` +
+                            `<span style="font-size:0.97em;color:#666;">Latitude: ${lastLocation.lat}, Longitude: ${lastLocation.lon}</span></div>` +
+                            `<div id="weatherDataSection">Loading weather data...</div>`;
+                    }
+                    
+                    // Fetch weather directly 
+                    fetchWeatherData(lastLocation.lat, lastLocation.lon);
+                    
+                    // Directly update climate zone
+                    if (typeof window.showClimateZone === 'function') {
+                        console.log(`Directly calling showClimateZone with ${lastLocation.lat}, ${lastLocation.lon} from restored location`);
+                        window.showClimateZone(lastLocation.lat, lastLocation.lon);
+                    }
+                } else if (lastLocation.type === 'query' && lastLocation.value) {
+                    locationInput.value = lastLocation.value;
+                    geocodeLocation(lastLocation.value);
+                }
             }
         }
     } catch (e) {

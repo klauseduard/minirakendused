@@ -639,19 +639,30 @@
 
         // Load the grid JSON
         fetch('gardening_calendar/data/koppen_grid_0.5deg.json')
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) throw new Error(`Failed to load Köppen grid data: ${r.status} ${r.statusText}`);
+                return r.json();
+            })
             .then(data => {
+                console.log(`Köppen grid data loaded successfully with ${Object.keys(data).length} entries`);
                 koppenGrid = data;
                 // If we already have a location, try to show zone
                 const cached = localStorage.getItem('gardening_last_location');
                 if (cached) {
                     try {
                         const loc = JSON.parse(cached);
+                        console.log(`Found cached location: ${JSON.stringify(loc)}`);
                         if (loc.type === 'coords' && loc.lat && loc.lon) {
+                            console.log(`Showing climate zone for cached location: lat=${loc.lat}, lon=${loc.lon}`);
                             showClimateZone(loc.lat, loc.lon);
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        console.error('Error processing cached location:', e);
+                    }
                 }
+            })
+            .catch(error => {
+                console.error('Error loading Köppen grid data:', error);
             });
 
         // Helper: round to nearest 0.25
@@ -674,29 +685,47 @@
 
         // Show climate zone info
         function showClimateZone(lat, lon) {
+            console.log(`showClimateZone called with: lat=${lat}, lon=${lon}`);
             if (!koppenGrid) {
+                console.error('Köppen grid data not loaded yet');
                 climateZoneInfo.innerHTML = '';
                 return;
             }
+            
             // Check for override
             const override = localStorage.getItem('gardening_climate_zone_override');
             let lookupKey = '';
             let foundZone = '';
             if (override) {
+                console.log(`Using override climate zone: ${override}`);
                 userClimateZoneOverride = override;
                 userClimateZone = override;
                 lookupKey = '(override)';
                 foundZone = override;
             } else {
+                // Ensure lat and lon are numeric values
                 const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
                 const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
+                
+                if (isNaN(latNum) || isNaN(lonNum)) {
+                    console.error(`Invalid coordinates: lat=${lat}, lon=${lon}`);
+                    climateZoneInfo.innerHTML = '';
+                    return;
+                }
+                
+                console.log(`Processed coordinates: latNum=${latNum}, lonNum=${lonNum}`);
+                
                 const key = `${round025(latNum)} ${round025(lonNum)}`;
+                console.log(`Looking up climate zone with key: ${key}`);
+                
                 // Try exact match first
                 if (koppenGrid[key]) {
                     userClimateZone = koppenGrid[key];
                     lookupKey = key;
                     foundZone = userClimateZone;
+                    console.log(`Found exact match: ${userClimateZone}`);
                 } else {
+                    console.log(`No exact match found, searching for nearest...`);
                     // Find nearest neighbor
                     const roundedLat = round025(latNum);
                     const roundedLon = round025(lonNum);
@@ -724,15 +753,20 @@
                         userClimateZone = nearestZone;
                         lookupKey = `${key} (nearest: ${nearestKey}, dist: ${minDistance.toFixed(2)}°)`;
                         foundZone = nearestZone;
+                        console.log(`Found nearest match: ${userClimateZone}, distance: ${minDistance.toFixed(2)}°`);
                     } else {
                         userClimateZone = 'Unknown';
                         lookupKey = key;
                         foundZone = 'Unknown';
+                        console.log(`No nearby climate zone found for coordinates`);
                     }
                 }
             }
             renderClimateZoneUI(lookupKey, foundZone);
         }
+        
+        // Explicitly expose the function to the window object for the weather module to call
+        window.showClimateZone = showClimateZone;
 
         // Render the climate zone UI (with debug info)
         function renderClimateZoneUI(lookupKey = '', foundZone = '') {
@@ -1071,6 +1105,7 @@
         window.addEventListener('DOMContentLoaded', function() {
             // Wait a short time to ensure weather module is fully initialized
             setTimeout(() => {
+                console.log("Initializing climate zone data...");
                 // Connect climate zone updates with weather updates
                 const cached = localStorage.getItem('gardening_last_location');
                 if (cached) {
@@ -1078,11 +1113,14 @@
                         const loc = JSON.parse(cached);
                         if (loc.type === 'coords' && loc.lat && loc.lon) {
                             // If we have coordinates, show climate zone
+                            console.log(`Found cached location: ${loc.lat}, ${loc.lon}, updating climate zone...`);
                             showClimateZone(loc.lat, loc.lon);
                         }
                     } catch (e) {
                         console.error('Error updating climate zone:', e);
                     }
+                } else {
+                    console.log("No cached location found.");
                 }
                 
                 // Set fixed language to English
