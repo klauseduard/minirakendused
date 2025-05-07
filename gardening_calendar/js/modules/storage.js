@@ -15,6 +15,31 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Initialize the storage module
+ * Loads preferences and sets up any required event listeners
+ */
+export function initStorage() {
+    console.log('Initializing storage module...');
+    
+    // Load user preferences
+    const preferences = loadPreferences();
+    
+    // Log loaded preferences for debugging
+    console.log('Loaded user preferences:', preferences);
+    
+    // Set up event listeners for preference changes if needed
+    document.addEventListener('temperatureUnitChange', (e) => {
+        saveTemperatureUnit(e.detail.unit);
+    });
+    
+    document.addEventListener('precipitationUnitChange', (e) => {
+        savePrecipitationUnit(e.detail.unit);
+    });
+    
+    return preferences;
+}
+
+/**
  * Get selected plants and tasks
  * @returns {Object} Selected items object organized by month and category
  */
