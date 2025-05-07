@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Module Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        button {
+            padding: 8px 12px;
+            margin: 5px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        input {
+            padding: 8px;
+            width: 300px;
+        }
+        #weatherPlaceholder {
+            margin-top: 20px;
+            min-height: 100px;
+            padding: 15px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .debug-panel {
+            margin-top: 20px;
+            border-top: 1px solid #ccc;
+            padding-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather Module Test</h1>
+        
+        <div>
+            <h2>Location Settings</h2>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="locationInput" placeholder="Enter city or location name">
+                <button id="searchLocationBtn">Search</button>
+                <button id="useMyLocationBtn">Use My Location</button>
+            </div>
+            
+            <div style="display: flex; gap: 20px;">
+                <div>
+                    <label for="tempUnitSelect">Temperature Unit:</label>
+                    <select id="tempUnitSelect">
+                        <option value="C">Celsius (°C)</option>
+                        <option value="F">Fahrenheit (°F)</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="precipUnitSelect">Precipitation Unit:</label>
+                    <select id="precipUnitSelect">
+                        <option value="mm">Millimeters (mm)</option>
+                        <option value="in">Inches (in)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <div id="weatherPlaceholder">
+            Weather information will appear here after you select a location.
+        </div>
+
+        <div class="debug-panel">
+            <h3>Debug Info</h3>
+            <button id="loadCachedBtn">Load from localStorage</button>
+            <button id="clearCachedBtn">Clear localStorage</button>
+            <div id="debugOutput" style="margin-top: 10px; font-family: monospace; white-space: pre-wrap;"></div>
+        </div>
+    </div>
+
+    <!-- Import storage module -->
+    <script type="module" src="gardening_calendar/js/storage-loader.js"></script>
+    
+    <!-- Import Weather module -->
+    <script type="module" src="gardening_calendar/js/weather-loader.js"></script>
+
+    <script>
+        // Debug function to display localStorage content
+        function updateDebugInfo() {
+            const debugOutput = document.getElementById('debugOutput');
+            try {
+                const lastLocation = localStorage.getItem('gardening_last_location');
+                const tempUnit = localStorage.getItem('gardening_temp_unit');
+                const precipUnit = localStorage.getItem('gardening_precip_unit');
+                
+                debugOutput.textContent = `Last Location: ${lastLocation || 'Not set'}\n`;
+                debugOutput.textContent += `Temperature Unit: ${tempUnit || 'Default (C)'}\n`;
+                debugOutput.textContent += `Precipitation Unit: ${precipUnit || 'Default (mm)'}\n`;
+            } catch (e) {
+                debugOutput.textContent = `Error reading localStorage: ${e.message}`;
+            }
+        }
+
+        // Initialize once DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Update debug info
+            updateDebugInfo();
+            
+            // Debug buttons
+            document.getElementById('loadCachedBtn').addEventListener('click', function() {
+                const locationInput = document.getElementById('locationInput');
+                const weatherPlaceholder = document.getElementById('weatherPlaceholder');
+                
+                try {
+                    const lastLocation = JSON.parse(localStorage.getItem('gardening_last_location'));
+                    if (!lastLocation) {
+                        weatherPlaceholder.innerHTML = "<p>No cached location found</p>";
+                        return;
+                    }
+                    
+                    if (lastLocation.type === 'query') {
+                        locationInput.value = lastLocation.value;
+                        // This should trigger weather loading via geocodeLocation
+                        console.log('Testing geocodeLocation with:', lastLocation.value);
+                        if (typeof geocodeLocation === 'function') {
+                            geocodeLocation(lastLocation.value);
+                        } else {
+                            weatherPlaceholder.innerHTML = "<p>Error: geocodeLocation function not available</p>";
+                        }
+                    } else if (lastLocation.type === 'coords') {
+                        // This should trigger weather loading via displayLocationInfo
+                        console.log('Testing displayLocationInfo with:', lastLocation.lat, lastLocation.lon);
+                        if (typeof displayLocationInfo === 'function') {
+                            displayLocationInfo('Cached location', lastLocation.lat, lastLocation.lon, '', '', '');
+                        } else {
+                            weatherPlaceholder.innerHTML = "<p>Error: displayLocationInfo function not available</p>";
+                        }
+                    }
+                } catch (e) {
+                    weatherPlaceholder.innerHTML = `<p>Error loading cached location: ${e.message}</p>`;
+                }
+                
+                updateDebugInfo();
+            });
+            
+            document.getElementById('clearCachedBtn').addEventListener('click', function() {
+                localStorage.removeItem('gardening_last_location');
+                updateDebugInfo();
+                alert('Cached location cleared');
+            });
+        });
+    </script>
+</body>
+</html> 

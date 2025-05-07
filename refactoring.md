@@ -26,10 +26,14 @@ The refactoring process is partially complete. Here's the current status:
     - `/gardening_calendar/js/modules/ui.js` has been created with common UI functions
     - `ui-loader.js` exposes the functions globally for backward compatibility
     - Functions include modal handling, confirmation dialogs, notifications, and scroll utilities
-  - **3.4 Weather Functionality** ❌ PENDING
-    - *Need to add timezone-awareness in weather data processing*
-    - *Need to fix day/night calculations to respect local sunrise/sunset times*
-  - **3.5 Calendar Functionality** ❌ PENDING
+  - **3.4 Weather Functionality** ✅ COMPLETED
+    - Created `/gardening_calendar/js/modules/weather.js` with weather-related functions
+    - `weather-loader.js` exposes functions globally for backward compatibility
+    - Includes `renderWeatherData()`, `fetchWeatherData()`, `geocodeLocation()`, etc.
+  - **3.5 Calendar Functionality** ✅ COMPLETED
+    - Created `/gardening_calendar/js/modules/calendar.js` with calendar-related functions
+    - `calendar-loader.js` exposes the functions globally for backward compatibility 
+    - Includes `renderCalendar()`, plant selection logic, month switching, search functionality
   - **3.6 Climate Zone Logic** ❌ PENDING
   - **3.7 Search Functionality** ❌ PENDING
   - **3.8 Prompt Generator** ✅ COMPLETED

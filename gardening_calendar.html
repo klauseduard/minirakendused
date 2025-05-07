@@ -475,17 +475,17 @@
         </div>
     </div>
 
-    <!-- Image viewer modal -->
-    <!-- ... existing code ... -->
+    <!-- Import storage module -->
+    <script type="module" src="gardening_calendar/js/storage-loader.js"></script>
 
     <!-- Import data module first to ensure data is available-->
     <script type="module" src="gardening_calendar/js/data-loader.js"></script>
     
-    <!-- Import storage module -->
-    <script type="module" src="gardening_calendar/js/storage-loader.js"></script>
-    
     <!-- Import UI module -->
     <script type="module" src="gardening_calendar/js/ui-loader.js"></script>
+
+    <!-- Import Weather module - must be loaded before inline script -->
+    <script type="module" src="gardening_calendar/js/weather-loader.js"></script>
     
     <!-- Add our refactored journal module after data is loaded -->
     <script type="module" src="gardening_calendar/js/journal-init.js"></script>
@@ -624,21 +624,14 @@
         const calendarContent = document.getElementById('calendarContent');
         const monthButtons = document.querySelectorAll('.month-btn');
         const searchBox = document.getElementById('searchBox');
+        const locationInput = document.getElementById('locationInput');
+        const weatherPlaceholder = document.getElementById('weatherPlaceholder');
+        const clearLocationBtn = document.getElementById('clearLocationBtn');
 
         // Active month (default April)
         let activeMonth = 'april';
 
-        // Track last actions for retry
-        let lastGeocodeQuery = null;
-        let lastWeatherCoords = null;
-        let lastWeatherAction = null; // 'geocode' or 'weather'
-
-        // Store last fetched weather data for re-rendering
-        let lastWeatherData = null;
-        let lastWeatherLat = null;
-        let lastWeatherLon = null;
-
-        // --- Köppen climate zone logic ---
+        // Climate zone logic - keep this for now since it's still used
         let koppenGrid = null;
         let userClimateZone = null;
         let userClimateZoneOverride = null;
@@ -795,22 +788,6 @@
             }
         }
 
-        // Helper: Convert temperature and precipitation
-        function convertTemp(val, unit) {
-            if (unit === 'F') return Math.round(val * 9/5 + 32);
-            return Math.round(val);
-        }
-        function convertPrecip(val, unit) {
-            if (unit === 'in') return (val / 25.4).toFixed(2);
-            return val;
-        }
-        function getTempUnitSymbol() {
-            return tempUnitSelect.value === 'F' ? '°F' : '°C';
-        }
-        function getPrecipUnitSymbol() {
-            return precipUnitSelect.value === 'in' ? 'in' : 'mm';
-        }
-
         // Function to render calendar content
         function renderCalendar(month, searchTerm = '') {
             // Clear content
@@ -953,6 +930,70 @@
             });
         }
 
+        // Calendar item selection functions
+        function isItemSelected(month, category, item) {
+            const savedSelections = JSON.parse(localStorage.getItem('gardening_selected_items') || '{}');
+            if (!savedSelections[month]) return false;
+            if (!savedSelections[month][category]) return false;
+            
+            // Convert item to string for comparison
+            const itemStr = JSON.stringify(item);
+            return savedSelections[month][category].some(savedItem => 
+                JSON.stringify(savedItem) === itemStr
+            );
+        }
+
+        function toggleItemSelection(month, category, item, selected) {
+            const savedSelections = JSON.parse(localStorage.getItem('gardening_selected_items') || '{}');
+            
+            // Initialize nested structure if not exists
+            if (!savedSelections[month]) savedSelections[month] = {};
+            if (!savedSelections[month][category]) savedSelections[month][category] = [];
+            
+            if (selected) {
+                // Add item if not already present
+                const itemStr = JSON.stringify(item);
+                const exists = savedSelections[month][category].some(savedItem => 
+                    JSON.stringify(savedItem) === itemStr
+                );
+                
+                if (!exists) {
+                    savedSelections[month][category].push(item);
+                }
+            } else {
+                // Remove item if present
+                savedSelections[month][category] = savedSelections[month][category].filter(savedItem => 
+                    JSON.stringify(savedItem) !== JSON.stringify(item)
+                );
+            }
+            
+            // Save back to localStorage
+            localStorage.setItem('gardening_selected_items', JSON.stringify(savedSelections));
+        }
+
+        function updateSelectAllCheckbox(month, category) {
+            const checkbox = document.querySelector(`.select-all-checkbox[data-category="${category}"]`);
+            if (!checkbox) return;
+            
+            // Check if any items exist in this category
+            const categoryItems = calendarData[month][category] || [];
+            if (categoryItems.length === 0) {
+                checkbox.checked = false;
+                return;
+            }
+            
+            // Check if ALL items in this category are selected
+            let allSelected = true;
+            for (let i = 0; i < categoryItems.length; i++) {
+                if (!isItemSelected(month, category, categoryItems[i])) {
+                    allSelected = false;
+                    break;
+                }
+            }
+            
+            checkbox.checked = allSelected;
+        }
+
         // Search function
         function searchCalendar() {
             const searchTerm = searchBox.value.trim();
@@ -1010,562 +1051,7 @@
             });
         }
 
-        // Weather/location handling
-        const locationInput = document.getElementById('locationInput');
-        const useMyLocationBtn = document.getElementById('useMyLocationBtn');
-        const weatherPlaceholder = document.getElementById('weatherPlaceholder');
-
-        // Helper: Display error with optional retry
-        function displayLocationError(msg, retryType = null) {
-            let retryBtn = '';
-            if (retryType === 'geocode') {
-                retryBtn = '<button id="retryGeocodeBtn" style="margin-left:12px;">Retry</button>';
-            } else if (retryType === 'weather') {
-                retryBtn = '<button id="retryWeatherBtn" style="margin-left:12px;">Retry</button>';
-            }
-            weatherPlaceholder.innerHTML = `<div role="alert" style="color: #b71c1c;">${msg}${retryBtn}</div>`;
-            if (retryType === 'geocode') {
-                const btn = document.getElementById('retryGeocodeBtn');
-                if (btn) btn.onclick = () => {
-                    if (lastGeocodeQuery) geocodeLocation(lastGeocodeQuery, true);
-                };
-            } else if (retryType === 'weather') {
-                const btn = document.getElementById('retryWeatherBtn');
-                if (btn) btn.onclick = () => {
-                    if (lastWeatherCoords) fetchWeatherData(lastWeatherCoords.lat, lastWeatherCoords.lon, true);
-                };
-            }
-        }
-
-        // Helper: Display location and coordinates, then fetch and display weather
-        function displayLocationInfo(name, lat, lon, admin1, admin2, country) {
-            let locationParts = [];
-            if (name) locationParts.push(name);
-            if (admin2) locationParts.push(admin2);
-            if (admin1) locationParts.push(admin1);
-            if (country) locationParts.push(country);
-            const locationString = locationParts.join(', ');
-            weatherPlaceholder.innerHTML =
-                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br><br>` +
-                `<span style="font-size:0.97em;color:#666;">Latitude: ${lat}, Longitude: ${lon}</span></div>` +
-                `<div id="weatherDataSection">Loading weather data...</div>`;
-            lastWeatherCoords = { lat, lon };
-            lastWeatherAction = 'weather';
-            fetchWeatherData(lat, lon);
-            showClimateZone(lat, lon);
-        }
-
-        // Weather code to icon, text, and color (Open-Meteo codes)
-        function weatherCodeToIconTextColor(code) {
-            // Weather type to color mapping
-            const typeColors = {
-                sun:   { bg: '#fffde7', color: '#fbc02d' },
-                cloud: { bg: '#eceff1', color: '#607d8b' },
-                rain:  { bg: '#e3f2fd', color: '#1976d2' },
-                snow:  { bg: '#f3e5f5', color: '#7e57c2' },
-                storm: { bg: '#ffe0b2', color: '#e65100' },
-                fog:   { bg: '#f5f5f5', color: '#757575' },
-                unknown: { bg: '#eeeeee', color: '#888' }
-            };
-            // Map weather code to icon, text, and type
-            const map = {
-                0:  {icon: '☀️', text: 'Clear sky', type: 'sun'},
-                1:  {icon: '🌤️', text: 'Mainly clear', type: 'sun'},
-                2:  {icon: '⛅', text: 'Partly cloudy', type: 'cloud'},
-                3:  {icon: '☁️', text: 'Overcast', type: 'cloud'},
-                45: {icon: '🌫️', text: 'Fog', type: 'fog'},
-                48: {icon: '🌫️', text: 'Rime fog', type: 'fog'},
-                51: {icon: '🌦️', text: 'Light drizzle', type: 'rain'},
-                53: {icon: '🌦️', text: 'Drizzle', type: 'rain'},
-                55: {icon: '🌦️', text: 'Dense drizzle', type: 'rain'},
-                56: {icon: '🌧️', text: 'Freezing light drizzle', type: 'rain'},
-                57: {icon: '🌧️', text: 'Freezing drizzle', type: 'rain'},
-                61: {icon: '🌦️', text: 'Slight rain', type: 'rain'},
-                63: {icon: '🌧️', text: 'Rain', type: 'rain'},
-                65: {icon: '🌧️', text: 'Heavy rain', type: 'rain'},
-                66: {icon: '🌧️', text: 'Freezing light rain', type: 'rain'},
-                67: {icon: '🌧️', text: 'Freezing rain', type: 'rain'},
-                71: {icon: '🌨️', text: 'Slight snow fall', type: 'snow'},
-                73: {icon: '🌨️', text: 'Snow fall', type: 'snow'},
-                75: {icon: '❄️', text: 'Heavy snow fall', type: 'snow'},
-                77: {icon: '❄️', text: 'Snow grains', type: 'snow'},
-                80: {icon: '🌦️', text: 'Slight rain showers', type: 'rain'},
-                81: {icon: '🌧️', text: 'Rain showers', type: 'rain'},
-                82: {icon: '🌧️', text: 'Violent rain showers', type: 'rain'},
-                85: {icon: '🌨️', text: 'Slight snow showers', type: 'snow'},
-                86: {icon: '🌨️', text: 'Snow showers', type: 'snow'},
-                95: {icon: '⛈️', text: 'Thunderstorm', type: 'storm'},
-                96: {icon: '⛈️', text: 'Thunderstorm w/ hail', type: 'storm'},
-                99: {icon: '⛈️', text: 'Thunderstorm w/ heavy hail', type: 'storm'}
-            };
-            const entry = map[code] || {icon: '❓', text: 'Unknown', type: 'unknown'};
-            const color = typeColors[entry.type] || typeColors.unknown;
-            return { ...entry, ...color };
-        }
-
-        // Fetch weather data from Open-Meteo
-        async function fetchWeatherData(lat, lon, isRetry = false) {
-            lastWeatherCoords = { lat, lon };
-            lastWeatherAction = 'weather';
-            lastWeatherLat = lat;
-            lastWeatherLon = lon;
-            const weatherSection = document.getElementById('weatherDataSection');
-            if (!weatherSection) return;
-            weatherSection.textContent = 'Loading weather data...';
-            try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&hourly=temperature_2m,precipitation,windspeed_10m&forecast_days=16&timezone=auto`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Weather service error');
-                const data = await response.json();
-                lastWeatherData = data;
-                if (!data.current_weather || !data.daily || !data.hourly) {
-                    weatherSection.innerHTML = '<div role="alert" style="color: #b71c1c;">Weather data not available for this location.</div>';
-                    return;
-                }
-                renderWeatherData(data);
-            } catch (e) {
-                if (weatherSection) {
-                    weatherSection.innerHTML = '<div role="alert" style="color: #b71c1c;">Could not fetch weather data. <button id="retryWeatherBtn" style="margin-left:12px;">Retry</button></div>';
-                    const btn = document.getElementById('retryWeatherBtn');
-                    if (btn) btn.onclick = () => {
-                        if (lastWeatherCoords) fetchWeatherData(lastWeatherCoords.lat, lastWeatherCoords.lon, true);
-                    };
-                }
-            }
-        }
-
-        // Render weather data in selected units
-        function renderWeatherData(data) {
-            const weatherSection = document.getElementById('weatherDataSection');
-            if (!weatherSection) return;
-            const tempUnit = tempUnitSelect.value;
-            const precipUnit = precipUnitSelect.value;
-            // Display current weather
-            const currentIconTextColor = weatherCodeToIconTextColor(data.current_weather.weathercode);
-            let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol()}, Wind: ${data.current_weather.windspeed} km/h</div>`;
-            // Prepare hourly data grouped by day
-            const hourlyByDay = groupHourlyByDay(data.hourly, data.daily.time);
-            const hourlyPrecipByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.precipitation }, data.daily.time);
-            const hourlyWindByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.windspeed_10m }, data.daily.time);
-            // Display forecast table
-            html += `<div style="margin-top:10px;"><strong>16-day forecast:</strong></div>`;
-            html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
-            for (let i = 0; i < data.daily.time.length; i++) {
-                const { nightMin, nightMax, dayMin, dayMax } = calcNightDayMinMax(hourlyByDay[i]);
-                const weatherIconTextColor = weatherCodeToIconTextColor(data.daily.weathercode[i]);
-                
-                // Color-code the temperature cells
-                function getTempHtml(tempValue) {
-                    if (tempValue === null) return '-';
-                    const temp = convertTemp(tempValue, tempUnit);
-                    const tempColor = getTemperatureColor(temp, tempUnit);
-                    
-                    // Calculate contrasting text color (black or white) based on background color
-                    // Convert hex color to RGB to calculate luminance
-                    const hexToRgb = (hex) => {
-                        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-                        const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-                        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
-                        return result ? {
-                            r: parseInt(result[1], 16),
-                            g: parseInt(result[2], 16),
-                            b: parseInt(result[3], 16)
-                        } : {r: 0, g: 0, b: 0};
-                    };
-                    
-                    // Calculate relative luminance for accessibility contrast
-                    const rgb = hexToRgb(tempColor);
-                    
-                    // Use the original color but with reduced opacity for a softer look
-                    const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
-                    const textColor = '#333333';
-                    const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
-                    
-                    return `<span style="display:inline-block;background-color:${bgColor};color:${textColor};padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol()}</span>`;
-                }
-                
-                html += `<tr>
-                    <td>${data.daily.time[i]}</td>
-                    <td>${getTempHtml(nightMin)}</td>
-                    <td>${getTempHtml(nightMax)}</td>
-                    <td>${getTempHtml(dayMin)}</td>
-                    <td>${getTempHtml(dayMax)}</td>
-                    <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol()}</td>
-                    <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
-                    <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
-                </tr>`;
-            }
-            html += `</tbody></table>`;
-            weatherSection.innerHTML = html;
-            // Add event listeners for sparklines
-            addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit);
-        }
-
-        // Calculate night and day min/max for a day's hourly temps
-        function calcNightDayMinMax(temps) {
-            if (!temps || temps.length !== 24) return { nightMin: null, nightMax: null, dayMin: null, dayMax: null };
-            // Night: 21:00–23:00 (21,22,23) and 00:00–05:00 (0,1,2,3,4,5)
-            const nightHours = [21,22,23,0,1,2,3,4,5];
-            const dayHours = [6,7,8,9,10,11,12,13,14,15,16,17,18,19,20];
-            const nightTemps = nightHours.map(h => temps[h]).filter(t => t !== undefined);
-            const dayTemps = dayHours.map(h => temps[h]).filter(t => t !== undefined);
-            return {
-                nightMin: nightTemps.length ? Math.round(Math.min(...nightTemps)) : null,
-                nightMax: nightTemps.length ? Math.round(Math.max(...nightTemps)) : null,
-                dayMin: dayTemps.length ? Math.round(Math.min(...dayTemps)) : null,
-                dayMax: dayTemps.length ? Math.round(Math.max(...dayTemps)) : null
-            };
-        }
-
-        // Group hourly temperature data by day
-        function groupHourlyByDay(hourly, dailyDates) {
-            const result = [];
-            const hours = hourly.time;
-            const temps = hourly.temperature_2m;
-            let dayIndex = 0;
-            let currentDay = dailyDates[dayIndex];
-            let dayTemps = [];
-            for (let i = 0; i < hours.length; i++) {
-                if (hours[i].startsWith(currentDay)) {
-                    dayTemps.push(temps[i]);
-                } else {
-                    result.push(dayTemps);
-                    dayTemps = [];
-                    dayIndex++;
-                    currentDay = dailyDates[dayIndex];
-                    if (!currentDay) break;
-                    if (hours[i].startsWith(currentDay)) {
-                        dayTemps.push(temps[i]);
-                    }
-                }
-            }
-            if (dayTemps.length) result.push(dayTemps);
-            return result;
-        }
-
-        // Shared temperature color mapping function
-        function getTemperatureColor(temp, tempUnit) {
-            // Define more granular temperature steps
-            const temperatureSteps = tempUnit === 'F' ? [
-                { threshold: 14, color: '#0d47a1' },   // Very cold (deep blue)
-                { threshold: 23, color: '#1565c0' },   // Freezing (deep blue-mid blue)
-                { threshold: 32, color: '#1976d2' },   // Freezing point (mid blue)
-                { threshold: 41, color: '#1e88e5' },   // Cold (blue)
-                { threshold: 50, color: '#42a5f5' },   // Cool (light blue)
-                { threshold: 59, color: '#64b5f6' },   // Cool-mild (pale blue)
-                { threshold: 64, color: '#81c784' },   // Mild (light green)
-                { threshold: 68, color: '#4caf50' },   // Mild-comfortable (medium green)
-                { threshold: 73, color: '#7cb342' },   // Comfortable (green-yellow)
-                { threshold: 77, color: '#9e9d24' },   // Warm (yellow-green)
-                { threshold: 82, color: '#ffb74d' },   // Warm-hot (light orange)
-                { threshold: 86, color: '#ff9800' },   // Hot (orange)
-                { threshold: 91, color: '#f57c00' },   // Very hot (dark orange)
-                { threshold: 95, color: '#e64a19' },   // Extremely hot (orange-red)
-                { threshold: 100, color: '#d32f2f' },  // Dangerous heat (red)
-                { threshold: Infinity, color: '#b71c1c' } // Extreme heat (deep red)
-            ] : [
-                { threshold: -20, color: '#0d47a1' },  // Extreme cold (deep blue)
-                { threshold: -15, color: '#1565c0' },  // Very cold (deep blue-mid blue)
-                { threshold: -10, color: '#1976d2' },  // Very cold (mid blue)
-                { threshold: -5, color: '#1e88e5' },   // Cold (blue)
-                { threshold: 0, color: '#42a5f5' },    // Freezing (light blue)
-                { threshold: 5, color: '#64b5f6' },    // Cool (pale blue)
-                { threshold: 10, color: '#81c784' },   // Cool-mild (light green)
-                { threshold: 15, color: '#4caf50' },   // Mild (medium green)
-                { threshold: 20, color: '#7cb342' },   // Comfortable (green-yellow)
-                { threshold: 23, color: '#9e9d24' },   // Warm (yellow-green)
-                { threshold: 26, color: '#ffb74d' },   // Warm-hot (light orange)
-                { threshold: 30, color: '#ff9800' },   // Hot (orange)
-                { threshold: 33, color: '#f57c00' },   // Very hot (dark orange)
-                { threshold: 36, color: '#e64a19' },   // Extremely hot (orange-red)
-                { threshold: 40, color: '#d32f2f' },   // Dangerous heat (red)
-                { threshold: Infinity, color: '#b71c1c' } // Extreme heat (deep red)
-            ];
-            
-            // Find the appropriate color based on temperature
-            for (const step of temperatureSteps) {
-                if (temp <= step.threshold) {
-                    return step.color;
-                }
-            }
-            return '#b71c1c'; // Fallback to deepest red
-        }
-
-        // Render a mini SVG sparkline for a day's temperatures
-        function renderSparkline(temps, dayIndex, tempUnit) {
-            if (!temps || temps.length === 0) return '';
-            const w = 60, h = 40;
-            // Convert all temps for sparkline
-            const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
-            
-            // Use absolute temperature ranges for consistent coloring
-            // -10°C (14°F) to 40°C (104°F) is a reasonable range for most weather
-            const absMinTemp = tempUnit === 'F' ? 14 : -10;
-            const absMaxTemp = tempUnit === 'F' ? 104 : 40;
-            
-            // Use local min/max for the height calculations only
-            const min = Math.min(...convertedTemps);
-            const max = Math.max(...convertedTemps);
-            const range = max - min || 1;
-            
-            // Create a smooth curve using cubic bezier curves
-            let path = '';
-            const allPoints = [];
-            let pathSegments = [];
-            
-            convertedTemps.forEach((t, i) => {
-                const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
-                const y = h - 2 - ((t - min) / range) * (h - 4);
-                allPoints.push({ x, y, temp: t });
-            });
-            
-            // Build smooth path using cubic bezier curves
-            if (allPoints.length > 0) {
-                path = `M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
-                
-                for (let i = 0; i < allPoints.length - 1; i++) {
-                    const current = allPoints[i];
-                    const next = allPoints[i + 1];
-                    
-                    // Calculate control points for smooth curve
-                    const cpx1 = current.x + (next.x - current.x) / 3;
-                    const cpy1 = current.y;
-                    const cpx2 = current.x + 2 * (next.x - current.x) / 3;
-                    const cpy2 = next.y;
-                    
-                    const segment = `C${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`;
-                    path += ` ${segment}`;
-                    
-                    // Store segment with average temperature for coloring
-                    const avgTemp = (current.temp + next.temp) / 2;
-                    pathSegments.push({
-                        segment: segment,
-                        temp: avgTemp,
-                        startX: current.x,
-                        endX: next.x
-                    });
-                }
-            }
-            
-            // Reference lines for 0 and 20 (in selected unit)
-            const y0 = h - 2 - ((convertTemp(0, tempUnit) - min) / range) * (h - 4);
-            const y20 = h - 2 - ((convertTemp(20, tempUnit) - min) / range) * (h - 4);
-            
-            // Create multiple path elements with different colors based on temperature
-            let coloredPaths = '';
-            
-            if (allPoints.length > 0) {
-                // Don't start with an incomplete path
-                
-                pathSegments.forEach((segment, i) => {
-                    const color = getTemperatureColor(segment.temp, tempUnit);
-                    coloredPaths += `<path d="M ${segment.startX.toFixed(1)},${allPoints[i].y.toFixed(1)} ${segment.segment}" 
-                        fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />`;
-                });
-            }
-            
-            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" style="vertical-align:middle;cursor:pointer;" data-day-index="${dayIndex}">
-                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
-                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
-                ${coloredPaths}
-            </svg>`;
-        }
-
-        // Render a larger SVG chart for modal
-        function renderLargeTempChart(temps, tempUnit) {
-            if (!temps || temps.length === 0) return '';
-            const w = 340, h = 100;
-            // Convert all temps for chart
-            const convertedTemps = temps.map(t => convertTemp(t, tempUnit));
-            
-            // Use absolute temperature ranges for consistent coloring
-            // -10°C (14°F) to 40°C (104°F) is a reasonable range for most weather
-            const absMinTemp = tempUnit === 'F' ? 14 : -10;
-            const absMaxTemp = tempUnit === 'F' ? 104 : 40;
-            
-            // Use local min/max for the height calculations only
-            const min = Math.min(...convertedTemps);
-            const max = Math.max(...convertedTemps);
-            const range = max - min || 1;
-            
-            // Create a smooth curve using cubic bezier curves
-            let path = '';
-            const allPoints = [];
-            let pathSegments = [];
-            
-            convertedTemps.forEach((t, i) => {
-                const x = (i / (convertedTemps.length - 1)) * (w - 2) + 1;
-                const y = h - 20 - ((t - min) / range) * (h - 40);
-                allPoints.push({ x, y, temp: t });
-            });
-            
-            // Build smooth path using cubic bezier curves
-            if (allPoints.length > 0) {
-                path = `M ${allPoints[0].x.toFixed(1)},${allPoints[0].y.toFixed(1)}`;
-                
-                for (let i = 0; i < allPoints.length - 1; i++) {
-                    const current = allPoints[i];
-                    const next = allPoints[i + 1];
-                    
-                    // Calculate control points for smooth curve
-                    const cpx1 = current.x + (next.x - current.x) / 3;
-                    const cpy1 = current.y;
-                    const cpx2 = current.x + 2 * (next.x - current.x) / 3;
-                    const cpy2 = next.y;
-                    
-                    const segment = `C${cpx1.toFixed(1)},${cpy1.toFixed(1)} ${cpx2.toFixed(1)},${cpy2.toFixed(1)} ${next.x.toFixed(1)},${next.y.toFixed(1)}`;
-                    path += ` ${segment}`;
-                    
-                    // Store segment with average temperature for coloring
-                    const avgTemp = (current.temp + next.temp) / 2;
-                    pathSegments.push({
-                        segment: segment,
-                        temp: avgTemp,
-                        startX: current.x,
-                        endX: next.x
-                    });
-                }
-            }
-            
-            // Reference lines for 0 and 20 (in selected unit)
-            const y0 = h - 20 - ((convertTemp(0, tempUnit) - min) / range) * (h - 40);
-            const y20 = h - 20 - ((convertTemp(20, tempUnit) - min) / range) * (h - 40);
-            const minLabel = min + getTempUnitSymbol();
-            const maxLabel = max + getTempUnitSymbol();
-            
-            // Create multiple path elements with different colors based on temperature
-            let coloredPaths = '';
-            
-            if (allPoints.length > 0) {
-                // Don't start with an incomplete path
-                
-                pathSegments.forEach((segment, i) => {
-                    const color = getTemperatureColor(segment.temp, tempUnit);
-                    coloredPaths += `<path d="M ${segment.startX.toFixed(1)},${allPoints[i].y.toFixed(1)} ${segment.segment}" 
-                        fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />`;
-                });
-            }
-            
-            return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">
-                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y0.toFixed(1)} ${w},${y0.toFixed(1)}" opacity="0.5" />
-                <polyline fill="none" stroke="#bbb" stroke-width="1" points="0,${y20.toFixed(1)} ${w},${y20.toFixed(1)}" opacity="0.5" />
-                ${coloredPaths}
-                <text x="2" y="${h - 22}" font-size="11" fill="#888">${minLabel}</text>
-                <text x="2" y="18" font-size="11" fill="#888">${maxLabel}</text>
-            </svg>`;
-        }
-
-        // Show modal with detailed chart and hourly temps
-        function showWeatherModal(dayIndex, date, temps, precips, winds) {
-            // Track weather detail view in Google Analytics
-            if (typeof gtag === 'function') {
-                gtag('event', 'view_weather_details', {
-                    'date': date,
-                    'day_index': dayIndex
-                });
-            }
-            
-            // Build hourly table
-            const tempUnit = tempUnitSelect.value;
-            const precipUnit = precipUnitSelect.value;
-            let hourlyTable = '<table class="weather-modal-hourly-table"><thead><tr><th>Hour</th><th>Temp (' + getTempUnitSymbol() + ')</th><th>Precip. (' + getPrecipUnitSymbol() + ')</th><th>Wind (km/h)</th></tr></thead><tbody>';
-            for (let h = 0; h < temps.length; h++) {
-                // Color-code the temperature cell
-                const temp = convertTemp(temps[h], tempUnit);
-                const tempColor = getTemperatureColor(temp, tempUnit);
-                
-                // Calculate contrasting text color (black or white) based on background color
-                const hexToRgb = (hex) => {
-                    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-                    const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-                    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
-                    return result ? {
-                        r: parseInt(result[1], 16),
-                        g: parseInt(result[2], 16),
-                        b: parseInt(result[3], 16)
-                    } : {r: 0, g: 0, b: 0};
-                };
-                
-                // Calculate relative luminance for accessibility contrast
-                const rgb = hexToRgb(tempColor);
-                
-                // Use the original color but with reduced opacity for a softer look
-                const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
-                const textColor = '#333333';
-                const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
-                
-                const tempHtml = `<span style="display:inline-block;background-color:${bgColor};color:${textColor};padding:2px 6px;border-radius:4px;font-weight:500;width:100%;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol()}</span>`;
-                
-                hourlyTable += `<tr>
-                    <td>${h}:00</td>
-                    <td>${tempHtml}</td>
-                    <td>${precips && precips[h] !== undefined ? convertPrecip(precips[h], precipUnit) : '-'}</td>
-                    <td>${winds && winds[h] !== undefined ? Math.round(winds[h]) : '-'}</td>
-                </tr>`;
-            }
-            hourlyTable += '</tbody></table>';
-            
-            // Create modal content
-            const modalContent = `
-                <div class="weather-modal-chart">${renderLargeTempChart(temps, tempUnit)}</div>
-                ${hourlyTable}
-            `;
-            
-            // Use the UI module's showModal function
-            showModal(`Hourly Weather for ${date}`, modalContent, {
-                maxWidth: '800px',
-                id: 'weatherModalOverlay',
-                showCloseButton: true,
-                closeOnEscape: true,
-                closeOnOutsideClick: true
-            });
-        }
-
-        // Add event delegation for sparkline clicks after weather table is rendered
-        function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit) {
-            const table = document.querySelector('.weather-forecast-table');
-            if (!table) return;
-            table.addEventListener('click', function(e) {
-                const svg = e.target.closest('svg[data-day-index]');
-                if (svg) {
-                    const dayIndex = parseInt(svg.getAttribute('data-day-index'));
-                    if (!isNaN(dayIndex) && hourlyByDay[dayIndex]) {
-                        showWeatherModal(
-                            dayIndex,
-                            dailyDates[dayIndex],
-                            hourlyByDay[dayIndex],
-                            hourlyPrecipByDay ? hourlyPrecipByDay[dayIndex] : null,
-                            hourlyWindByDay ? hourlyWindByDay[dayIndex] : null
-                        );
-                    }
-                }
-            });
-        }
-
-        // On page load, check for cached location
-        window.addEventListener('DOMContentLoaded', () => {
-            const cached = localStorage.getItem('gardening_last_location');
-            if (cached) {
-                try {
-                    const loc = JSON.parse(cached);
-                    if (loc.type === 'query' && loc.value) {
-                        locationInput.value = loc.value;
-                        // Update clear button opacity
-                        clearLocationBtn.style.opacity = '0.7';
-                        geocodeLocation(loc.value);
-                    } else if (loc.type === 'coords' && loc.lat && loc.lon) {
-                        // Clear the input when using coordinates
-                        locationInput.value = '';
-                        clearLocationBtn.style.opacity = '0.2';
-                        displayLocationInfo('Your location', loc.lat, loc.lon, '', '', '');
-                    }
-                } catch (e) {}
-            }
-        });
-        
         // Handle clear button logic and input events
-        const clearLocationBtn = document.getElementById('clearLocationBtn');
-        
         // Show/hide clear button based on input content
         locationInput.addEventListener('input', function() {
             clearLocationBtn.style.opacity = this.value ? '0.7' : '0.2';
@@ -1580,155 +1066,31 @@
         
         // Set initial opacity for clear button
         clearLocationBtn.style.opacity = locationInput.value ? '0.7' : '0.2';
-        
-        // We're now using a single placeholder format for consistency
 
-        // Geocoding API call
-        async function geocodeLocation(query, isRetry = false) {
-            // Track location search in Google Analytics
-            if (typeof gtag === 'function' && !isRetry) {
-                gtag('event', 'search_location', {
-                    'search_term': query
-                });
-            }
-            
-            lastGeocodeQuery = query;
-            lastWeatherAction = 'geocode';
-            weatherPlaceholder.textContent = 'Looking up location...';
-            // Cache the query
-            localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'query', value: query }));
-            try {
-                const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error('Geocoding service error');
-                const data = await response.json();
-                if (!data.results || data.results.length === 0) {
-                    displayLocationError('Location not found. Please try a different name or postal code.', 'geocode');
-                    return;
+        // Initialize climate zone after weather module is loaded
+        window.addEventListener('DOMContentLoaded', function() {
+            // Wait a short time to ensure weather module is fully initialized
+            setTimeout(() => {
+                // Connect climate zone updates with weather updates
+                const cached = localStorage.getItem('gardening_last_location');
+                if (cached) {
+                    try {
+                        const loc = JSON.parse(cached);
+                        if (loc.type === 'coords' && loc.lat && loc.lon) {
+                            // If we have coordinates, show climate zone
+                            showClimateZone(loc.lat, loc.lon);
+                        }
+                    } catch (e) {
+                        console.error('Error updating climate zone:', e);
+                    }
                 }
-                const result = data.results[0];
-                displayLocationInfo(
-                    result.name,
-                    result.latitude,
-                    result.longitude,
-                    result.admin1,
-                    result.admin2,
-                    result.country
-                );
-            } catch (e) {
-                displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
-            }
-        }
-
-        // Handle location input and search
-        const searchLocationBtn = document.getElementById('searchLocationBtn');
-        
-        // Search when clicking the search button
-        searchLocationBtn.addEventListener('click', function() {
-            const query = locationInput.value.trim();
-            if (query) geocodeLocation(query);
+                
+                // Set fixed language to English
+                currentLang = 'en';
+                document.title = translations['en'].title;
+                renderCalendar(activeMonth, searchBox?.value || '');
+            }, 200);
         });
-        
-        // Search when pressing Enter
-        locationInput.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') {
-                const query = locationInput.value.trim();
-                if (query) geocodeLocation(query);
-            }
-        });
-        
-        // We no longer search on blur to avoid unexpected behavior
-        // This makes the UX more explicit - users must press Enter or the Search button
-
-        // Handle 'Use my location' button
-        useMyLocationBtn.addEventListener('click', function() {
-            // Clear the input field when using geolocation
-            locationInput.value = '';
-            
-            weatherPlaceholder.textContent = 'Getting your location...';
-            if (!navigator.geolocation) {
-                displayLocationError('Geolocation is not supported by your browser.', 'geocode');
-                return;
-            }
-            navigator.geolocation.getCurrentPosition(
-                (pos) => {
-                    const lat = pos.coords.latitude.toFixed(5);
-                    const lon = pos.coords.longitude.toFixed(5);
-                    // Cache the coordinates
-                    localStorage.setItem('gardening_last_location', JSON.stringify({ type: 'coords', lat, lon }));
-                    displayLocationInfo('Your location', lat, lon, '', '', '');
-                },
-                (err) => {
-                    displayLocationError('Could not get your location. Please allow location access or enter a place name.', 'geocode');
-                }
-            );
-        });
-
-        // Unit preference logic
-        const tempUnitSelect = document.getElementById('tempUnitSelect');
-        const precipUnitSelect = document.getElementById('precipUnitSelect');
-        
-        // Load preferences from localStorage using the storage module
-        function loadUnitPrefs() {
-            // Use the storage module utility functions
-            const temp = storageUtils.getTemperatureUnit();
-            const precip = storageUtils.getPrecipitationUnit();
-            
-            tempUnitSelect.value = temp;
-            precipUnitSelect.value = precip;
-        }
-        
-        // Save preferences to localStorage
-        tempUnitSelect.addEventListener('change', () => {
-            storageUtils.saveTemperatureUnit(tempUnitSelect.value);
-            // Track event in Google Analytics
-            if (typeof gtag === 'function') {
-                gtag('event', 'change_preference', {
-                    'preference_type': 'temperature_unit',
-                    'value': tempUnitSelect.value
-                });
-            }
-            if (lastWeatherData) renderWeatherData(lastWeatherData);
-        });
-        
-        precipUnitSelect.addEventListener('change', () => {
-            storageUtils.savePrecipitationUnit(precipUnitSelect.value);
-            // Track event in Google Analytics
-            if (typeof gtag === 'function') {
-                gtag('event', 'change_preference', {
-                    'preference_type': 'precipitation_unit',
-                    'value': precipUnitSelect.value
-                });
-            }
-            if (lastWeatherData) renderWeatherData(lastWeatherData);
-        });
-        
-        // Language is now fixed to English
-        
-        // On page load, set unit preferences
-        window.addEventListener('DOMContentLoaded', async () => {
-            loadUnitPrefs();
-            // Set fixed language to English
-            currentLang = 'en';
-            document.title = translations['en'].title;
-            renderCalendar(activeMonth, searchBox?.value || '');
-        });
-
-        // Prompt Generator Logic
-        const generatePromptBtn = document.getElementById('generatePromptBtn');
-        const copyPromptBtn = document.getElementById('copyPromptBtn');
-        const customNotes = document.getElementById('customNotes');
-        const generatedPrompt = document.getElementById('generatedPrompt');
-        const includeCalendar = document.getElementById('includeCalendar');
-        const includeRelevantPlantsOnly = document.getElementById('includeRelevantPlantsOnly');
-
-        // Garden Journal functionality
-        // ----------------------------
-
-        // JOURNAL CODE HAS BEEN MOVED TO /gardening_calendar/js/modules/journal.js
-        // Loading it via the loader script below
-
-        // Weather, Calendar, and other JavaScript functionality continues...
 
         // Navigation functionality
         document.addEventListener('DOMContentLoaded', () => {
@@ -1774,11 +1136,6 @@
                 }
             });
         });
-        
-        // JOURNAL CODE HAS BEEN MOVED TO /gardening_calendar/js/modules/journal.js
-        // Loading it via the loader script below
-
-        // Weather, Calendar, and other JavaScript functionality continues...
     </script>
     
     <!-- Journal Module Loader -->
