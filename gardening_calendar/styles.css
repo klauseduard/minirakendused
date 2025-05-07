@@ -1204,10 +1204,18 @@ footer {
 }
 
 /* Custom Entries Styles */
+.custom-entries-toolbar {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin: 15px 0;
+    padding: 0 5px;
+    flex-wrap: wrap;
+}
+
 .custom-entry-buttons {
     display: flex;
     gap: 10px;
-    margin-left: 10px;
 }
 
 .custom-add-btn {
@@ -1221,13 +1229,14 @@ footer {
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
     box-shadow: 0 2px 5px var(--shadow);
-    min-width: 150px;
-    justify-content: center;
+    background-color: var(--secondary-color);
+    color: white;
 }
 
 .custom-add-btn:hover {
     transform: translateY(-2px);
     box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    background-color: var(--accent-color);
 }
 
 .custom-add-btn:active {
@@ -1327,29 +1336,22 @@ footer {
 
 /* Responsive design for custom entry buttons */
 @media (max-width: 900px) {
-    .calendar-nav {
-        flex-direction: column;
-        align-items: stretch;
-    }
-    
-    .custom-entry-buttons {
-        display: flex;
+    .custom-entries-toolbar {
         justify-content: center;
-        margin-top: 15px;
-        margin-left: 0;
-        gap: 10px;
     }
 }
 
 @media (max-width: 600px) {
-    .custom-entry-buttons {
+    .custom-entries-toolbar {
         flex-direction: column;
-        align-items: stretch;
-        margin-top: 15px;
+        align-items: center;
+        gap: 8px;
     }
     
-    .custom-add-btn {
-        justify-content: center;
+    .custom-add-btn, 
+    .custom-entries-toolbar .data-manage-btn {
+        width: 100%;
+        max-width: 250px;
     }
 }
 

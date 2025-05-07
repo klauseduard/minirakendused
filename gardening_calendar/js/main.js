@@ -255,6 +255,12 @@ function setupNavigation() {
                     }
                 });
                 
+                // Make sure the custom entries toolbar is visible
+                const customEntriesToolbar = document.querySelector('.custom-entries-toolbar');
+                if (customEntriesToolbar) {
+                    customEntriesToolbar.style.display = 'flex';
+                }
+                
                 // Restore all category cards visibility
                 document.querySelectorAll('.category-card').forEach(card => {
                     card.style.display = 'flex';  // Cards use flex layout internally
