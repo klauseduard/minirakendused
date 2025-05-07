@@ -1201,4 +1201,92 @@ footer {
     .calendar-content {
         grid-template-columns: 1fr !important;
     }
+}
+
+/* Custom Entries Styles */
+.custom-entry-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 15px;
+    gap: 10px;
+}
+
+.custom-add-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.custom-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+}
+
+.custom-add-btn:active {
+    transform: translateY(0);
+}
+
+.custom-item {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    border-left: 3px solid var(--primary-color);
+    padding-left: 5px !important;
+}
+
+.edit-custom-item-btn {
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+.edit-custom-item-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Form Styling */
+.weather-modal form label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.weather-modal form input[type="text"],
+.weather-modal form textarea,
+.weather-modal form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1em;
+    transition: border-color 0.2s;
+}
+
+.weather-modal form input[type="text"]:focus,
+.weather-modal form textarea:focus,
+.weather-modal form select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.weather-modal form input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Responsive design for custom entry buttons */
+@media (max-width: 600px) {
+    .custom-entry-buttons {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .custom-add-btn {
+        justify-content: center;
+    }
 } 

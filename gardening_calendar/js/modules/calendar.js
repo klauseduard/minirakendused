@@ -44,6 +44,11 @@ export function renderCalendar(month, searchTerm = '') {
         const items = calendarData[month][category];
         let filteredItems = items;
         
+        // Skip empty categories
+        if (!items || items.length === 0) {
+            return;
+        }
+        
         // Apply filter if search term exists
         if (searchTerm) {
             filteredItems = items.filter(item => {
@@ -67,7 +72,8 @@ export function renderCalendar(month, searchTerm = '') {
         delay += 100;
         
         // Icon and title
-        const isTaskCategory = category === 'garden_tasks';
+        const isTaskCategory = category === 'garden_tasks' || category === 'custom_tasks';
+        const isCustomCategory = category === 'custom_plants' || category === 'custom_tasks';
         const categoryDisplayName = translations[currentLang][category] || categoryNames[category] || category;
         
         categoryCard.innerHTML = `
@@ -87,12 +93,21 @@ export function renderCalendar(month, searchTerm = '') {
                     const itemId = JSON.stringify(item); // Store the full item object
                     const displayText = searchTerm ? highlightText(itemText, searchTerm) : itemText;
                     
+                    // Add edit button for custom items
+                    const editButton = item.custom ? `
+                        <button class="edit-custom-item-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}" 
+                            style="margin-left: 8px; background: transparent; border: none; color: var(--primary-color); cursor: pointer; font-size: 0.9em;">
+                            ✏️
+                        </button>
+                    ` : '';
+                    
                     return `
-                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}" data-item-id="${encodeURIComponent(itemId)}">
+                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}${item.custom ? ' custom-item' : ''}" data-item-id="${encodeURIComponent(itemId)}">
                             <label class="item-label">
                                 <input type="checkbox" class="item-checkbox" 
                                     ${isItemSelected(month, category, item) ? 'checked' : ''}>
                                 <span class="item-text">${displayText}</span>
+                                ${editButton}
                             </label>
                         </li>
                     `;
@@ -108,6 +123,23 @@ export function renderCalendar(month, searchTerm = '') {
                 toggleItemSelection(month, category, item, e.target.checked);
                 // Update the "Select All" checkbox status
                 updateSelectAllCheckbox(month, category);
+            });
+        });
+        
+        // Add edit buttons for custom items
+        categoryCard.querySelectorAll('.edit-custom-item-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent the checkbox from being toggled
+                e.stopPropagation(); // Stop event bubbling
+                
+                const id = button.dataset.id;
+                const type = button.dataset.type;
+                
+                if (type === 'plant' && window.openCustomPlantModal) {
+                    window.openCustomPlantModal(id);
+                } else if (type === 'task' && window.openCustomTaskModal) {
+                    window.openCustomTaskModal(id);
+                }
             });
         });
         
@@ -242,6 +274,11 @@ export function initCalendar(activeMonth) {
             // Update active month
             activeMonth = button.dataset.month;
             
+            // Dispatch month changed event
+            document.dispatchEvent(new CustomEvent('monthChanged', { 
+                detail: { month: activeMonth } 
+            }));
+            
             // Show calendar
             searchBox.value = ''; // Reset search
             renderCalendar(activeMonth);
@@ -249,25 +286,11 @@ export function initCalendar(activeMonth) {
     });
     
     // Listen for search input
-    searchBox.addEventListener('input', () => {
-        const searchTerm = searchBox.value.trim();
-        renderCalendar(activeMonth, searchTerm);
+    searchBox.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim();
+        searchCalendar(activeMonth, searchTerm);
     });
     
-    // Initial calendar display - wait for data module to be loaded
-    let calendarInitialized = false;
-    if (window.calendarData) {
-        // If data is already loaded, render immediately
-        renderCalendar(activeMonth);
-        calendarInitialized = true;
-    } else {
-        // Otherwise, wait for the data module to be loaded
-        document.addEventListener('dataModuleLoaded', function() {
-            if (!calendarInitialized) {
-                console.log('Data module loaded, initializing calendar');
-                renderCalendar(activeMonth);
-                calendarInitialized = true;
-            }
-        });
-    }
+    // Show initial calendar
+    renderCalendar(activeMonth);
 } 

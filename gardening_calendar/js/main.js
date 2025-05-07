@@ -14,6 +14,7 @@ import * as climateModule from './modules/climate.js';
 import * as calendarModule from './modules/calendar.js';
 import * as searchModule from './modules/search.js';
 import * as journalModule from './modules/journal.js';
+import * as customEntriesModule from './modules/custom-entries.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -27,7 +28,8 @@ window.GardeningApp = {
         climate: climateModule,
         calendar: calendarModule,
         search: searchModule,
-        journal: journalModule
+        journal: journalModule,
+        customEntries: customEntriesModule
     }
 };
 
@@ -38,6 +40,7 @@ window.calendarData = dataModule.calendarData;
 window.categoryIcons = dataModule.categoryIcons;
 window.categoryNames = dataModule.categoryNames;
 window.journalEntryTypes = dataModule.journalEntryTypes;
+window.customEntryTypes = dataModule.customEntryTypes;
 
 // Storage module exports
 window.getSelectedItems = storageModule.getSelectedItems;
@@ -140,6 +143,11 @@ function initApp() {
     journalModule.initJournal();
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
     console.log('Journal module initialized');
+    
+    // Step 9: Initialize custom entries module
+    customEntriesModule.initCustomEntries(window.GardeningApp.activeMonth);
+    document.dispatchEvent(new CustomEvent('customEntriesModuleLoaded'));
+    console.log('Custom Entries module initialized');
     
     // Set up navigation and remaining event listeners
     setupNavigation();

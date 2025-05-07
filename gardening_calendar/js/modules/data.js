@@ -46,6 +46,24 @@ export const translations = {
         'transplanting': 'Transplanting',
         'greenhouse': 'Greenhouse',
         'garden_tasks': 'Garden Tasks',
+        'custom_plants': 'My Custom Plants',
+        'custom_tasks': 'My Custom Tasks',
+        
+        // Custom entries
+        'add_custom_plant': 'Add Custom Plant',
+        'add_custom_task': 'Add Custom Task',
+        'custom_plant_name': 'Plant Name',
+        'custom_task_name': 'Task Description',
+        'custom_plant_description': 'Description (optional)',
+        'custom_task_description': 'Additional Notes (optional)',
+        'add_to_category': 'Add to Category',
+        'add_button': 'Add',
+        'cancel_button': 'Cancel',
+        'delete_button': 'Delete',
+        'edit_button': 'Edit',
+        'edit_custom_plant': 'Edit Custom Plant',
+        'edit_custom_task': 'Edit Custom Task',
+        'no_custom_entries': 'No custom entries yet. Use the buttons above to add your own plants and tasks.',
         
         // AI Prompt Modal
         'ai_assistant': 'AI Gardening Assistant',
@@ -110,7 +128,9 @@ export const calendarData = {
             {"en": "Turning compost", "et": "Komposti segamine"},
             {"en": "Cleaning and preparing greenhouse", "et": "Kasvuhoone puhastamine ja ettevalmistamine"},
             {"en": "Loosening and fertilizing beds", "et": "Peenarde kobestamine ja väetamine"}
-        ]
+        ],
+        "custom_plants": [],
+        "custom_tasks": []
     },
     "may": {
         "direct_sowing": [
@@ -155,7 +175,9 @@ export const calendarData = {
             {"en": "Adding mulch to beds", "et": "Multši lisamine peenardele"},
             {"en": "Weed control", "et": "Umbrohutõrje"},
             {"en": "Adding green matter to compost", "et": "Rohelise materjali lisamine kompostile"}
-        ]
+        ],
+        "custom_plants": [],
+        "custom_tasks": []
     },
     "early_june": {
         "direct_sowing": [
@@ -181,7 +203,9 @@ export const calendarData = {
             {"en": "Monitoring watering schedule", "et": "Kastmisgraafiku jälgimine"},
             {"en": "Weed control", "et": "Umbrohutõrje"},
             {"en": "Covering strawberries with bird netting", "et": "Maasikate katmine linnuvõrguga"}
-        ]
+        ],
+        "custom_plants": [],
+        "custom_tasks": []
     }
 };
 
@@ -191,7 +215,9 @@ export const categoryIcons = {
     "seedling_start": "🌿",
     "transplanting": "🌿",
     "greenhouse": "🏡",
-    "garden_tasks": "🧰"
+    "garden_tasks": "🧰",
+    "custom_plants": "🌸",
+    "custom_tasks": "📝"
 };
 
 // Category display names
@@ -200,7 +226,9 @@ export const categoryNames = {
     "seedling_start": "Starting Seedlings",
     "transplanting": "Transplanting",
     "greenhouse": "Greenhouse",
-    "garden_tasks": "Garden Tasks"
+    "garden_tasks": "Garden Tasks",
+    "custom_plants": "My Custom Plants",
+    "custom_tasks": "My Custom Tasks"
 };
 
 // Journal entry types
@@ -212,11 +240,28 @@ export const journalEntryTypes = {
     "maintenance": { icon: "🧰", name: "Maintenance" }
 };
 
+// Custom entries structure
+export const customEntryTypes = {
+    "plant": { 
+        icon: "🌸", 
+        name: "Custom Plant",
+        defaultCategory: "custom_plants",
+        fields: ["name", "description", "category"]
+    },
+    "task": { 
+        icon: "📝", 
+        name: "Custom Task",
+        defaultCategory: "custom_tasks",
+        fields: ["name", "description", "month"]
+    }
+};
+
 // Export all data as a default object as well for convenience
 export default {
     translations,
     calendarData,
     categoryIcons,
     categoryNames,
-    journalEntryTypes
+    journalEntryTypes,
+    customEntryTypes
 }; 
