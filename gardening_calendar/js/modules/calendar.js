@@ -12,6 +12,9 @@ export function renderCalendar(month, searchTerm = '') {
     // Get the calendar content element
     const calendarContent = document.getElementById('calendarContent');
     
+    // Ensure grid display
+    calendarContent.style.display = 'grid';
+    
     // Clear content
     calendarContent.innerHTML = '';
     
@@ -58,7 +61,7 @@ export function renderCalendar(month, searchTerm = '') {
         
         // Create category card
         const categoryCard = document.createElement('div');
-        const categoryClass = category === 'garden_tasks' ? 'category-card garden-tasks-card' : 'category-card';
+        const categoryClass = 'category-card';
         categoryCard.className = `${categoryClass} fade-in`;
         categoryCard.style.animationDelay = `${delay}ms`;
         delay += 100;
