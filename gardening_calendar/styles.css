@@ -1353,13 +1353,23 @@ footer {
         width: 100%;
         max-width: 250px;
     }
+    
+    /* Journal Entry Form Responsive Layout */
+    #journalEntryForm .form-row {
+        flex-direction: column;
+    }
+    
+    #journalEntryForm .form-column {
+        width: 100%;
+        margin-bottom: 15px;
+    }
 }
 
 /* Journal Entry Modal Photo Preview Styles */
 .photo-preview {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border-radius: 8px;
     overflow: hidden;
     margin: 5px;
@@ -1411,4 +1421,18 @@ footer {
 
 #imageLightbox {
     z-index: 10000;
+}
+
+@media (max-width: 900px) {
+    .photo-preview {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+@media (max-width: 600px) {
+    .photo-preview {
+        width: 80px;
+        height: 80px;
+    }
 } 
