@@ -173,52 +173,76 @@ function addCustomEntryButtons() {
     // Get the month navigation section
     const monthNav = document.querySelector('.month-navigation');
     
+    // Find the calendar-nav container and the title section
+    const monthNavTitle = monthNav.querySelector('.month-nav-title');
+    const calendarNav = monthNav.querySelector('.calendar-nav');
+    
     // Create custom entry buttons container
     const customButtonsContainer = document.createElement('div');
     customButtonsContainer.className = 'custom-entry-buttons';
-    customButtonsContainer.style.display = 'flex';
-    customButtonsContainer.style.justifyContent = 'flex-end';
-    customButtonsContainer.style.marginTop = '15px';
-    customButtonsContainer.style.gap = '10px';
     
     // Create add plant button
     addCustomPlantBtn = document.createElement('button');
     addCustomPlantBtn.id = 'addCustomPlantBtn';
     addCustomPlantBtn.className = 'custom-add-btn';
-    addCustomPlantBtn.style.padding = '8px 12px';
-    addCustomPlantBtn.style.background = 'var(--primary-color)';
+    addCustomPlantBtn.style.padding = '8px 16px';
+    addCustomPlantBtn.style.background = 'var(--secondary-color)';
     addCustomPlantBtn.style.color = 'white';
     addCustomPlantBtn.style.border = 'none';
-    addCustomPlantBtn.style.borderRadius = '20px';
+    addCustomPlantBtn.style.borderRadius = '30px';
     addCustomPlantBtn.style.display = 'flex';
     addCustomPlantBtn.style.alignItems = 'center';
     addCustomPlantBtn.style.gap = '5px';
     addCustomPlantBtn.style.fontWeight = '500';
     addCustomPlantBtn.style.cursor = 'pointer';
+    addCustomPlantBtn.style.boxShadow = '0 2px 5px var(--shadow)';
+    addCustomPlantBtn.style.minWidth = '150px';
+    addCustomPlantBtn.style.justifyContent = 'center';
     addCustomPlantBtn.innerHTML = '<span style="font-size: 1.1em;">🌸</span><span>Add Custom Plant</span>';
     
     // Create add task button
     addCustomTaskBtn = document.createElement('button');
     addCustomTaskBtn.id = 'addCustomTaskBtn';
     addCustomTaskBtn.className = 'custom-add-btn';
-    addCustomTaskBtn.style.padding = '8px 12px';
+    addCustomTaskBtn.style.padding = '8px 16px';
     addCustomTaskBtn.style.background = 'var(--secondary-color)';
     addCustomTaskBtn.style.color = 'white';
     addCustomTaskBtn.style.border = 'none';
-    addCustomTaskBtn.style.borderRadius = '20px';
+    addCustomTaskBtn.style.borderRadius = '30px';
     addCustomTaskBtn.style.display = 'flex';
     addCustomTaskBtn.style.alignItems = 'center';
     addCustomTaskBtn.style.gap = '5px';
     addCustomTaskBtn.style.fontWeight = '500';
     addCustomTaskBtn.style.cursor = 'pointer';
+    addCustomTaskBtn.style.boxShadow = '0 2px 5px var(--shadow)';
+    addCustomTaskBtn.style.minWidth = '150px';
+    addCustomTaskBtn.style.justifyContent = 'center';
     addCustomTaskBtn.innerHTML = '<span style="font-size: 1.1em;">📝</span><span>Add Custom Task</span>';
     
     // Add buttons to container
     customButtonsContainer.appendChild(addCustomPlantBtn);
     customButtonsContainer.appendChild(addCustomTaskBtn);
     
-    // Add container to the month navigation section
-    monthNav.appendChild(customButtonsContainer);
+    // Create a separation between month nav and custom buttons
+    const spacer = document.createElement('div');
+    spacer.style.height = '20px';
+    
+    // Make sure the buttons are prominently placed
+    // First add to calendar nav
+    if (calendarNav) {
+        calendarNav.style.display = 'flex';
+        calendarNav.style.flexWrap = 'wrap';
+        calendarNav.style.justifyContent = 'space-between';
+        calendarNav.style.alignItems = 'center';
+        calendarNav.style.gap = '10px';
+        
+        // Place the buttons after the month buttons
+        calendarNav.appendChild(customButtonsContainer);
+    } else {
+        // Fallback: add container directly to monthNav
+        monthNav.appendChild(spacer);
+        monthNav.appendChild(customButtonsContainer);
+    }
 }
 
 /**

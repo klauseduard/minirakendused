@@ -1206,21 +1206,23 @@ footer {
 /* Custom Entries Styles */
 .custom-entry-buttons {
     display: flex;
-    justify-content: flex-end;
-    margin-top: 15px;
     gap: 10px;
+    margin-left: 10px;
 }
 
 .custom-add-btn {
-    padding: 8px 12px;
+    padding: 8px 16px;
     border: none;
-    border-radius: 20px;
+    border-radius: 30px;
     display: flex;
     align-items: center;
     gap: 5px;
     font-weight: 500;
     cursor: pointer;
     transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 5px var(--shadow);
+    min-width: 150px;
+    justify-content: center;
 }
 
 .custom-add-btn:hover {
@@ -1324,10 +1326,26 @@ footer {
 }
 
 /* Responsive design for custom entry buttons */
+@media (max-width: 900px) {
+    .calendar-nav {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    
+    .custom-entry-buttons {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+        margin-left: 0;
+        gap: 10px;
+    }
+}
+
 @media (max-width: 600px) {
     .custom-entry-buttons {
         flex-direction: column;
         align-items: stretch;
+        margin-top: 15px;
     }
     
     .custom-add-btn {
