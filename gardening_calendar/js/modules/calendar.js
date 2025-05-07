@@ -33,6 +33,14 @@ export function renderCalendar(month, searchTerm = '') {
         return;
     }
     
+    // Ensure custom entries categories exist
+    if (!calendarData[month]['custom_plants']) {
+        calendarData[month]['custom_plants'] = [];
+    }
+    if (!calendarData[month]['custom_tasks']) {
+        calendarData[month]['custom_tasks'] = [];
+    }
+    
     // Show categories
     const categories = Object.keys(calendarData[month]);
     
@@ -44,8 +52,8 @@ export function renderCalendar(month, searchTerm = '') {
         const items = calendarData[month][category];
         let filteredItems = items;
         
-        // Skip empty categories
-        if (!items || items.length === 0) {
+        // Skip empty categories, except for custom entries categories
+        if ((!items || items.length === 0) && category !== 'custom_plants' && category !== 'custom_tasks') {
             return;
         }
         
@@ -57,8 +65,8 @@ export function renderCalendar(month, searchTerm = '') {
             });
         }
         
-        // Don't show category if no results after filtering
-        if (filteredItems.length === 0 && searchTerm) {
+        // Don't show category if no results after filtering and it's not a custom category
+        if (filteredItems.length === 0 && searchTerm && category !== 'custom_plants' && category !== 'custom_tasks') {
             return;
         }
         
@@ -112,6 +120,11 @@ export function renderCalendar(month, searchTerm = '') {
                         </li>
                     `;
                 }).join('')}
+                ${(category === 'custom_plants' || category === 'custom_tasks') && filteredItems.length === 0 ? `
+                    <li class="empty-custom-entries" style="padding: 15px; color: #666; text-align: center; font-style: italic;">
+                        ${category === 'custom_plants' ? 'No custom plants added yet. Use the "Add Custom Plant" button above.' : 'No custom tasks added yet. Use the "Add Custom Task" button above.'}
+                    </li>
+                ` : ''}
             </ul>
         `;
 

@@ -117,12 +117,17 @@ function initApp() {
     document.dispatchEvent(new CustomEvent('climateModuleLoaded'));
     console.log('Climate module initialized');
     
-    // Step 6: Initialize calendar module
+    // Step 6: Initialize custom entries module (moved before calendar)
+    customEntriesModule.initCustomEntries(window.GardeningApp.activeMonth);
+    document.dispatchEvent(new CustomEvent('customEntriesModuleLoaded'));
+    console.log('Custom Entries module initialized');
+    
+    // Step 7: Initialize calendar module (now after custom entries are loaded)
     calendarModule.initCalendar(window.GardeningApp.activeMonth);
     document.dispatchEvent(new CustomEvent('calendarModuleLoaded'));
     console.log('Calendar module initialized');
     
-    // Step 7: Initialize search module
+    // Step 8: Initialize search module
     const searchBox = document.getElementById('searchBox');
     if (searchBox) {
         searchModule.initSearch({
@@ -139,15 +144,10 @@ function initApp() {
     document.dispatchEvent(new CustomEvent('searchModuleLoaded'));
     console.log('Search module initialized');
     
-    // Step 8: Initialize journal module
+    // Step 9: Initialize journal module
     journalModule.initJournal();
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
     console.log('Journal module initialized');
-    
-    // Step 9: Initialize custom entries module
-    customEntriesModule.initCustomEntries(window.GardeningApp.activeMonth);
-    document.dispatchEvent(new CustomEvent('customEntriesModuleLoaded'));
-    console.log('Custom Entries module initialized');
     
     // Set up navigation and remaining event listeners
     setupNavigation();

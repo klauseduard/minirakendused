@@ -14,6 +14,11 @@ import {
 // Register global handlers and export functionality for other modules to use
 window.customEntriesInit = function(activeMonth) {
     initCustomEntries(activeMonth);
+    
+    // Force calendar re-render after loading custom entries
+    if (window.renderCalendar) {
+        window.renderCalendar(activeMonth);
+    }
 };
 
 window.openCustomPlantModal = function(plantId) {
