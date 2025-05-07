@@ -339,8 +339,8 @@ header.scrolled h1 {
 }
 
 .calendar-content {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    display: grid !important;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
     gap: 20px;
 }
 
@@ -353,14 +353,15 @@ header.scrolled h1 {
     height: 100%;
     display: flex;
     flex-direction: column;
+    max-width: 100%;
 }
 
 .category-card:last-child {
-    grid-column: 1 / -1;
+    grid-column: auto;
 }
 
 .garden-tasks-card {
-    grid-column: 1 / -1;
+    grid-column: auto;
 }
 
 .category-card .plant-list {
@@ -892,6 +893,9 @@ footer {
     background: white;
     color: var(--primary-color);
     border-color: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    font-weight: 600;
 }
 
 @media (max-width: 799px) {
@@ -1022,6 +1026,18 @@ footer {
     box-shadow: 0 2px 8px var(--shadow);
     padding: 20px;
     margin-bottom: 25px;
+    min-height: 80vh; /* Set a minimum height for the journal when displayed */
+    position: relative;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 5;
+}
+
+/* When journal is visible, ensure it has proper spacing */
+.journal-content {
+    height: 100%;
+    overflow-y: auto;
 }
 
 .journal-header {
@@ -1173,4 +1189,16 @@ footer {
 .delete-confirm-btn {
     background: #d32f2f;
     color: white;
+}
+
+@media (min-width: 769px) {
+    .calendar-content {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .calendar-content {
+        grid-template-columns: 1fr !important;
+    }
 } 
