@@ -14,6 +14,7 @@ import * as climateModule from './modules/climate.js';
 import * as calendarModule from './modules/calendar.js';
 import * as searchModule from './modules/search.js';
 import * as journalModule from './modules/journal.js';
+import * as customEntriesModule from './modules/custom-entries.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -27,7 +28,8 @@ window.GardeningApp = {
         climate: climateModule,
         calendar: calendarModule,
         search: searchModule,
-        journal: journalModule
+        journal: journalModule,
+        customEntries: customEntriesModule
     }
 };
 
@@ -38,6 +40,7 @@ window.calendarData = dataModule.calendarData;
 window.categoryIcons = dataModule.categoryIcons;
 window.categoryNames = dataModule.categoryNames;
 window.journalEntryTypes = dataModule.journalEntryTypes;
+window.customEntryTypes = dataModule.customEntryTypes;
 
 // Storage module exports
 window.getSelectedItems = storageModule.getSelectedItems;
@@ -84,6 +87,12 @@ window.createJournalEntry = journalModule.createJournalEntry;
 window.updateJournalEntry = journalModule.updateJournalEntry;
 window.deleteJournalEntry = journalModule.deleteJournalEntry;
 
+// Custom entries module exports
+window.initCustomEntries = customEntriesModule.initCustomEntries;
+window.openCustomPlantModal = customEntriesModule.openPlantModal;
+window.openCustomTaskModal = customEntriesModule.openTaskModal;
+window.loadCustomEntries = customEntriesModule.loadCustomEntries;
+
 /**
  * Initialize all modules in the correct order
  */
@@ -114,12 +123,17 @@ function initApp() {
     document.dispatchEvent(new CustomEvent('climateModuleLoaded'));
     console.log('Climate module initialized');
     
-    // Step 6: Initialize calendar module
+    // Step 6: Initialize custom entries module (moved before calendar)
+    customEntriesModule.initCustomEntries(window.GardeningApp.activeMonth);
+    document.dispatchEvent(new CustomEvent('customEntriesModuleLoaded'));
+    console.log('Custom Entries module initialized');
+    
+    // Step 7: Initialize calendar module (now after custom entries are loaded)
     calendarModule.initCalendar(window.GardeningApp.activeMonth);
     document.dispatchEvent(new CustomEvent('calendarModuleLoaded'));
     console.log('Calendar module initialized');
     
-    // Step 7: Initialize search module
+    // Step 8: Initialize search module
     const searchBox = document.getElementById('searchBox');
     if (searchBox) {
         searchModule.initSearch({
@@ -136,7 +150,7 @@ function initApp() {
     document.dispatchEvent(new CustomEvent('searchModuleLoaded'));
     console.log('Search module initialized');
     
-    // Step 8: Initialize journal module
+    // Step 9: Initialize journal module
     journalModule.initJournal();
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
     console.log('Journal module initialized');
@@ -240,6 +254,12 @@ function setupNavigation() {
                         section.style.display = 'block';
                     }
                 });
+                
+                // Make sure the custom entries toolbar is visible
+                const customEntriesToolbar = document.querySelector('.custom-entries-toolbar');
+                if (customEntriesToolbar) {
+                    customEntriesToolbar.style.display = 'flex';
+                }
                 
                 // Restore all category cards visibility
                 document.querySelectorAll('.category-card').forEach(card => {

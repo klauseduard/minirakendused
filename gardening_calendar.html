@@ -108,6 +108,16 @@
             <section class="month-navigation" id="monthly-calendar">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="month-nav-title">Select Growing Period</h2>
+                    <div class="data-management-buttons" style="display: flex; gap: 10px;">
+                        <button id="exportCustomEntriesBtn" class="data-manage-btn" style="padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">
+                            <span style="font-size: 1.1em;">📤</span>
+                            <span>Export Custom Entries</span>
+                        </button>
+                        <button id="importCustomEntriesBtn" class="data-manage-btn" style="padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">
+                            <span style="font-size: 1.1em;">📥</span>
+                            <span>Import Custom Entries</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="calendar-nav">
                     <button class="month-btn active" data-month="april">April</button>
@@ -281,6 +291,41 @@
         </div>
     </div>
 
+    <!-- Custom Entries Import Modal -->
+    <div id="customEntriesImportModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 450px; padding: 25px;">
+            <button class="weather-modal-close" id="customImportModalCloseBtn" aria-label="Close import options">&times;</button>
+            <div style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Import Custom Entries</div>
+            <div id="importCustomStatsMessage" style="margin-bottom: 25px; line-height: 1.5;">How would you like to import custom entries?</div>
+            
+            <div class="mb-15">
+                <input type="file" id="customEntriesFileInput" accept=".json" style="margin-bottom: 20px;">
+            </div>
+            
+            <div id="importOptionsContainer" style="display: none;">
+                <div class="import-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 12px; cursor: pointer;">
+                    <div style="margin-right: 15px; font-size: 1.5rem;">🔄</div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 500;">Merge</div>
+                        <div style="font-size: 0.9rem; color: #666;">Add new entries and update existing ones</div>
+                    </div>
+                </div>
+                
+                <div class="import-option" style="display: flex; align-items: center; padding: 12px; border: 1px solid #ddd; border-radius: 8px; cursor: pointer;">
+                    <div style="margin-right: 15px; font-size: 1.5rem;">♻️</div>
+                    <div style="flex-grow: 1;">
+                        <div style="font-weight: 500;">Replace All</div>
+                        <div style="font-size: 0.9rem; color: #666;">Delete all existing entries and use imported ones</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; justify-content: flex-end; margin-top: 20px;">
+                <button id="customImportOptionsCancelBtn" class="button" style="background: #e0e0e0; color: #333; padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Export Options Modal -->
     <div id="exportOptionsModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
         <div class="weather-modal" style="max-width: 450px; padding: 25px;">
@@ -354,37 +399,41 @@
 
     <!-- Journal Entry Modal -->
     <div id="journalEntryModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
-        <div class="weather-modal" style="max-width: 600px; padding: 25px;">
+        <div class="weather-modal" style="max-width: 800px; padding: 25px;">
             <button class="weather-modal-close" id="journalEntryModalCloseBtn" aria-label="Close journal entry">&times;</button>
             <div id="journalEntryModalTitle" style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Add Journal Entry</div>
             
             <form id="journalEntryForm">
                 <input type="hidden" id="journalEntryId" value="">
                 
-                <div style="margin-bottom: 15px;">
-                    <label for="entryDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Date</label>
-                    <input type="date" id="entryDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" required>
+                <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-column" style="flex: 1;">
+                        <label for="entryDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Date</label>
+                        <input type="date" id="entryDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" required>
+                    </div>
+                    
+                    <div class="form-column" style="flex: 1;">
+                        <label for="entryType" style="display: block; margin-bottom: 5px; font-weight: 500;">Entry Type</label>
+                        <select id="entryType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" required>
+                            <option value="planting">🌱 Planting</option>
+                            <option value="care">🌿 Garden Care</option>
+                            <option value="harvest">🥕 Harvest</option>
+                            <option value="observation">👁️ Observation</option>
+                            <option value="maintenance">🧰 Maintenance</option>
+                        </select>
+                    </div>
                 </div>
                 
-                <div style="margin-bottom: 15px;">
-                    <label for="entryType" style="display: block; margin-bottom: 5px; font-weight: 500;">Entry Type</label>
-                    <select id="entryType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" required>
-                        <option value="planting">🌱 Planting</option>
-                        <option value="care">🌿 Garden Care</option>
-                        <option value="harvest">🥕 Harvest</option>
-                        <option value="observation">👁️ Observation</option>
-                        <option value="maintenance">🧰 Maintenance</option>
-                    </select>
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label for="entryPlants" style="display: block; margin-bottom: 5px; font-weight: 500;">Plants (comma separated)</label>
-                    <input type="text" id="entryPlants" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="E.g. Tomatoes, Basil, Marigolds">
-                </div>
-                
-                <div style="margin-bottom: 15px;">
-                    <label for="entryLocation" style="display: block; margin-bottom: 5px; font-weight: 500;">Location in Garden</label>
-                    <input type="text" id="entryLocation" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="E.g. North bed, Pot #3, Raised bed">
+                <div class="form-row" style="display: flex; gap: 15px; margin-bottom: 15px;">
+                    <div class="form-column" style="flex: 1;">
+                        <label for="entryPlants" style="display: block; margin-bottom: 5px; font-weight: 500;">Plants (comma separated)</label>
+                        <input type="text" id="entryPlants" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="E.g. Tomatoes, Basil, Marigolds">
+                    </div>
+                    
+                    <div class="form-column" style="flex: 1;">
+                        <label for="entryLocation" style="display: block; margin-bottom: 5px; font-weight: 500;">Location in Garden</label>
+                        <input type="text" id="entryLocation" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="E.g. North bed, Pot #3, Raised bed">
+                    </div>
                 </div>
                 
                 <div id="harvestMetricsContainer" style="margin-bottom: 15px; padding: 12px; border: 1px solid #ddd; border-radius: 8px; display: none;">
@@ -403,7 +452,7 @@
                 
                 <div style="margin-bottom: 15px;">
                     <label for="entryNotes" style="display: block; margin-bottom: 5px; font-weight: 500;">Notes</label>
-                    <textarea id="entryNotes" rows="4" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="Write your observations, notes, or tasks here..."></textarea>
+                    <textarea id="entryNotes" rows="6" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 8px;" placeholder="Write your observations, notes, or tasks here..."></textarea>
                 </div>
                 
                 <div style="margin-bottom: 15px;">
@@ -413,7 +462,7 @@
                         <span style="font-size: 1.1em;">📷</span>
                         <span>Add Photos</span>
                     </button>
-                    <div id="photoPreviewContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;"></div>
+                    <div id="photoPreviewContainer" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; justify-content: flex-start;"></div>
                 </div>
                 
                 <div style="display: flex; justify-content: flex-end; gap: 12px; margin-top: 20px;">

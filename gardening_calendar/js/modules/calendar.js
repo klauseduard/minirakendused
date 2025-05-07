@@ -33,6 +33,14 @@ export function renderCalendar(month, searchTerm = '') {
         return;
     }
     
+    // Ensure custom entries categories exist
+    if (!calendarData[month]['custom_plants']) {
+        calendarData[month]['custom_plants'] = [];
+    }
+    if (!calendarData[month]['custom_tasks']) {
+        calendarData[month]['custom_tasks'] = [];
+    }
+    
     // Show categories
     const categories = Object.keys(calendarData[month]);
     
@@ -44,6 +52,11 @@ export function renderCalendar(month, searchTerm = '') {
         const items = calendarData[month][category];
         let filteredItems = items;
         
+        // Skip empty categories, except for custom entries categories
+        if ((!items || items.length === 0) && category !== 'custom_plants' && category !== 'custom_tasks') {
+            return;
+        }
+        
         // Apply filter if search term exists
         if (searchTerm) {
             filteredItems = items.filter(item => {
@@ -52,8 +65,8 @@ export function renderCalendar(month, searchTerm = '') {
             });
         }
         
-        // Don't show category if no results after filtering
-        if (filteredItems.length === 0 && searchTerm) {
+        // Don't show category if no results after filtering and it's not a custom category
+        if (filteredItems.length === 0 && searchTerm && category !== 'custom_plants' && category !== 'custom_tasks') {
             return;
         }
         
@@ -67,7 +80,8 @@ export function renderCalendar(month, searchTerm = '') {
         delay += 100;
         
         // Icon and title
-        const isTaskCategory = category === 'garden_tasks';
+        const isTaskCategory = category === 'garden_tasks' || category === 'custom_tasks';
+        const isCustomCategory = category === 'custom_plants' || category === 'custom_tasks';
         const categoryDisplayName = translations[currentLang][category] || categoryNames[category] || category;
         
         categoryCard.innerHTML = `
@@ -87,16 +101,36 @@ export function renderCalendar(month, searchTerm = '') {
                     const itemId = JSON.stringify(item); // Store the full item object
                     const displayText = searchTerm ? highlightText(itemText, searchTerm) : itemText;
                     
+                    // Add edit button for custom items
+                    const editButton = item.custom ? `
+                        <div class="custom-item-actions">
+                            <button class="custom-item-edit-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}" 
+                                aria-label="Edit ${isTaskCategory ? 'task' : 'plant'}">
+                                <span>✏️</span>
+                            </button>
+                            <button class="custom-item-delete-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}"
+                                aria-label="Delete ${isTaskCategory ? 'task' : 'plant'}">
+                                <span>❌</span>
+                            </button>
+                        </div>
+                    ` : '';
+                    
                     return `
-                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}" data-item-id="${encodeURIComponent(itemId)}">
+                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}${item.custom ? ' custom-item' : ''}" data-item-id="${encodeURIComponent(itemId)}">
                             <label class="item-label">
                                 <input type="checkbox" class="item-checkbox" 
                                     ${isItemSelected(month, category, item) ? 'checked' : ''}>
                                 <span class="item-text">${displayText}</span>
+                                ${editButton}
                             </label>
                         </li>
                     `;
                 }).join('')}
+                ${(category === 'custom_plants' || category === 'custom_tasks') && filteredItems.length === 0 ? `
+                    <li class="empty-custom-entries" style="padding: 15px; color: #666; text-align: center; font-style: italic;">
+                        ${category === 'custom_plants' ? 'No custom plants added yet. Use the "Add Custom Plant" button above.' : 'No custom tasks added yet. Use the "Add Custom Task" button above.'}
+                    </li>
+                ` : ''}
             </ul>
         `;
 
@@ -108,6 +142,136 @@ export function renderCalendar(month, searchTerm = '') {
                 toggleItemSelection(month, category, item, e.target.checked);
                 // Update the "Select All" checkbox status
                 updateSelectAllCheckbox(month, category);
+            });
+        });
+        
+        // Add click event for custom items 
+        categoryCard.querySelectorAll('.custom-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                // Only handle direct clicks on the item, not on buttons or checkboxes
+                if (e.target.closest('.custom-item-actions') || e.target.closest('.item-checkbox')) {
+                    return;
+                }
+                
+                const editBtn = item.querySelector('.custom-item-edit-btn');
+                if (editBtn) {
+                    const id = editBtn.dataset.id;
+                    const type = editBtn.dataset.type;
+                    
+                    if (type === 'plant' && window.openCustomPlantModal) {
+                        window.openCustomPlantModal(id);
+                    } else if (type === 'task' && window.openCustomTaskModal) {
+                        window.openCustomTaskModal(id);
+                    }
+                }
+            });
+        });
+        
+        // Add edit buttons for custom items
+        categoryCard.querySelectorAll('.custom-item-edit-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent the checkbox from being toggled
+                e.stopPropagation(); // Stop event bubbling
+                
+                const id = button.dataset.id;
+                const type = button.dataset.type;
+                
+                if (type === 'plant' && window.openCustomPlantModal) {
+                    window.openCustomPlantModal(id);
+                } else if (type === 'task' && window.openCustomTaskModal) {
+                    window.openCustomTaskModal(id);
+                }
+            });
+        });
+        
+        // Add delete buttons for custom items
+        categoryCard.querySelectorAll('.custom-item-delete-btn').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault(); // Prevent the checkbox from being toggled
+                e.stopPropagation(); // Stop event bubbling
+                
+                const id = button.dataset.id;
+                const type = button.dataset.type;
+                
+                // Visual feedback before confirmation
+                const itemLi = button.closest('li');
+                
+                try {
+                    if (type === 'plant') {
+                        if (confirm('Are you sure you want to delete this custom plant? This action cannot be undone.')) {
+                            // Visual feedback
+                            if (itemLi) {
+                                itemLi.style.opacity = '0.5';
+                                itemLi.style.pointerEvents = 'none';
+                            }
+                            
+                            // Import function directly
+                            import('../modules/storage.js').then(module => {
+                                const success = module.deleteCustomPlant(id);
+                                
+                                if (success) {
+                                    // Clean all custom entries and reload them
+                                    if (window.loadCustomEntries) {
+                                        window.loadCustomEntries();
+                                    }
+                                    
+                                    // Re-render the calendar
+                                    renderCalendar(month, searchTerm);
+                                    
+                                    if (window.showNotification) {
+                                        window.showNotification('Custom plant deleted successfully', 'success');
+                                    }
+                                } else {
+                                    // Restore the item if deletion failed
+                                    if (itemLi) {
+                                        itemLi.style.opacity = '';
+                                        itemLi.style.pointerEvents = '';
+                                    }
+                                }
+                            });
+                        }
+                    } else if (type === 'task') {
+                        if (confirm('Are you sure you want to delete this custom task? This action cannot be undone.')) {
+                            // Visual feedback
+                            if (itemLi) {
+                                itemLi.style.opacity = '0.5';
+                                itemLi.style.pointerEvents = 'none';
+                            }
+                            
+                            // Import function directly
+                            import('../modules/storage.js').then(module => {
+                                const success = module.deleteCustomTask(id);
+                                
+                                if (success) {
+                                    // Clean all custom entries and reload them
+                                    if (window.loadCustomEntries) {
+                                        window.loadCustomEntries();
+                                    }
+                                    
+                                    // Re-render the calendar
+                                    renderCalendar(month, searchTerm);
+                                    
+                                    if (window.showNotification) {
+                                        window.showNotification('Custom task deleted successfully', 'success');
+                                    }
+                                } else {
+                                    // Restore the item if deletion failed
+                                    if (itemLi) {
+                                        itemLi.style.opacity = '';
+                                        itemLi.style.pointerEvents = '';
+                                    }
+                                }
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error during delete operation:', error);
+                    // Restore the item if an error occurred
+                    if (itemLi) {
+                        itemLi.style.opacity = '';
+                        itemLi.style.pointerEvents = '';
+                    }
+                }
             });
         });
         
@@ -242,6 +406,11 @@ export function initCalendar(activeMonth) {
             // Update active month
             activeMonth = button.dataset.month;
             
+            // Dispatch month changed event
+            document.dispatchEvent(new CustomEvent('monthChanged', { 
+                detail: { month: activeMonth } 
+            }));
+            
             // Show calendar
             searchBox.value = ''; // Reset search
             renderCalendar(activeMonth);
@@ -249,25 +418,11 @@ export function initCalendar(activeMonth) {
     });
     
     // Listen for search input
-    searchBox.addEventListener('input', () => {
-        const searchTerm = searchBox.value.trim();
-        renderCalendar(activeMonth, searchTerm);
+    searchBox.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.trim();
+        searchCalendar(activeMonth, searchTerm);
     });
     
-    // Initial calendar display - wait for data module to be loaded
-    let calendarInitialized = false;
-    if (window.calendarData) {
-        // If data is already loaded, render immediately
-        renderCalendar(activeMonth);
-        calendarInitialized = true;
-    } else {
-        // Otherwise, wait for the data module to be loaded
-        document.addEventListener('dataModuleLoaded', function() {
-            if (!calendarInitialized) {
-                console.log('Data module loaded, initializing calendar');
-                renderCalendar(activeMonth);
-                calendarInitialized = true;
-            }
-        });
-    }
+    // Show initial calendar
+    renderCalendar(activeMonth);
 } 

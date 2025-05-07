@@ -1203,11 +1203,173 @@ footer {
     }
 }
 
+/* Custom Entries Styles */
+.custom-entries-toolbar {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin: 15px 0;
+    padding: 0 5px;
+    flex-wrap: wrap;
+}
+
+.custom-entry-buttons {
+    display: flex;
+    gap: 10px;
+}
+
+.custom-add-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+    box-shadow: 0 2px 5px var(--shadow);
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+.custom-add-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
+    background-color: var(--accent-color);
+}
+
+.custom-add-btn:active {
+    transform: translateY(0);
+}
+
+.custom-item {
+    background-color: rgba(var(--primary-rgb), 0.05);
+    border-left: 3px solid var(--primary-color);
+    padding-left: 5px !important;
+    position: relative;
+    transition: background-color 0.2s;
+    cursor: pointer;
+}
+
+.custom-item:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+}
+
+.custom-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.custom-item:hover .custom-item-actions {
+    opacity: 1;
+}
+
+.custom-item-edit-btn,
+.custom-item-delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    color: var(--primary-color);
+    transition: background-color 0.2s, color 0.2s, transform 0.1s;
+}
+
+.custom-item-edit-btn:hover,
+.custom-item-delete-btn:hover {
+    background-color: rgba(var(--primary-rgb), 0.1);
+    transform: scale(1.1);
+}
+
+.custom-item-delete-btn {
+    color: #d32f2f;
+}
+
+.custom-item-delete-btn:hover {
+    background-color: rgba(211, 47, 47, 0.1);
+}
+
+.edit-custom-item-btn {
+    opacity: 0.5;
+    transition: opacity 0.2s, transform 0.1s;
+}
+
+/* Form Styling */
+.weather-modal form label {
+    font-weight: 500;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.weather-modal form input[type="text"],
+.weather-modal form textarea,
+.weather-modal form select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 1em;
+    transition: border-color 0.2s;
+}
+
+.weather-modal form input[type="text"]:focus,
+.weather-modal form textarea:focus,
+.weather-modal form select:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
+}
+
+.weather-modal form input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+/* Responsive design for custom entry buttons */
+@media (max-width: 900px) {
+    .custom-entries-toolbar {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 600px) {
+    .custom-entries-toolbar {
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .custom-add-btn, 
+    .custom-entries-toolbar .data-manage-btn {
+        width: 100%;
+        max-width: 250px;
+    }
+    
+    /* Journal Entry Form Responsive Layout */
+    #journalEntryForm .form-row {
+        flex-direction: column;
+    }
+    
+    #journalEntryForm .form-column {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+}
+
 /* Journal Entry Modal Photo Preview Styles */
 .photo-preview {
     position: relative;
-    width: 100px;
-    height: 100px;
+    width: 120px;
+    height: 120px;
     border-radius: 8px;
     overflow: hidden;
     margin: 5px;
@@ -1259,4 +1421,18 @@ footer {
 
 #imageLightbox {
     z-index: 10000;
+}
+
+@media (max-width: 900px) {
+    .photo-preview {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+@media (max-width: 600px) {
+    .photo-preview {
+        width: 80px;
+        height: 80px;
+    }
 } 
