@@ -3,6 +3,9 @@
  * Handles all weather-related functionality
  */
 
+import * as uiUtils from './ui.js';
+import * as storageUtils from './storage.js';
+
 // Weather icon and color mappings
 const weatherCodeMap = {
     0: {icon: '☀️', text: 'Clear sky', type: 'clear'},
@@ -398,6 +401,157 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         // Hide tooltip when not hovering
         sparkline.addEventListener('mouseleave', () => {
             tooltip.style.display = 'none';
+        });
+        
+        // Add click handler to open detailed hourly view
+        sparkline.addEventListener('click', () => {
+            showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, tempUnit, precipUnit);
+        });
+    }
+}
+
+/**
+ * Show detailed hourly weather for a day in a modal
+ * @param {number} dayIndex - Index of the day
+ * @param {string} dateStr - Date string
+ * @param {Array} temps - Hourly temperatures
+ * @param {Array} precips - Hourly precipitation
+ * @param {Array} winds - Hourly wind speeds
+ * @param {string} tempUnit - Temperature unit
+ * @param {string} precipUnit - Precipitation unit
+ */
+export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds, tempUnit, precipUnit) {
+    if (!temps || temps.length === 0) return;
+    
+    // Use the UI module's showModal function if available
+    if (typeof uiUtils !== 'undefined' && typeof uiUtils.showModal === 'function') {
+        const title = `Hourly Weather Details - ${dateStr}`;
+        
+        // Build hourly table
+        let content = `<div style="max-height:70vh;overflow-y:auto;padding:0 5px;">`;
+        content += `<table class="weather-modal-hourly-table" style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">`;
+        content += `<caption class="visually-hidden">Hourly weather details for ${dateStr}</caption>`;
+        content += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th></tr></thead><tbody>`;
+        
+        // Add rows for each hour
+        for (let i = 0; i < 24; i++) {
+            // Format hour display (0 => 12 AM, 12 => 12 PM, 23 => 11 PM)
+            const hourDisplay = i === 0 ? '12 AM' : 
+                              i < 12 ? `${i} AM` : 
+                              i === 12 ? '12 PM' : 
+                              `${i - 12} PM`;
+            
+            const temp = temps[i] !== undefined ? convertTemp(temps[i], tempUnit) : '-';
+            const precip = precips[i] !== undefined ? convertPrecip(precips[i], precipUnit) : '-';
+            const wind = winds[i] !== undefined ? winds[i] : '-';
+            
+            // Get temperature color for styling
+            const tempColor = getTemperatureColor(temp, tempUnit);
+            const hexToRgb = (hex) => {
+                const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+                const fullHex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(fullHex);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : {r: 0, g: 0, b: 0};
+            };
+            
+            const rgb = hexToRgb(tempColor);
+            const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
+            const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
+            
+            content += `<tr>`;
+            content += `<td>${hourDisplay}</td>`;
+            content += `<td><span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol(tempUnit)}</span></td>`;
+            content += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
+            content += `<td>${wind} km/h</td>`;
+            content += `</tr>`;
+        }
+        
+        content += `</tbody></table></div>`;
+        
+        // Show modal
+        uiUtils.showModal(title, content, {
+            id: 'hourlyWeatherModal',
+            width: '90%',
+            maxWidth: '600px',
+            showCloseButton: true,
+            closeOnEscape: true,
+            closeOnOutsideClick: true
+        });
+    } else {
+        // Fallback if UI module is not available - create a simple modal
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'weather-modal-overlay';
+        modalOverlay.style.cssText = 'display:flex;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);justify-content:center;align-items:center;z-index:1000;';
+        
+        const modal = document.createElement('div');
+        modal.className = 'weather-modal';
+        modal.style.cssText = 'background:white;border-radius:8px;padding:20px;max-width:600px;width:90%;max-height:90vh;overflow-y:auto;position:relative;';
+        
+        const closeBtn = document.createElement('button');
+        closeBtn.innerHTML = '&times;';
+        closeBtn.className = 'weather-modal-close';
+        closeBtn.style.cssText = 'position:absolute;top:10px;right:10px;background:none;border:none;font-size:24px;cursor:pointer;padding:5px;line-height:1;';
+        closeBtn.setAttribute('aria-label', 'Close modal');
+        
+        const title = document.createElement('div');
+        title.className = 'weather-modal-title';
+        title.textContent = `Hourly Weather Details - ${dateStr}`;
+        title.style.cssText = 'font-size:18px;font-weight:600;color:#333;margin-bottom:15px;padding-right:30px;';
+        
+        // Build table similar to above
+        let tableHtml = `<table class="weather-modal-hourly-table" style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">`;
+        tableHtml += `<caption class="visually-hidden">Hourly weather details for ${dateStr}</caption>`;
+        tableHtml += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th></tr></thead><tbody>`;
+        
+        for (let i = 0; i < 24; i++) {
+            const hourDisplay = i === 0 ? '12 AM' : 
+                              i < 12 ? `${i} AM` : 
+                              i === 12 ? '12 PM' : 
+                              `${i - 12} PM`;
+            
+            const temp = temps[i] !== undefined ? convertTemp(temps[i], tempUnit) : '-';
+            const precip = precips[i] !== undefined ? convertPrecip(precips[i], precipUnit) : '-';
+            const wind = winds[i] !== undefined ? winds[i] : '-';
+            
+            tableHtml += `<tr>`;
+            tableHtml += `<td>${hourDisplay}</td>`;
+            tableHtml += `<td>${temp}${getTempUnitSymbol(tempUnit)}</td>`;
+            tableHtml += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
+            tableHtml += `<td>${wind} km/h</td>`;
+            tableHtml += `</tr>`;
+        }
+        
+        tableHtml += `</tbody></table>`;
+        
+        const content = document.createElement('div');
+        content.innerHTML = tableHtml;
+        
+        modal.appendChild(closeBtn);
+        modal.appendChild(title);
+        modal.appendChild(content);
+        modalOverlay.appendChild(modal);
+        document.body.appendChild(modalOverlay);
+        
+        // Add event listeners
+        closeBtn.addEventListener('click', () => {
+            modalOverlay.remove();
+        });
+        
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.remove();
+            }
+        });
+        
+        document.addEventListener('keydown', function closeOnEsc(e) {
+            if (e.key === 'Escape') {
+                modalOverlay.remove();
+                document.removeEventListener('keydown', closeOnEsc);
+            }
         });
     }
 }
