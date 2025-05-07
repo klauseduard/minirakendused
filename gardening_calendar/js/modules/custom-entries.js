@@ -170,22 +170,31 @@ function createCustomModals() {
  * Add custom entry buttons to the calendar section
  */
 function addCustomEntryButtons() {
-    // Get the month navigation section
+    // Get the month navigation section and calendar content
     const monthNav = document.querySelector('.month-navigation');
-    
-    // Find the calendar-nav container and the title section
-    const monthNavTitle = monthNav.querySelector('.month-nav-title');
+    const calendarContent = document.getElementById('calendarContent');
     const calendarNav = monthNav.querySelector('.calendar-nav');
+    
+    // Find existing export/import buttons
+    const exportBtn = document.getElementById('exportCustomEntriesBtn');
+    const importBtn = document.getElementById('importCustomEntriesBtn');
+    const dataManagementContainer = monthNav.querySelector('.data-management-buttons');
     
     // Create custom entry buttons container
     const customButtonsContainer = document.createElement('div');
-    customButtonsContainer.className = 'custom-entry-buttons';
+    customButtonsContainer.className = 'custom-entries-toolbar';
+    customButtonsContainer.id = 'customEntriesToolbar'; // Add an ID for easier selection
+    customButtonsContainer.style.display = 'flex';
+    customButtonsContainer.style.justifyContent = 'flex-end';
+    customButtonsContainer.style.flexWrap = 'wrap';
+    customButtonsContainer.style.gap = '10px';
+    customButtonsContainer.style.marginTop = '15px';
+    customButtonsContainer.style.marginBottom = '15px';
     
     // Create add plant button
     addCustomPlantBtn = document.createElement('button');
     addCustomPlantBtn.id = 'addCustomPlantBtn';
     addCustomPlantBtn.className = 'custom-add-btn';
-    addCustomPlantBtn.style.padding = '8px 16px';
     addCustomPlantBtn.style.background = 'var(--secondary-color)';
     addCustomPlantBtn.style.color = 'white';
     addCustomPlantBtn.style.border = 'none';
@@ -196,15 +205,12 @@ function addCustomEntryButtons() {
     addCustomPlantBtn.style.fontWeight = '500';
     addCustomPlantBtn.style.cursor = 'pointer';
     addCustomPlantBtn.style.boxShadow = '0 2px 5px var(--shadow)';
-    addCustomPlantBtn.style.minWidth = '150px';
-    addCustomPlantBtn.style.justifyContent = 'center';
     addCustomPlantBtn.innerHTML = '<span style="font-size: 1.1em;">🌸</span><span>Add Custom Plant</span>';
     
     // Create add task button
     addCustomTaskBtn = document.createElement('button');
     addCustomTaskBtn.id = 'addCustomTaskBtn';
     addCustomTaskBtn.className = 'custom-add-btn';
-    addCustomTaskBtn.style.padding = '8px 16px';
     addCustomTaskBtn.style.background = 'var(--secondary-color)';
     addCustomTaskBtn.style.color = 'white';
     addCustomTaskBtn.style.border = 'none';
@@ -215,34 +221,103 @@ function addCustomEntryButtons() {
     addCustomTaskBtn.style.fontWeight = '500';
     addCustomTaskBtn.style.cursor = 'pointer';
     addCustomTaskBtn.style.boxShadow = '0 2px 5px var(--shadow)';
-    addCustomTaskBtn.style.minWidth = '150px';
-    addCustomTaskBtn.style.justifyContent = 'center';
     addCustomTaskBtn.innerHTML = '<span style="font-size: 1.1em;">📝</span><span>Add Custom Task</span>';
     
     // Add buttons to container
     customButtonsContainer.appendChild(addCustomPlantBtn);
     customButtonsContainer.appendChild(addCustomTaskBtn);
     
-    // Create a separation between month nav and custom buttons
-    const spacer = document.createElement('div');
-    spacer.style.height = '20px';
+    // Move export/import buttons to our new container if they exist
+    if (exportBtn && importBtn) {
+        // Create new buttons instead of cloning to avoid event listener issues
+        const newExportBtn = document.createElement('button');
+        newExportBtn.id = 'customToolbarExportBtn';
+        newExportBtn.className = exportBtn.className;
+        newExportBtn.innerHTML = exportBtn.innerHTML;
+        newExportBtn.style.cssText = 'padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;';
+        
+        const newImportBtn = document.createElement('button');
+        newImportBtn.id = 'customToolbarImportBtn';
+        newImportBtn.className = importBtn.className;
+        newImportBtn.innerHTML = importBtn.innerHTML;
+        newImportBtn.style.cssText = 'padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;';
+        
+        // Add the new buttons to our container
+        customButtonsContainer.appendChild(newExportBtn);
+        customButtonsContainer.appendChild(newImportBtn);
+        
+        // Hide the originals (but don't remove them to avoid breaking functionality)
+        exportBtn.style.display = 'none';
+        importBtn.style.display = 'none';
+        
+        // Expose these functions to the window object for the buttons to access
+        window.exportCustomEntries = exportCustomEntries;
+        window.showImportModal = showImportModal;
+        
+        // Set up new event listeners for the new buttons
+        newExportBtn.addEventListener('click', () => {
+            exportCustomEntries();
+        });
+        
+        newImportBtn.addEventListener('click', () => {
+            showImportModal();
+        });
+    }
     
-    // Make sure the buttons are prominently placed
-    // First add to calendar nav
+    // Insert the custom buttons container between monthNav and calendarContent
+    if (calendarContent && calendarContent.parentNode) {
+        calendarContent.parentNode.insertBefore(customButtonsContainer, calendarContent);
+    } else {
+        // Fallback if we can't find calendarContent
+        monthNav.parentNode.insertBefore(customButtonsContainer, monthNav.nextSibling);
+    }
+    
+    // Make sure calendar nav is original (with just month buttons)
     if (calendarNav) {
         calendarNav.style.display = 'flex';
-        calendarNav.style.flexWrap = 'wrap';
-        calendarNav.style.justifyContent = 'space-between';
-        calendarNav.style.alignItems = 'center';
         calendarNav.style.gap = '10px';
-        
-        // Place the buttons after the month buttons
-        calendarNav.appendChild(customButtonsContainer);
-    } else {
-        // Fallback: add container directly to monthNav
-        monthNav.appendChild(spacer);
-        monthNav.appendChild(customButtonsContainer);
+        calendarNav.style.flexWrap = 'wrap';
     }
+    
+    // If the data management container is now empty, hide it
+    if (dataManagementContainer && exportBtn && importBtn) {
+        dataManagementContainer.style.display = 'none';
+    }
+    
+    // Update UI to reflect that we have export/import buttons in the toolbar
+    exportCustomEntriesBtn = exportBtn;
+    importCustomEntriesBtn = importBtn;
+    
+    // Add a MutationObserver to ensure the toolbar remains visible when switching views
+    setupToolbarVisibilityObserver(customButtonsContainer);
+}
+
+/**
+ * Ensure the custom entries toolbar remains visible when switching views
+ * @param {HTMLElement} toolbar - The custom entries toolbar element
+ */
+function setupToolbarVisibilityObserver(toolbar) {
+    // Listen for clicks on the navigation buttons that might affect visibility
+    document.querySelectorAll('.quick-jump-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            // The journal button will hide the toolbar, but the monthly-calendar button should show it
+            if (button.dataset.section === 'monthly-calendar') {
+                // Short delay to ensure DOM updates are processed
+                setTimeout(() => {
+                    if (toolbar && toolbar.style.display === 'none') {
+                        toolbar.style.display = 'flex';
+                    }
+                }, 100);
+            }
+        });
+    });
+    
+    // Also listen for the document event that signals the calendar module is loaded/initialized
+    document.addEventListener('calendarModuleLoaded', () => {
+        if (toolbar && toolbar.style.display === 'none') {
+            toolbar.style.display = 'flex';
+        }
+    });
 }
 
 /**
