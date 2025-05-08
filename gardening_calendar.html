@@ -15,6 +15,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Spring Gardening and Planting Calendar</title>
+    <meta name="description" content="Plan your garden tasks and sowing by month, with local weather forecasts and interactive features.">
+    <meta property="og:title" content="Spring Gardening and Planting Calendar">
+    <meta property="og:description" content="Plan your garden tasks and sowing by month, with local weather forecasts and interactive features!">
+    <meta property="og:image" content="https://klauseduard.github.io/minirakendused/gardening_calendar/images/garden-calendar-preview.jpg">
+    <meta property="og:url" content="https://klauseduard.github.io/minirakendused/gardening_calendar.html">
+    <meta property="og:type" content="website">
+    <meta name="twitter:card" content="summary_large_image">
     <link rel="stylesheet" href="gardening_calendar/styles.css">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
 </head>
@@ -91,10 +98,12 @@
             <section class="search-bar" id="search-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h2 class="search-section-title">Search & AI Garden Assistant</h2>
+                    <div style="display: flex; gap: 10px;">
                     <button id="aiAdviceBtn" class="ai-advice-btn" style="padding: 8px 16px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
                         <span style="font-size: 1.2em;">🤖</span>
                         <span>Generate AI gardening advice prompt</span>
                     </button>
+                    </div>
                 </div>
                 <div class="search-container">
                     <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
@@ -117,6 +126,7 @@
                             <span style="font-size: 1.1em;">📥</span>
                             <span>Import Custom Entries</span>
                         </button>
+                        <div class="social-share-container" id="calendarShareContainer"></div>
                     </div>
                 </div>
                 <div class="calendar-nav">
@@ -275,7 +285,10 @@
         </div>
 
         <footer>
-            <p>Spring Gardening and Planting Calendar © 2025</p>
+            <div class="footer-content">
+                <div class="social-share-container" id="footerShareContainer"></div>
+                <p>Spring Gardening and Planting Calendar © 2025</p>
+            </div>
         </footer>
     </div>
 
@@ -470,6 +483,23 @@
                     <button type="submit" id="journalEntrySaveBtn" style="padding: 8px 16px; background: var(--primary-color); color: white; border: none; border-radius: 20px; cursor: pointer;">Save Entry</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Journal Entry View Modal (for sharing individual entries) -->
+    <div id="journalEntryViewModal" class="weather-modal-overlay" style="display: none; z-index: 1000;">
+        <div class="weather-modal" style="max-width: 800px; padding: 25px;">
+            <button class="weather-modal-close" id="journalEntryViewModalCloseBtn" aria-label="Close journal entry view">&times;</button>
+            <div id="journalEntryViewTitle" style="font-size: 1.2rem; font-weight: 600; color: var(--primary-color); margin-bottom: 15px;">Journal Entry</div>
+            
+            <div id="journalEntryViewContent">
+                <!-- Will be filled dynamically -->
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 20px;">
+                <div class="social-share-container" id="journalEntryShareContainer"></div>
+                <button id="journalEntryViewCloseBtn" style="padding: 8px 16px; background: #e0e0e0; color: #333; border: none; border-radius: 20px; cursor: pointer;">Close</button>
+            </div>
         </div>
     </div>
 

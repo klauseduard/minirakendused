@@ -15,6 +15,7 @@ import * as calendarModule from './modules/calendar.js';
 import * as searchModule from './modules/search.js';
 import * as journalModule from './modules/journal.js';
 import * as customEntriesModule from './modules/custom-entries.js';
+import * as socialModule from './modules/social.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -29,7 +30,13 @@ window.GardeningApp = {
         calendar: calendarModule,
         search: searchModule,
         journal: journalModule,
-        customEntries: customEntriesModule
+        customEntries: customEntriesModule,
+        social: socialModule
+    },
+    state: {
+        currentMonth: null,
+        location: null,
+        weather: null
     }
 };
 
@@ -93,6 +100,10 @@ window.openCustomPlantModal = customEntriesModule.openPlantModal;
 window.openCustomTaskModal = customEntriesModule.openTaskModal;
 window.loadCustomEntries = customEntriesModule.loadCustomEntries;
 
+// Social module exports
+window.initSocialSharing = socialModule.initSocialSharing;
+window.shareContent = socialModule.shareContent;
+
 /**
  * Initialize all modules in the correct order
  */
@@ -154,6 +165,16 @@ function initApp() {
     journalModule.initJournal();
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
     console.log('Journal module initialized');
+    
+    // Step 10: Initialize social sharing module - only for footer
+    socialModule.initSocialSharing({
+        selector: '#footerShareContainer',
+        defaultTitle: 'Spring Gardening and Planting Calendar',
+        defaultDescription: 'A helpful tool for planning your gardening activities!'
+    });
+    
+    document.dispatchEvent(new CustomEvent('socialModuleLoaded'));
+    console.log('Social sharing module initialized');
     
     // Set up navigation and remaining event listeners
     setupNavigation();

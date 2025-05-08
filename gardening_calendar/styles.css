@@ -513,10 +513,33 @@ header.scrolled h1 {
 }
 
 footer {
+    margin-top: 30px;
+    padding: 20px 0;
     text-align: center;
-    margin-top: 50px;
-    padding: 20px;
-    color: #757575;
+    border-top: 1px solid #eee;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+footer .footer-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+    text-align: center;
+}
+
+footer .social-share-container {
+    margin-bottom: 5px;
+}
+
+footer p {
+    margin: 0;
+    color: #666;
     font-size: 0.9rem;
 }
 
@@ -1434,5 +1457,113 @@ footer {
     .photo-preview {
         width: 80px;
         height: 80px;
+    }
+} 
+
+/* Social Sharing Styles */
+.social-share-container {
+    position: relative;
+    display: inline-block;
+}
+
+.social-share-wrapper {
+    position: relative;
+}
+
+.social-share-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.social-share-btn:hover {
+    background: var(--primary-color);
+}
+
+.social-share-btn .share-icon {
+    font-size: 1.1em;
+}
+
+.social-native-share,
+.social-custom-share {
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    z-index: 100;
+    display: none;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 150px;
+}
+
+.social-platform-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    width: 100%;
+    text-align: left;
+}
+
+.social-platform-btn:hover {
+    background: #f0f0f0;
+}
+
+.social-platform-btn .platform-icon {
+    font-size: 1.2em;
+}
+
+.journal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.journal-share-btn {
+    padding: 5px 10px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.journal-share-btn:hover {
+    background: var(--primary-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+    .social-native-share,
+    .social-custom-share {
+        left: 0;
+        transform: none;
+        width: 100%;
+    }
+    
+    footer .footer-content {
+        flex-direction: column;
+        gap: 15px;
     }
 } 

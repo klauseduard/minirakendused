@@ -11,7 +11,7 @@ const STORAGE_KEYS = {
     PRECIP_UNIT: 'gardening_precip_unit',
     LANGUAGE: 'gardening_language',
     CLIMATE_ZONE_OVERRIDE: 'gardening_climate_zone_override',
-    JOURNAL_DATA: 'gardening_journal_data',
+    JOURNAL_DATA: 'gardening_journal_entries',
     CUSTOM_ENTRIES: 'gardening_custom_entries',
 };
 
@@ -714,6 +714,23 @@ export function importCustomEntries(importData, replaceExisting = false) {
     });
     
     return entries;
+}
+
+/**
+ * Get all journal entries
+ * @returns {Array} Array of journal entries
+ */
+export function getJournalEntries() {
+    const stored = localStorage.getItem(STORAGE_KEYS.JOURNAL_DATA);
+    return stored ? JSON.parse(stored) : [];
+}
+
+/**
+ * Save journal entries
+ * @param {Array} entries - Journal entries to save
+ */
+export function saveJournalEntries(entries) {
+    localStorage.setItem(STORAGE_KEYS.JOURNAL_DATA, JSON.stringify(entries));
 }
 
 // Export all constants
