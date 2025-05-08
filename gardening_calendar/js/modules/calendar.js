@@ -3,6 +3,9 @@
  * Handles all calendar rendering and interaction functionality
  */
 
+import { getSelectedItems, toggleItemSelection } from './storage.js';
+import { shareContent } from './social.js';
+
 /**
  * Render the calendar for the specified month with optional search filtering
  * @param {string} month - The month to render (e.g., 'april', 'may', 'early_june')
@@ -386,43 +389,81 @@ export function updateSelectAllCheckbox(month, category) {
 }
 
 /**
- * Initialize calendar functionality
- * @param {string} activeMonth - Initial month to display
+ * Initialize the calendar module
+ * @param {string} initialMonth - The initial month to display
  */
-export function initCalendar(activeMonth) {
-    // Get DOM elements
-    const monthButtons = document.querySelectorAll('.month-btn');
-    const searchBox = document.getElementById('searchBox');
+export function initCalendar(initialMonth) {
+    console.log('Initializing calendar module...');
     
-    // Listen for month button clicks
+    // Set up event listeners for month buttons
+    const monthButtons = document.querySelectorAll('.month-btn');
+    
     monthButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            // Remove active class from all buttons
+        button.addEventListener('click', function() {
+            // Update active state
             monthButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
             
-            // Add active class to clicked button
-            button.classList.add('active');
+            // Get month from data attribute
+            const month = this.dataset.month;
+            window.GardeningApp.activeMonth = month;
             
-            // Update active month
-            activeMonth = button.dataset.month;
-            
-            // Dispatch month changed event
-            document.dispatchEvent(new CustomEvent('monthChanged', { 
-                detail: { month: activeMonth } 
-            }));
-            
-            // Show calendar
-            searchBox.value = ''; // Reset search
-            renderCalendar(activeMonth);
+            // Render the calendar for this month
+            renderCalendar(month);
         });
     });
     
-    // Listen for search input
-    searchBox.addEventListener('input', (e) => {
-        const searchTerm = e.target.value.trim();
-        searchCalendar(activeMonth, searchTerm);
-    });
+    // Initialize share button for calendar selections
+    const shareContainer = document.getElementById('calendarShareContainer');
+    if (shareContainer) {
+        window.initSocialSharing({
+            selector: '#calendarShareContainer',
+            defaultTitle: 'My Garden Planner Selections',
+            defaultDescription: 'Check out my garden planning!',
+            addShareCallback: () => shareCalendarSelections()
+        });
+    }
     
-    // Show initial calendar
-    renderCalendar(activeMonth);
+    // Render the calendar with the initial month
+    renderCalendar(initialMonth);
+}
+
+/**
+ * Share the current calendar selections
+ */
+function shareCalendarSelections() {
+    const selections = getSelectedItems();
+    const currentMonth = window.GardeningApp.activeMonth;
+    const monthSelections = selections[currentMonth];
+    
+    if (!monthSelections) {
+        alert("You don't have any selections to share. Please select some plants or tasks first.");
+        return;
+    }
+    
+    // Collect all selected items across categories
+    const selectedItems = [];
+    
+    for (const category in monthSelections) {
+        const items = monthSelections[category];
+        
+        items.forEach(item => {
+            if (typeof item === 'object' && item.en) {
+                selectedItems.push(item.en);
+            } else {
+                selectedItems.push(item);
+            }
+        });
+    }
+    
+    // Only share if there are items
+    if (selectedItems.length > 0) {
+        // Use the shareContent function from social module
+        window.shareContent('selection', { 
+            items: selectedItems,
+            month: currentMonth
+        });
+    } else {
+        alert("You don't have any selections to share. Please select some plants or tasks first.");
+    }
 } 

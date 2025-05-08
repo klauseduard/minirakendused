@@ -1,5 +1,10 @@
-// Journal Module for Garden Calendar
-// Contains all journal-related functionality
+/**
+ * Journal Module for Gardening Calendar
+ * Handles garden journal functionality
+ */
+
+import { saveJournalEntries, getJournalEntries } from './storage.js';
+import { shareContent } from './social.js';
 
 // Journal entry types
 const journalEntryTypes = {
@@ -11,15 +16,6 @@ const journalEntryTypes = {
 };
 
 // Core Journal Functions
-function getJournalEntries() {
-    const stored = localStorage.getItem('gardening_journal_entries');
-    return stored ? JSON.parse(stored) : [];
-}
-
-function saveJournalEntries(entries) {
-    localStorage.setItem('gardening_journal_entries', JSON.stringify(entries));
-}
-
 function createJournalEntry(entryData) {
     const entries = getJournalEntries();
     const newEntry = {
@@ -1064,20 +1060,35 @@ export {
     handlePhotoSelection
 };
 
-// Initialize module - will add all event listeners
+/**
+ * Initialize the journal module
+ */
 export function initJournal() {
-    console.log("Journal module initialized");
+    console.log('Initializing journal module...');
     
-    // Add event listeners for journal features
-    const addJournalEntryBtn = document.getElementById('addJournalEntryBtn');
-    const emptyJournalAddBtn = document.getElementById('emptyJournalAddBtn');
-    const exportJournalBtn = document.getElementById('exportJournalBtn');
-    const importJournalBtn = document.getElementById('importJournalBtn');
-    const journalTabs = document.querySelectorAll('.journal-tab');
-    const journalSection = document.getElementById('garden-journal');
+    const journalTab = document.querySelector('.journal-tab[data-view="timeline"]');
+    const journalContent = document.getElementById('journalContent');
+    const addEntryBtn = document.getElementById('addJournalEntryBtn');
+    const emptyAddBtn = document.getElementById('emptyJournalAddBtn');
+    const shareContainer = document.getElementById('journalShareContainer');
+    
+    // If any elements are not found, return early
+    if (!journalTab || !journalContent) {
+        console.warn('Required journal elements not found');
+        return;
+    }
+    
+    // Initialize share button
+    if (shareContainer) {
+        window.GardeningApp.modules.social.initSocialSharing({
+            selector: '#journalShareContainer',
+            defaultTitle: 'My Garden Journal',
+            defaultDescription: 'Check out my gardening journey!'
+        });
+    }
     
     // Render journal if we're already on that tab
-    if (journalSection && journalSection.style.display !== 'none') {
+    if (journalContent && journalContent.style.display !== 'none') {
         renderJournal();
     }
     
@@ -1087,27 +1098,30 @@ export function initJournal() {
     const observer = new MutationObserver((mutations) => {
         mutations.forEach((mutation) => {
             if (mutation.attributeName === 'style' && 
-                journalSection.style.display !== 'none') {
+                journalContent.style.display !== 'none') {
                 renderJournal();
             }
         });
     });
     
     // Start observing the journal section for style changes
-    if (journalSection) {
-        observer.observe(journalSection, { attributes: true });
+    if (journalContent) {
+        observer.observe(journalContent, { attributes: true });
     }
     
     // Add journal entry buttons
-    if (addJournalEntryBtn) {
-        addJournalEntryBtn.addEventListener('click', () => openJournalEntryModal());
+    if (addEntryBtn) {
+        addEntryBtn.addEventListener('click', () => openJournalEntryModal());
     }
     
-    if (emptyJournalAddBtn) {
-        emptyJournalAddBtn.addEventListener('click', () => openJournalEntryModal());
+    if (emptyAddBtn) {
+        emptyAddBtn.addEventListener('click', () => openJournalEntryModal());
     }
     
     // Export/Import buttons
+    const exportJournalBtn = document.getElementById('exportJournalBtn');
+    const importJournalBtn = document.getElementById('importJournalBtn');
+    
     if (exportJournalBtn) {
         exportJournalBtn.addEventListener('click', function() {
             showExportOptionsModal();
@@ -1151,6 +1165,8 @@ export function initJournal() {
     }
     
     // Tab switching
+    const journalTabs = document.querySelectorAll('.journal-tab');
+    
     journalTabs.forEach(tab => {
         tab.addEventListener('click', () => {
             // Remove active class from all tabs
@@ -1296,4 +1312,234 @@ export function initJournal() {
             }
         });
     }
+}
+
+/**
+ * Render the journal entry in the timeline view
+ * @param {Object} entry - Journal entry object
+ * @param {number} index - Entry index
+ * @returns {HTMLElement} Entry element
+ */
+function renderTimelineEntry(entry, index) {
+    const entryTypes = journalEntryTypes;
+    const entryType = entryTypes[entry.type] || { icon: '📝', label: 'Note' };
+    
+    const entryEl = document.createElement('div');
+    entryEl.className = 'journal-entry';
+    entryEl.dataset.entryId = entry.id;
+    
+    // Add date formatting
+    const entryDate = new Date(entry.date);
+    const formattedDate = entryDate.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+    
+    // Truncate notes for preview if they're too long
+    const truncatedNotes = entry.notes && entry.notes.length > 120 
+        ? entry.notes.substring(0, 120) + '...' 
+        : entry.notes;
+    
+    // Create photo gallery if there are images
+    let photoGallery = '';
+    if (entry.images && entry.images.length > 0) {
+        photoGallery = `
+            <div class="entry-photos">
+                ${entry.images.slice(0, 3).map(photo => 
+                    `<div class="entry-photo">
+                        <img src="${photo}" alt="Garden journal photo">
+                    </div>`
+                ).join('')}
+                ${entry.images.length > 3 ? `<div class="entry-photo entry-photo-more">+${entry.images.length - 3}</div>` : ''}
+            </div>
+        `;
+    }
+    
+    // Template for entry
+    entryEl.innerHTML = `
+        <div class="entry-header">
+            <div class="entry-type">
+                <span class="entry-icon">${entryType.icon}</span>
+                <span class="entry-type-label">${entryType.label}</span>
+            </div>
+            <div class="entry-date">${formattedDate}</div>
+        </div>
+        
+        ${entry.plants ? `
+        <div class="entry-plants">
+            <strong>Plants:</strong> ${entry.plants}
+        </div>
+        ` : ''}
+        
+        ${entry.location ? `
+        <div class="entry-location">
+            <strong>Location:</strong> ${entry.location}
+        </div>
+        ` : ''}
+        
+        ${entry.type === 'harvest' && (entry.metrics.weight || entry.metrics.quantity) ? `
+        <div class="entry-harvest-metrics">
+            ${entry.metrics.weight ? `<span><strong>Weight:</strong> ${entry.metrics.weight}</span>` : ''}
+            ${entry.metrics.quantity ? `<span><strong>Quantity:</strong> ${entry.metrics.quantity}</span>` : ''}
+        </div>
+        ` : ''}
+        
+        ${entry.notes ? `
+        <div class="entry-notes">
+            ${truncatedNotes}
+        </div>
+        ` : ''}
+        
+        ${photoGallery}
+        
+        <div class="entry-actions">
+            <button class="entry-edit-btn" data-entry-id="${entry.id}">
+                <span class="action-icon">✏️</span> Edit
+            </button>
+            <button class="entry-delete-btn" data-entry-id="${entry.id}">
+                <span class="action-icon">🗑️</span> Delete
+            </button>
+            <button class="entry-share-btn" data-entry-id="${entry.id}">
+                <span class="action-icon">🔗</span> Share
+            </button>
+        </div>
+    `;
+    
+    // Add event listeners
+    entryEl.querySelector('.entry-edit-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        openEditModal(entry.id);
+    });
+    
+    entryEl.querySelector('.entry-delete-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        confirmDeleteEntry(entry.id);
+    });
+    
+    entryEl.querySelector('.entry-share-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        shareJournalEntry(entry);
+    });
+    
+    // Open view modal when clicking on the entry
+    entryEl.addEventListener('click', () => {
+        openViewModal(entry);
+    });
+    
+    return entryEl;
+}
+
+/**
+ * Open the journal entry view modal
+ * @param {Object} entry - Journal entry to view
+ */
+function openViewModal(entry) {
+    if (!entry) return;
+    
+    const entryType = journalEntryTypes[entry.type] || { icon: '📝', label: 'Note' };
+    
+    // Format date
+    const entryDate = new Date(entry.date);
+    const formattedDate = entryDate.toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+    
+    // Create photo gallery
+    let photoGallery = '';
+    if (entry.images && entry.images.length > 0) {
+        photoGallery = `
+            <div class="entry-view-photos">
+                ${entry.images.map(photo => 
+                    `<div class="entry-view-photo">
+                        <img src="${photo}" alt="Garden journal photo">
+                    </div>`
+                ).join('')}
+            </div>
+        `;
+    }
+    
+    // Fill the modal content
+    const viewModal = document.getElementById('journalEntryViewModal');
+    const viewTitle = document.getElementById('journalEntryViewTitle');
+    const viewContent = document.getElementById('journalEntryViewContent');
+    
+    viewTitle.innerHTML = `${entryType.icon} ${entryType.label} - ${formattedDate}`;
+    
+    viewContent.innerHTML = `
+        <div class="entry-view-content">
+            ${entry.plants ? `
+            <div class="entry-view-field">
+                <span class="field-label">Plants:</span>
+                <span class="field-value">${entry.plants}</span>
+            </div>
+            ` : ''}
+            
+            ${entry.location ? `
+            <div class="entry-view-field">
+                <span class="field-label">Location:</span>
+                <span class="field-value">${entry.location}</span>
+            </div>
+            ` : ''}
+            
+            ${entry.type === 'harvest' && (entry.metrics.weight || entry.metrics.quantity) ? `
+            <div class="entry-view-field">
+                <span class="field-label">Harvest Details:</span>
+                <span class="field-value">
+                    ${entry.metrics.weight ? `Weight: ${entry.metrics.weight}` : ''}
+                    ${entry.metrics.weight && entry.metrics.quantity ? ' • ' : ''}
+                    ${entry.metrics.quantity ? `Quantity: ${entry.metrics.quantity}` : ''}
+                </span>
+            </div>
+            ` : ''}
+            
+            ${entry.notes ? `
+            <div class="entry-view-field entry-notes-full">
+                <span class="field-label">Notes:</span>
+                <div class="entry-view-notes">${entry.notes.replace(/\n/g, '<br>')}</div>
+            </div>
+            ` : ''}
+            
+            ${photoGallery}
+        </div>
+    `;
+    
+    // Initialize share button in the view modal
+    const shareContainer = document.getElementById('journalEntryShareContainer');
+    shareContainer.innerHTML = ''; // Clear previous content
+    
+    // Set up event listeners
+    const closeButtons = viewModal.querySelectorAll('#journalEntryViewModalCloseBtn, #journalEntryViewCloseBtn');
+    closeButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            viewModal.style.display = 'none';
+        });
+    });
+    
+    // Show the modal
+    viewModal.style.display = 'flex';
+    
+    // Initialize share button for this entry
+    window.initSocialSharing({
+        selector: '#journalEntryShareContainer',
+        defaultTitle: `Garden Journal: ${entryType.label} - ${formattedDate}`,
+        defaultDescription: `Plants: ${entry.plants || 'None'}\n${entry.notes || ''}`,
+        addShareCallback: () => {
+            // Track share event
+            console.log('Share initiated for journal entry:', entry.id);
+        }
+    });
+}
+
+/**
+ * Share a journal entry
+ * @param {Object} entry - Journal entry to share
+ */
+function shareJournalEntry(entry) {
+    if (!entry) return;
+    
+    // Use the shareContent function from social module
+    window.shareContent('journal', { entry });
 } 
