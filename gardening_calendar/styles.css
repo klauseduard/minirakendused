@@ -1897,3 +1897,20 @@ footer p {
         font-size: 0.98rem;
     }
 } 
+
+/* --- Journal Active Mode --- */
+body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav) {
+    display: none !important;
+}
+/* Only hide header in journal mode on mobile */
+@media (max-width: 600px) {
+    body.journal-active header {
+        display: none !important;
+    }
+}
+/* Keep header visible in journal mode on desktop */
+@media (min-width: 601px) {
+    body.journal-active header {
+        display: block !important;
+    }
+} 
