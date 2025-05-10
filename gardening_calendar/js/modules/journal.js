@@ -1393,6 +1393,32 @@ export function initJournal() {
     }
 
     /** --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- **/
+
+    // --- Journal floating UI visibility: only show when journal section is visible (mobile) ---
+    const journalSection = document.getElementById('garden-journal');
+    function updateJournalFloatingUIVisibility() {
+        if (fabBtn && moreMenuContainer && viewDropdownContainer && journalSection) {
+            const isJournalVisible = journalSection.style.display !== 'none';
+            if (isMobile()) {
+                fabBtn.style.display = isJournalVisible ? 'flex' : 'none';
+                moreMenuContainer.style.display = isJournalVisible ? 'flex' : 'none';
+                viewDropdownContainer.style.display = isJournalVisible ? 'block' : 'none';
+            } else {
+                fabBtn.style.display = 'none';
+                moreMenuContainer.style.display = 'none';
+                viewDropdownContainer.style.display = 'none';
+            }
+        }
+    }
+    // Observe changes to journal section visibility
+    if (journalSection) {
+        const observer = new MutationObserver(updateJournalFloatingUIVisibility);
+        observer.observe(journalSection, { attributes: true, attributeFilter: ['style'] });
+    }
+    // Also update on navigation and resize
+    window.addEventListener('resize', updateJournalFloatingUIVisibility);
+    updateJournalFloatingUIVisibility();
+    // --- END Journal floating UI visibility ---
 }
 
 /**

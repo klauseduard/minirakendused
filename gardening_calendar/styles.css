@@ -1763,27 +1763,29 @@ footer p {
   }
   /* Show FAB for New Entry */
   .journal-fab-btn {
+    position: fixed !important;
+    left: 16px !important;
+    right: auto !important;
+    bottom: 24px !important;
+    z-index: 1202 !important;
     display: flex !important;
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 1200;
-    background: var(--secondary-color);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 56px;
-    height: 56px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
     align-items: center;
     justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    background: var(--secondary-color);
+    color: #fff;
     font-size: 2rem;
-    cursor: pointer;
-    transition: background 0.2s, box-shadow 0.2s;
+    opacity: 0.92;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    border: none;
   }
-  .journal-fab-btn:active {
-    background: var(--accent-color);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  .journal-fab-btn:active,
+  .journal-fab-btn:focus {
+    opacity: 1;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.22);
   }
   /* Show More (⋮) button in journal header */
   .journal-more-menu-container {
@@ -1908,10 +1910,7 @@ footer p {
     margin: 0;
   }
   .quick-jump-title {
-    text-align: left;
-    color: #fff;
-    font-size: 1.1rem;
-    margin-bottom: 8px;
+    display: none !important;
   }
 }
 /* --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- */ 
@@ -1933,7 +1932,7 @@ footer p {
     position: fixed !important;
     top: 10px !important;
     left: 10px !important;
-    z-index: 2000 !important;
+    z-index: 2002 !important;
     background: var(--primary-color) !important;
     color: #fff !important;
     border-radius: 8px !important;
@@ -1942,5 +1941,33 @@ footer p {
     padding: 6px 10px !important;
     border: none !important;
     display: block !important;
+  }
+  .quick-nav-menu-container {
+    display: none !important;
+    position: fixed !important;
+    top: 16px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-width: calc(100vw - 16px) !important;
+    background: var(--primary-color);
+    z-index: 2001;
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    padding-bottom: 8px;
+  }
+  .quick-nav-menu-container.open {
+    display: block !important;
+    animation: fadeIn 0.2s;
+  }
+  .quick-jump-menu {
+    padding: 18px 10px 10px 10px;
+  }
+} 
+
+@media (max-width: 600px) {
+  .main-layout {
+    padding-top: 60px !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
   }
 } 

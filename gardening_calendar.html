@@ -197,6 +197,29 @@
                         <!-- Calendar view will be added here -->
                     </div>
                 </div>
+                <!-- Floating Action Button for New Entry (mobile only) -->
+                <button id="journalFabBtn" class="journal-fab-btn" aria-label="Add New Journal Entry" style="display: none;">
+                    <span style="font-size: 2rem;">➕</span>
+                </button>
+                <!-- More Menu for Export/Import (mobile only) -->
+                <div id="journalMoreMenuContainer" class="journal-more-menu-container" style="display: none; position: relative;">
+                    <button id="journalMoreBtn" class="journal-more-btn" aria-label="More actions">
+                        <span style="font-size: 1.5rem;">⋮</span>
+                    </button>
+                    <div id="journalMoreMenu" class="journal-more-menu" style="display: none; position: absolute; right: 0; top: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; min-width: 120px;">
+                        <button id="journalExportMenuBtn" class="journal-more-menu-item">Export</button>
+                        <button id="journalImportMenuBtn" class="journal-more-menu-item">Import</button>
+                    </div>
+                </div>
+                <!-- Dropdown for Journal Views (mobile only) -->
+                <div id="journalViewDropdownContainer" class="journal-view-dropdown-container" style="display: none; margin-bottom: 10px;">
+                    <label for="journalViewDropdown" class="visually-hidden">Select Journal View</label>
+                    <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View">
+                        <option value="timeline">Timeline</option>
+                        <option value="gallery">Photo Gallery</option>
+                        <option value="calendar">Calendar</option>
+                    </select>
+                </div>
             </section>
 
             <button class="scroll-to-top" id="scrollToTop" aria-label="Scroll to top" style="display: none;">
@@ -509,36 +532,6 @@
             </div>
         </div>
     </div>
-
-    <!-- --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- -->
-
-    <!-- Floating Action Button for New Entry (mobile only) -->
-    <button id="journalFabBtn" class="journal-fab-btn" aria-label="Add New Journal Entry" style="display: none;">
-        <span style="font-size: 2rem;">➕</span>
-    </button>
-
-    <!-- More Menu for Export/Import (mobile only) -->
-    <div id="journalMoreMenuContainer" class="journal-more-menu-container" style="display: none; position: relative;">
-        <button id="journalMoreBtn" class="journal-more-btn" aria-label="More actions">
-            <span style="font-size: 1.5rem;">⋮</span>
-        </button>
-        <div id="journalMoreMenu" class="journal-more-menu" style="display: none; position: absolute; right: 0; top: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; min-width: 120px;">
-            <button id="journalExportMenuBtn" class="journal-more-menu-item">Export</button>
-            <button id="journalImportMenuBtn" class="journal-more-menu-item">Import</button>
-        </div>
-    </div>
-
-    <!-- Dropdown for Journal Views (mobile only) -->
-    <div id="journalViewDropdownContainer" class="journal-view-dropdown-container" style="display: none; margin-bottom: 10px;">
-        <label for="journalViewDropdown" class="visually-hidden">Select Journal View</label>
-        <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View">
-            <option value="timeline">Timeline</option>
-            <option value="gallery">Photo Gallery</option>
-            <option value="calendar">Calendar</option>
-        </select>
-    </div>
-
-    <!-- --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- -->
 
     <!-- Import main application module -->
     <script type="module" src="gardening_calendar/js/main.js"></script>
