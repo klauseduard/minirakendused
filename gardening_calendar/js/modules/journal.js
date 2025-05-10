@@ -415,7 +415,7 @@ function handlePhotoSelection(input) {
         }
         
         fileToBase64(file).then(base64 => {
-            compressImage(base64, 1200, 0.7).then(compressed => {
+            compressImage(base64, 800, 0.7).then(compressed => {
                 generateThumbnail(compressed, 150).then(thumbnail => {
                     // Create image container
                     const imgContainer = document.createElement('div');
