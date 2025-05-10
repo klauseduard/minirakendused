@@ -1344,11 +1344,6 @@ export function initJournal() {
     window.addEventListener('resize', updateMobileJournalUI);
     updateMobileJournalUI();
 
-    // FAB opens journal entry modal
-    if (fabBtn) {
-        fabBtn.addEventListener('click', () => openJournalEntryModal());
-    }
-
     // More button toggles menu
     if (moreBtn && moreMenu) {
         moreBtn.addEventListener('click', (e) => {
@@ -1419,6 +1414,68 @@ export function initJournal() {
     window.addEventListener('resize', updateJournalFloatingUIVisibility);
     updateJournalFloatingUIVisibility();
     // --- END Journal floating UI visibility ---
+
+    // --- FAB Expansion Logic ---
+    const fabActions = document.getElementById('journalFabActions');
+    const fabAddEntryBtn = document.getElementById('fabAddEntryBtn');
+    const fabExportBtn = document.getElementById('fabExportBtn');
+    const fabImportBtn = document.getElementById('fabImportBtn');
+
+    function closeFabActions() {
+        if (fabActions) fabActions.style.display = 'none';
+        if (fabBtn) fabBtn.setAttribute('aria-expanded', 'false');
+    }
+    function openFabActions() {
+        if (fabActions) fabActions.style.display = 'flex';
+        if (fabBtn) fabBtn.setAttribute('aria-expanded', 'true');
+    }
+    function toggleFabActions() {
+        if (!fabActions) return;
+        if (fabActions.style.display === 'flex') {
+            closeFabActions();
+        } else {
+            openFabActions();
+        }
+    }
+    if (fabBtn && fabActions) {
+        fabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFabActions();
+        });
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (fabActions.style.display === 'flex' && !fabActions.contains(e.target) && e.target !== fabBtn) {
+                closeFabActions();
+            }
+        });
+        // Keyboard accessibility: close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFabActions();
+        });
+    }
+    // Action handlers
+    if (fabAddEntryBtn) {
+        fabAddEntryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            openJournalEntryModal();
+        });
+    }
+    if (fabExportBtn) {
+        fabExportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            showExportOptionsModal();
+        });
+    }
+    if (fabImportBtn) {
+        fabImportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            if (importJournalBtn) importJournalBtn.click();
+        });
+    }
+    // --- END FAB Expansion Logic ---
 }
 
 /**

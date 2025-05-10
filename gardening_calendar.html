@@ -201,6 +201,12 @@
                 <button id="journalFabBtn" class="journal-fab-btn" aria-label="Add New Journal Entry" style="display: none;">
                     <span style="font-size: 2rem;">➕</span>
                 </button>
+                <!-- Expanded FAB Actions (vertical stack) -->
+                <div id="journalFabActions" class="journal-fab-actions" style="display: none; position: fixed; left: 16px; bottom: 88px; z-index: 1203; flex-direction: column; gap: 12px; align-items: flex-start;">
+                    <button id="fabAddEntryBtn" class="journal-fab-action-btn" aria-label="Add Entry"><span style="font-size: 1.3rem;">➕</span> Add Entry</button>
+                    <button id="fabExportBtn" class="journal-fab-action-btn" aria-label="Export Journal"><span style="font-size: 1.3rem;">📤</span> Export</button>
+                    <button id="fabImportBtn" class="journal-fab-action-btn" aria-label="Import Journal"><span style="font-size: 1.3rem;">📥</span> Import</button>
+                </div>
                 <!-- More Menu for Export/Import (mobile only) -->
                 <div id="journalMoreMenuContainer" class="journal-more-menu-container" style="display: none; position: relative;">
                     <button id="journalMoreBtn" class="journal-more-btn" aria-label="More actions">

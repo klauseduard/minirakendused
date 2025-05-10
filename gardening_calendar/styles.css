@@ -1971,3 +1971,55 @@ footer p {
     padding-right: 8px !important;
   }
 } 
+
+.journal-fab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  position: fixed;
+  left: 16px;
+  bottom: 88px;
+  z-index: 1203;
+  pointer-events: auto;
+}
+.journal-fab-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--secondary-color);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  padding: 10px 18px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 120px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  opacity: 0.97;
+}
+.journal-fab-action-btn:active,
+.journal-fab-action-btn:focus {
+  background: var(--accent-color);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  opacity: 1;
+  outline: none;
+}
+@media (max-width: 600px) {
+  .journal-fab-actions {
+    left: 16px !important;
+    bottom: 88px !important;
+    right: auto !important;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    pointer-events: auto;
+  }
+  .journal-fab-action-btn {
+    min-width: 140px;
+    font-size: 1.08rem;
+    padding: 12px 20px;
+  }
+} 
