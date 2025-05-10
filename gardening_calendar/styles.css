@@ -28,7 +28,9 @@ body {
     padding: 20px;
 }
 
-header {
+/* Header styles - visible on desktop, hidden on mobile */
+@media (min-width: 601px) {
+  header {
     text-align: center;
     margin: -20px -20px 20px -20px;  /* Negative margin to span full width */
     padding: 15px 20px;
@@ -40,23 +42,25 @@ header {
     box-shadow: 0 2px 8px var(--shadow);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-}
-
-/* Add transition for smooth shadow change on scroll */
-header.scrolled {
+    display: block !important;
+  }
+  
+  /* Add transition for smooth shadow change on scroll */
+  header.scrolled {
     box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
-}
-
-h1 {
+  }
+  
+  h1 {
     font-size: 2rem;
     margin-bottom: 15px;
     transition: all 0.3s ease;
-}
-
-/* Compact header on scroll */
-header.scrolled h1 {
+  }
+  
+  /* Compact header on scroll */
+  header.scrolled h1 {
     font-size: 1.5rem;
     margin-bottom: 10px;
+  }
 }
 
 .description {
@@ -342,46 +346,36 @@ header.scrolled h1 {
 .calendar-content {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 20px;
+    gap: 25px !important;
+    margin-top: 20px !important;
 }
 
 .category-card {
     background-color: var(--white);
-    border-radius: 10px;
-    padding: 20px;
-    box-shadow: 0 2px 8px var(--shadow);
-    transition: transform 0.3s ease;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
     height: 100%;
     display: flex;
     flex-direction: column;
     max-width: 100%;
 }
 
-.category-card:last-child {
-    grid-column: auto;
-}
-
-.garden-tasks-card {
-    grid-column: auto;
-}
-
-.category-card .plant-list {
-    flex-grow: 1;
-}
-
 .category-card:hover {
     transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
 }
 
 .category-header {
     display: flex;
     align-items: center;
-    margin-bottom: 15px;
+    margin-bottom: 20px;
 }
 
 .category-icon {
-    width: 40px;
-    height: 40px;
+    width: 45px;
+    height: 45px;
     margin-right: 15px;
     background-color: var(--secondary-color);
     border-radius: 50%;
@@ -389,12 +383,13 @@ header.scrolled h1 {
     align-items: center;
     justify-content: center;
     color: var(--white);
-    font-size: 1.2rem;
+    font-size: 1.3rem;
 }
 
 .category-title {
     font-size: 1.3rem;
     color: var(--primary-color);
+    font-weight: 600;
 }
 
 .plant-list {
@@ -1043,67 +1038,75 @@ footer p {
     accent-color: var(--primary-color);
 }
 
-/* Garden Journal Styles */
+/* Garden Journal Improved Styles */
 .garden-journal {
     background: var(--white);
     border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
-    padding: 20px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    padding: 25px;
     margin-bottom: 25px;
-    min-height: 80vh; /* Set a minimum height for the journal when displayed */
+    min-height: 80vh;
     position: relative;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 5;
 }
 
-/* When journal is visible, ensure it has proper spacing */
-.journal-content {
-    height: 100%;
-    overflow-y: auto;
-}
-
+/* Journal header with proper spacing and alignment */
 .journal-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
+    margin-bottom: 25px;
 }
 
 .journal-title {
     color: var(--primary-color);
-    font-size: 1.4rem;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
 
+/* Improved button styles for desktop */
 .journal-btn {
-    padding: 8px 12px;
+    padding: 10px 16px;
     background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.journal-btn:hover {
+    background: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
 }
 
 .journal-add-btn {
-    padding: 8px 12px;
+    padding: 10px 16px;
     background: var(--secondary-color);
     color: white;
     border: none;
     border-radius: 20px;
     display: flex;
     align-items: center;
-    gap: 5px;
+    gap: 6px;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
+.journal-add-btn:hover {
+    background: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* Journal tabs with improved styling */
 .journal-tabs {
     display: flex;
     gap: 12px;
@@ -1117,12 +1120,557 @@ footer p {
     border-radius: 20px;
     font-weight: 500;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.journal-tab:hover {
+    background: #f8faf5;
+    transform: translateY(-1px);
 }
 
 .journal-tab.active {
     background: var(--secondary-color);
     color: white;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
+
+/* Desktop specific journal improvements */
+@media (min-width: 768px) {
+    .garden-journal {
+        padding: 30px;
+    }
+    
+    .journal-header {
+        margin-bottom: 30px;
+    }
+    
+    .journal-title {
+        font-size: 1.7rem;
+    }
+    
+    .journal-actions {
+        display: flex;
+        gap: 12px;
+    }
+    
+    .journal-btn, .journal-add-btn {
+        padding: 12px 20px;
+        font-size: 1.05rem;
+        min-width: 120px;
+    }
+    
+    .journal-tabs {
+        margin-bottom: 25px;
+    }
+    
+    .journal-tab {
+        padding: 10px 20px;
+        min-width: 120px;
+        text-align: center;
+    }
+}
+
+/* Mobile specific journal fixes */
+@media (max-width: 600px) {
+    .journal-header {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 10px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .journal-title {
+        font-size: 1.1rem !important;
+        margin-bottom: 6px !important;
+        text-align: center !important;
+    }
+    
+    .journal-btn, .journal-add-btn {
+        width: 100% !important;
+        margin-bottom: 6px !important;
+        justify-content: center !important;
+        display: flex !important;
+    }
+    
+    .journal-tabs {
+        flex-direction: column !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+    }
+    
+    .journal-tab {
+        width: 100% !important;
+        text-align: center !important;
+    }
+}
+
+/* Remove quick navigation hamburger and menu styles (no longer used) */
+.quick-nav-toggle-btn,
+.quick-nav-menu-container {
+  display: none !important;
+  height: 0 !important;
+  width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: none !important;
+}
+
+/* Desktop-only Quick Navigation Menu - restored for desktop */
+@media (min-width: 601px) {
+  .quick-jump-menu {
+    display: flex !important;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    padding: 15px;
+    max-width: 800px;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    height: auto !important;
+    width: auto !important;
+  }
+
+  .quick-jump-title {
+    width: 100%;
+    text-align: center;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 5px !important;
+    font-weight: 500;
+    display: block !important;
+  }
+
+  .quick-jump-btn {
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 20px;
+    color: white;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    display: flex !important;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+}
+
+/* Hide desktop navigation on mobile */
+@media (max-width: 600px) {
+  .quick-jump-menu,
+  .quick-jump-btn,
+  .quick-jump-title {
+    display: none !important;
+  }
+  
+  header {
+    display: none !important;
+  }
+  
+  /* Make content start at the top of the viewport on mobile */
+  .main-layout {
+    padding-top: 0 !important;
+    margin-top: 0 !important;
+  }
+  
+  .container {
+    padding-top: 5px !important;
+  }
+}
+
+/* Journal FAB styles */
+.journal-fab-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+  position: fixed;
+  left: 16px;
+  bottom: 144px !important; /* 60px nav + 56px FAB + 16px gap + 12px extra */
+  z-index: 1203;
+  pointer-events: auto;
+}
+
+.journal-fab-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--secondary-color);
+  color: #fff;
+  border: none;
+  border-radius: 24px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  padding: 10px 18px;
+  font-size: 1.05rem;
+  font-weight: 500;
+  cursor: pointer;
+  min-width: 120px;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  opacity: 0.97;
+}
+
+.journal-fab-action-btn:active,
+.journal-fab-action-btn:focus {
+  background: var(--accent-color);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
+  opacity: 1;
+  outline: none;
+}
+
+/* Bottom Navigation Bar (mobile only) */
+@media (max-width: 600px) {
+  .journal-fab-actions {
+    left: 16px !important;
+    bottom: 144px !important;
+    right: auto !important;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    pointer-events: auto;
+  }
+  
+  .journal-fab-action-btn {
+    min-width: 140px;
+    font-size: 1.08rem;
+    padding: 12px 20px;
+  }
+  
+  .bottom-nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 60px;
+    background: var(--white);
+    box-shadow: 0 -2px 8px var(--shadow);
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    z-index: 1205;
+    border-top: 1px solid #e0e0e0;
+  }
+  
+  .bottom-nav-btn {
+    flex: 1 1 0;
+    background: none;
+    border: none;
+    outline: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: var(--primary-color);
+    padding: 6px 0 0 0;
+    cursor: pointer;
+    min-width: 44px;
+    min-height: 44px;
+    transition: background 0.15s, color 0.15s;
+    border-radius: 0;
+  }
+  
+  .bottom-nav-btn:active,
+  .bottom-nav-btn.active {
+    color: var(--secondary-color);
+    background: #f1f8e9;
+  }
+  
+  .bottom-nav-label {
+    font-size: 0.8em;
+    margin-top: 2px;
+    display: block;
+  }
+  
+  /* Move FAB and FAB actions above bottom nav */
+  .journal-fab-btn {
+    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
+    left: 20px !important;
+    right: auto !important;
+  }
+  
+  .scroll-to-top {
+    bottom: 80px !important;
+    right: 20px !important;
+  }
+}
+
+@media (min-width: 601px) {
+  .bottom-nav {
+    display: none !important;
+  }
+} 
+
+/* Adjust main layout padding when header is visible */
+@media (min-width: 601px) {
+  .main-layout {
+    padding-top: 20px;
+  }
+  
+  .container {
+    padding-top: 20px;
+  }
+} 
+
+/* Search and AI Section Styles */
+.search-section-title {
+  font-size: 1.2rem;
+  color: var(--primary-color);
+  margin-bottom: 15px;
+  font-weight: 500;
+}
+
+.ai-advice-btn {
+  padding: 12px 16px;
+  background: var(--secondary-color);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.2s;
+  margin-bottom: 15px;
+}
+
+.ai-advice-btn:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-2px);
+}
+
+.ai-advice-btn:active {
+  transform: translateY(0);
+}
+
+.search-container {
+  width: 100%;
+  margin-bottom: 15px;
+}
+
+/* Desktop layout - horizontal arrangement */
+@media (min-width: 768px) {
+  .search-bar {
+    position: relative;
+  }
+  
+  .search-section-title {
+    width: 60%;
+    float: left;
+    margin-bottom: 20px;
+  }
+  
+  .ai-advice-btn {
+    position: absolute;
+    right: 20px;
+    top: 20px;
+    margin-bottom: 0;
+    min-width: 220px;
+    justify-content: center;
+    font-size: 1.05rem;
+    padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  }
+  
+  .search-container {
+    clear: both;
+  }
+
+  .ai-hint-text {
+    margin-left: 5px;
+    width: 60%;
+  }
+}
+
+/* Mobile layout - fully stacked, full width */
+@media (max-width: 600px) {
+  .ai-advice-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+  }
+  
+  .search-section-title {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  
+  .search-box {
+    padding: 14px 20px !important;
+  }
+} 
+
+/* AI hint text */
+.ai-hint-text {
+  color: #666;
+  font-size: 0.9rem;
+  margin: -8px 0 12px 0;
+  padding-left: 4px;
+  font-style: italic;
+}
+
+@media (max-width: 600px) {
+  .ai-hint-text {
+    text-align: center;
+    margin-bottom: 16px;
+    padding: 0 10px;
+  }
+} 
+
+/* Planting Schedule Styles */
+.month-nav-header {
+  display: flex; 
+  justify-content: space-between; 
+  align-items: center; 
+  margin-bottom: 15px;
+}
+
+.data-management-buttons {
+  display: flex; 
+  gap: 10px;
+}
+
+.data-manage-btn {
+  padding: 8px 12px; 
+  background: var(--accent-color); 
+  color: white; 
+  border: none; 
+  border-radius: 20px; 
+  display: flex; 
+  align-items: center; 
+  gap: 5px; 
+  font-weight: 500; 
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.data-manage-btn:hover {
+  background-color: var(--primary-color);
+  transform: translateY(-2px);
+}
+
+/* Month buttons improved styling */
+.calendar-nav {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.month-btn, .location-action-btn {
+  padding: 14px 28px;
+  background-color: var(--secondary-color);
+  color: var(--white);
+  border: none;
+  border-radius: 30px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px var(--shadow);
+  min-width: 150px;
+  text-align: center;
+}
+
+.month-btn:hover, .location-action-btn:hover {
+  background-color: var(--accent-color);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.month-btn.active {
+  background-color: var(--accent-color);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow);
+}
+
+/* Desktop improvements for planting schedule */
+@media (min-width: 768px) {
+  .month-navigation {
+    padding: 25px;
+  }
+  
+  .month-nav-title {
+    font-size: 1.3rem;
+    margin-bottom: 18px;
+  }
+  
+  .calendar-explainer {
+    font-size: 1rem;
+    margin-bottom: 18px;
+    max-width: 80%;
+  }
+  
+  .month-btn {
+    flex: 1;
+    max-width: 220px;
+  }
+}
+
+/* Mobile-specific adjustments */
+@media (max-width: 600px) {
+  .month-nav-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  
+  .data-management-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  
+  .data-manage-btn {
+    flex: 1 1 40%;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 0.9rem;
+  }
+  
+  .calendar-explainer {
+    margin-bottom: 12px;
+    font-size: 0.95rem;
+  }
+  
+  .month-btn {
+    padding: 10px 16px;
+    font-size: 1rem;
+    min-width: 100px;
+  }
+} 
+
+/* Desktop grid improvements */
+@media (min-width: 1024px) {
+  .calendar-content {
+    grid-template-columns: repeat(3, 1fr) !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1023px) {
+  .calendar-content {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .calendar-content {
+    grid-template-columns: 1fr !important;
+    gap: 15px !important;
+  }
+  
+  .category-card {
+    padding: 15px;
+  }
+} 
+
+/* Restore essential functionality styling */
 
 /* Custom Modal Styles */
 .custom-confirm-modal-overlay {
@@ -1215,18 +1763,6 @@ footer p {
     color: white;
 }
 
-@media (min-width: 769px) {
-    .calendar-content {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)) !important;
-    }
-}
-
-@media (max-width: 768px) {
-    .calendar-content {
-        grid-template-columns: 1fr !important;
-    }
-}
-
 /* Custom Entries Styles */
 .custom-entries-toolbar {
     display: flex;
@@ -1242,151 +1778,59 @@ footer p {
     gap: 10px;
 }
 
-.custom-add-btn {
-    padding: 8px 16px;
-    border: none;
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.2s, transform 0.1s;
-    box-shadow: 0 2px 5px var(--shadow);
-    background-color: var(--secondary-color);
-    color: white;
+/* When journal is visible, ensure it has proper spacing */
+.journal-content {
+    height: 100%;
+    overflow-y: auto;
 }
 
-.custom-add-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 3px 5px rgba(0, 0, 0, 0.1);
-    background-color: var(--accent-color);
-}
-
-.custom-add-btn:active {
-    transform: translateY(0);
-}
-
-.custom-item {
-    background-color: rgba(var(--primary-rgb), 0.05);
-    border-left: 3px solid var(--primary-color);
-    padding-left: 5px !important;
-    position: relative;
-    transition: background-color 0.2s;
-    cursor: pointer;
-}
-
-.custom-item:hover {
-    background-color: rgba(var(--primary-rgb), 0.1);
-}
-
-.custom-item-actions {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-left: auto;
-    opacity: 0;
-    transition: opacity 0.2s;
-}
-
-.custom-item:hover .custom-item-actions {
-    opacity: 1;
-}
-
-.custom-item-edit-btn,
-.custom-item-delete-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 28px;
-    height: 28px;
-    border-radius: 50%;
-    color: var(--primary-color);
-    transition: background-color 0.2s, color 0.2s, transform 0.1s;
-}
-
-.custom-item-edit-btn:hover,
-.custom-item-delete-btn:hover {
-    background-color: rgba(var(--primary-rgb), 0.1);
-    transform: scale(1.1);
-}
-
-.custom-item-delete-btn {
-    color: #d32f2f;
-}
-
-.custom-item-delete-btn:hover {
-    background-color: rgba(211, 47, 47, 0.1);
-}
-
-.edit-custom-item-btn {
-    opacity: 0.5;
-    transition: opacity 0.2s, transform 0.1s;
-}
-
-/* Form Styling */
-.weather-modal form label {
-    font-weight: 500;
-    margin-bottom: 5px;
-    display: block;
-}
-
-.weather-modal form input[type="text"],
-.weather-modal form textarea,
-.weather-modal form select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 1em;
-    transition: border-color 0.2s;
-}
-
-.weather-modal form input[type="text"]:focus,
-.weather-modal form textarea:focus,
-.weather-modal form select:focus {
-    border-color: var(--primary-color);
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(var(--primary-rgb), 0.1);
-}
-
-.weather-modal form input[type="checkbox"] {
-    margin-right: 5px;
-}
-
-/* Responsive design for custom entry buttons */
-@media (max-width: 900px) {
-    .custom-entries-toolbar {
-        justify-content: center;
-    }
-}
+/* --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- */
 
 @media (max-width: 600px) {
-    .custom-entries-toolbar {
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-    }
-    
-    .custom-add-btn, 
-    .custom-entries-toolbar .data-manage-btn {
-        width: 100%;
-        max-width: 250px;
-    }
-    
-    /* Journal Entry Form Responsive Layout */
-    #journalEntryForm .form-row {
-        flex-direction: column;
-    }
-    
-    #journalEntryForm .form-column {
-        width: 100%;
-        margin-bottom: 15px;
-    }
+  /* Hide original Export/Import/New Entry buttons and tab row */
+  .journal-header .journal-btn,
+  .journal-header .journal-add-btn,
+  .journal-tabs {
+    display: none !important;
+  }
+  /* Show FAB for New Entry */
+  .journal-fab-btn {
+    position: fixed !important;
+    left: 16px !important;
+    right: auto !important;
+    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
+    z-index: 1202 !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    background: var(--secondary-color);
+    color: #fff;
+    font-size: 2rem;
+    opacity: 0.92;
+    transition: opacity 0.2s, box-shadow 0.2s;
+    border: none;
+  }
+  
+  /* Show More (⋮) button in journal header */
+  .journal-more-menu-container {
+    display: flex !important;
+    align-items: center;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1100;
+  }
+  
+  /* Show journal view dropdown, hide tab row */
+  .journal-view-dropdown-container {
+    display: block !important;
+    width: 100%;
+    margin-bottom: 10px;
+  }
 }
 
 /* Journal Entry Modal Photo Preview Styles */
@@ -1409,334 +1853,8 @@ footer p {
     transition: transform 0.2s ease-in-out;
 }
 
-.photo-preview img:hover {
-    transform: scale(1.05);
-}
-
-.photo-remove-btn {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    width: 20px;
-    height: 20px;
-    background-color: rgba(255, 0, 0, 0.7);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    font-size: 14px;
-    line-height: 1;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.2s;
-}
-
-.photo-remove-btn:hover {
-    background-color: rgba(255, 0, 0, 0.9);
-}
-
-#photoPreviewContainer {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 10px;
-}
-
-#imageLightbox {
-    z-index: 10000;
-}
-
-@media (max-width: 900px) {
-    .photo-preview {
-        width: 100px;
-        height: 100px;
-    }
-}
-
+/* Weather forecast styles for mobile */
 @media (max-width: 600px) {
-    .photo-preview {
-        width: 80px;
-        height: 80px;
-    }
-} 
-
-/* Social Sharing Styles */
-.social-share-container {
-    position: relative;
-    display: inline-block;
-}
-
-.social-share-wrapper {
-    position: relative;
-}
-
-.social-share-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 20px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.social-share-btn:hover {
-    background: var(--primary-color);
-}
-
-.social-share-btn .share-icon {
-    font-size: 1.1em;
-}
-
-.social-native-share,
-.social-custom-share {
-    position: absolute;
-    bottom: calc(100% + 10px);
-    left: 50%;
-    transform: translateX(-50%);
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    padding: 10px;
-    z-index: 100;
-    display: none;
-    flex-direction: column;
-    gap: 5px;
-    min-width: 150px;
-}
-
-.social-platform-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: none;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    width: 100%;
-    text-align: left;
-}
-
-.social-platform-btn:hover {
-    background: #f0f0f0;
-}
-
-.social-platform-btn .platform-icon {
-    font-size: 1.2em;
-}
-
-.journal-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.journal-share-btn {
-    padding: 5px 10px;
-    background: var(--accent-color);
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 0.9em;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-}
-
-.journal-share-btn:hover {
-    background: var(--primary-color);
-}
-
-/* Responsive adjustments */
-@media (max-width: 600px) {
-    .social-native-share,
-    .social-custom-share {
-        left: 0;
-        transform: none;
-        width: 100%;
-    }
-    
-    footer .footer-content {
-        flex-direction: column;
-        gap: 15px;
-    }
-}
-
-/* --- MOBILE USABILITY IMPROVEMENTS (mobile-usability branch) --- */
-
-@media (max-width: 600px) {
-    /* Make all content start at the very top of screen - zero spacing */
-    body, 
-    .container,
-    .main-layout,
-    .top-controls,
-    .garden-journal,
-    .weather-display,
-    .search-bar,
-    .month-navigation {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-        border-top: none !important;
-    }
-
-    /* Set body/html with no margins */
-    html, body {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
-    /* Ensure container fills viewport width and has no margins */
-    .container {
-        width: 100% !important;
-        max-width: 100% !important;
-        margin-left: 0 !important;
-        margin-right: 0 !important;
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }
-
-    /* Remove top border radius from top sections */
-    .top-controls,
-    .garden-journal {
-        border-top-left-radius: 0 !important;
-        border-top-right-radius: 0 !important;
-    }
-
-    /* Remove ALL top spacing/margins for mobile view */
-    body {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    .container {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    .main-layout {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
-    }
-    
-    /* Ensure the first section starts at the very top */
-    .top-controls {
-        margin-top: 0 !important;
-        border-top-left-radius: 0 !important;
-        border-top-right-radius: 0 !important;
-    }
-    /* Add vertical spacing between rows and buttons */
-    .location-row,
-    .units-row,
-    .unit-group,
-    .search-container,
-    .month-navigation,
-    .calendar-nav,
-    .garden-journal,
-    .weather-display,
-    .search-bar,
-    .top-controls {
-        margin-bottom: 12px !important;
-    }
-    .location-action-btn,
-    .location-btn,
-    .month-btn {
-        margin-bottom: 10px !important;
-    }
-    /* Increase input and select padding for comfort */
-    .location-input,
-    .search-box,
-    select,
-    input[type="date"],
-    input[type="file"] {
-        padding-top: 14px !important;
-        padding-bottom: 14px !important;
-        font-size: 1.05rem !important;
-    }
-    /* Minimum font size for labels and controls */
-    label,
-    .unit-group label,
-    .month-nav-title,
-    .search-section-title {
-        font-size: 1.05rem !important;
-    }
-    /* Add horizontal padding to main container/sections */
-    .container,
-    .main-layout,
-    .top-controls,
-    .weather-display,
-    .search-bar,
-    .month-navigation,
-    .calendar-content,
-    .garden-journal {
-        padding-left: 8px !important;
-        padding-right: 8px !important;
-    }
-    /* Section separation: subtle divider */
-    .top-controls,
-    .weather-display,
-    .search-bar,
-    .month-navigation,
-    .garden-journal {
-        border-bottom: 1px solid #e0e0e0;
-    }
-    /* Quick-jump menu: make more compact */
-    .quick-jump-menu {
-        padding-top: 2px;
-        padding-bottom: 2px;
-        gap: 4px;
-    }
-    /* Stack main layout sections vertically and adjust padding */
-    .main-layout,
-    .top-controls,
-    .weather-display,
-    .search-bar,
-    .month-navigation,
-    .calendar-content,
-    .garden-journal {
-        padding: 8px 0 !important;
-        margin-bottom: 12px !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        max-width: 100vw !important;
-    }
-    .container {
-        padding: 0 !important;
-        max-width: 100vw !important;
-    }
-    header {
-        padding-top: 0 !important;
-        margin-top: 0 !important;
-        min-height: 0 !important;
-        height: auto !important;
-    }
-    h1 {
-        font-size: 1.1rem !important;
-    }
-    /* Ensure all buttons and inputs are at least 44px tall and wide */
-    button, .location-input, .search-box, select, input[type="date"], input[type="file"] {
-        min-height: 44px !important;
-        min-width: 44px !important;
-        font-size: 1rem !important;
-    }
-    /* Mobile warning banner for very small screens */
-    .mobile-warning {
-        display: block !important;
-        font-size: 0.95rem;
-        color: #b71c1c;
-        background: #fff3e0;
-        border: 1px solid #ffccbc;
-        border-radius: 6px;
-        margin: 8px 0;
-        padding: 10px 8px;
-        text-align: center;
-    }
     /* Weather forecast table: card/list view for each day */
     .weather-forecast-table {
         display: block;
@@ -1778,424 +1896,4 @@ footer p {
         text-align: left;
         font-size: 0.98rem;
     }
-    .weather-forecast-table td:last-child {
-        border-bottom: none;
-    }
-}
-
-/* --- END MOBILE USABILITY IMPROVEMENTS --- */ 
-
-@media (max-width: 600px) {
-  .journal-header {
-    flex-direction: column !important;
-    align-items: stretch !important;
-    gap: 10px !important;
-    margin-bottom: 10px !important;
-  }
-  .journal-title {
-    font-size: 1.1rem !important;
-    margin-bottom: 6px !important;
-    text-align: center !important;
-  }
-  .journal-btn, .journal-add-btn {
-    width: 100% !important;
-    margin-bottom: 6px !important;
-    justify-content: center !important;
-    display: flex !important;
-  }
-  .journal-tabs {
-    flex-direction: column !important;
-    gap: 6px !important;
-    margin-bottom: 10px !important;
-  }
-  .journal-tab {
-    width: 100% !important;
-    text-align: center !important;
-  }
-} 
-
-/* --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- */
-
-@media (max-width: 600px) {
-  /* Hide original Export/Import/New Entry buttons and tab row */
-  .journal-header .journal-btn,
-  .journal-header .journal-add-btn,
-  .journal-tabs {
-    display: none !important;
-  }
-  /* Show FAB for New Entry */
-  .journal-fab-btn {
-    position: fixed !important;
-    left: 16px !important;
-    right: auto !important;
-    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
-    z-index: 1202 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    background: var(--secondary-color);
-    color: #fff;
-    font-size: 2rem;
-    opacity: 0.92;
-    transition: opacity 0.2s, box-shadow 0.2s;
-    border: none;
-  }
-  .journal-fab-btn:active,
-  .journal-fab-btn:focus {
-    opacity: 1;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.22);
-  }
-  /* Show More (⋮) button in journal header */
-  .journal-more-menu-container {
-    display: flex !important;
-    align-items: center;
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 1100;
-  }
-  .journal-more-btn {
-    background: none;
-    border: none;
-    color: var(--primary-color);
-    font-size: 1.5rem;
-    padding: 8px;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .journal-more-btn:active {
-    background: #e8f5e9;
-  }
-  .journal-more-menu {
-    min-width: 120px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    padding: 6px 0;
-    position: absolute;
-    right: 0;
-    top: 40px;
-    z-index: 1201;
-    display: none;
-    flex-direction: column;
-  }
-  .journal-more-menu-item {
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    padding: 12px 18px;
-    font-size: 1rem;
-    color: var(--primary-color);
-    cursor: pointer;
-    transition: background 0.2s;
-  }
-  .journal-more-menu-item:hover,
-  .journal-more-menu-item:focus {
-    background: #f1f8e9;
-    outline: none;
-  }
-  /* Show journal view dropdown, hide tab row */
-  .journal-view-dropdown-container {
-    display: block !important;
-    width: 100%;
-    margin-bottom: 10px;
-  }
-  .journal-view-dropdown {
-    width: 100%;
-    padding: 12px 16px;
-    border-radius: 20px;
-    border: 2px solid var(--secondary-color);
-    font-size: 1.05rem;
-    color: var(--primary-color);
-    background: #f8faf5;
-    margin-bottom: 8px;
-    appearance: none;
-    -webkit-appearance: none;
-    outline: none;
-  }
-}
-
-/* --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- */ 
-
-/* Remove quick navigation hamburger and menu styles (no longer used) */
-.quick-nav-toggle-btn,
-.quick-nav-menu-container,
-.quick-jump-menu,
-.quick-jump-btn,
-.quick-jump-title {
-  display: none !important;
-  height: 0 !important;
-  width: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: none !important;
-}
-
-@media (max-width: 600px) {
-  .app-title, .app-icon-mobile {
-    display: none !important;
-  }
-  header {
-    min-height: 0 !important;
-    height: 0 !important;
-    padding: 0 !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    position: relative !important;
-    display: block !important;
-  }
-  .quick-nav-toggle-btn {
-    position: fixed !important;
-    top: 10px !important;
-    left: 10px !important;
-    z-index: 2002 !important;
-    background: var(--primary-color) !important;
-    color: #fff !important;
-    border-radius: 8px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
-    font-size: 2rem !important;
-    padding: 6px 10px !important;
-    border: none !important;
-    display: block !important;
-  }
-  .quick-nav-menu-container {
-    display: none !important;
-    position: fixed !important;
-    top: 16px !important;
-    left: 8px !important;
-    right: 8px !important;
-    max-width: calc(100vw - 16px) !important;
-    background: var(--primary-color);
-    z-index: 2001;
-    border-radius: 12px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    padding-bottom: 8px;
-  }
-  .quick-nav-menu-container.open {
-    display: block !important;
-    animation: fadeIn 0.2s;
-  }
-  .quick-jump-menu {
-    padding: 18px 10px 10px 10px;
-  }
-} 
-
-@media (max-width: 600px) {
-  .main-layout {
-    padding-top: 60px !important;
-    padding-left: 8px !important;
-    padding-right: 8px !important;
-  }
-} 
-
-.journal-fab-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  position: fixed;
-  left: 16px;
-  bottom: 144px !important; /* 60px nav + 56px FAB + 16px gap + 12px extra */
-  z-index: 1203;
-  pointer-events: auto;
-}
-.journal-fab-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--secondary-color);
-  color: #fff;
-  border: none;
-  border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  padding: 10px 18px;
-  font-size: 1.05rem;
-  font-weight: 500;
-  cursor: pointer;
-  min-width: 120px;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-  opacity: 0.97;
-}
-.journal-fab-action-btn:active,
-.journal-fab-action-btn:focus {
-  background: var(--accent-color);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
-  opacity: 1;
-  outline: none;
-}
-@media (max-width: 600px) {
-  .journal-fab-actions {
-    left: 16px !important;
-    bottom: 144px !important;
-    right: auto !important;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-    pointer-events: auto;
-  }
-  .journal-fab-action-btn {
-    min-width: 140px;
-    font-size: 1.08rem;
-    padding: 12px 20px;
-  }
-} 
-
-/* Bottom Navigation Bar (mobile only) */
-@media (max-width: 600px) {
-  .bottom-nav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 60px;
-    background: var(--white);
-    box-shadow: 0 -2px 8px var(--shadow);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 1205;
-    border-top: 1px solid #e0e0e0;
-  }
-  .bottom-nav-btn {
-    flex: 1 1 0;
-    background: none;
-    border: none;
-    outline: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    color: var(--primary-color);
-    padding: 6px 0 0 0;
-    cursor: pointer;
-    min-width: 44px;
-    min-height: 44px;
-    transition: background 0.15s, color 0.15s;
-    border-radius: 0;
-  }
-  .bottom-nav-btn:active,
-  .bottom-nav-btn.active {
-    color: var(--secondary-color);
-    background: #f1f8e9;
-  }
-  .bottom-nav-label {
-    font-size: 0.8em;
-    margin-top: 2px;
-    display: block;
-  }
-}
-
-@media (min-width: 601px) {
-  .bottom-nav {
-    display: none !important;
-  }
-} 
-
-@media (max-width: 600px) {
-  /* Move FAB and FAB actions above bottom nav */
-  .journal-fab-btn {
-    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
-  }
-  .journal-fab-actions {
-    bottom: 144px !important; /* 60px nav + 56px FAB + 16px gap + 12px extra */
-  }
-  .scroll-to-top {
-    bottom: 80px !important;
-    right: 20px !important;
-  }
-} 
-
-@media (max-width: 600px) {
-  /* Hide header/title area on mobile for maximum space */
-  header {
-    display: none !important;
-  }
-} 
-
-/* Search and AI Section Styles */
-.search-section-title {
-  font-size: 1.2rem;
-  color: var(--primary-color);
-  margin-bottom: 15px;
-  font-weight: 500;
-}
-
-.ai-advice-btn {
-  padding: 12px 16px;
-  background: var(--secondary-color);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  margin-bottom: 15px;
-}
-
-.ai-advice-btn:hover {
-  background-color: var(--accent-color);
-  transform: translateY(-2px);
-}
-
-.ai-advice-btn:active {
-  transform: translateY(0);
-}
-
-.search-container {
-  width: 100%;
-  margin-bottom: 15px;
-}
-
-/* Desktop layout - horizontal arrangement */
-@media (min-width: 768px) {
-  .search-bar {
-    position: relative;
-  }
-  
-  .search-section-title {
-    width: 60%;
-    float: left;
-    margin-bottom: 20px;
-  }
-  
-  .ai-advice-btn {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    margin-bottom: 0;
-  }
-  
-  .search-container {
-    clear: both;
-  }
-}
-
-/* Mobile layout - fully stacked, full width */
-@media (max-width: 600px) {
-  .ai-advice-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-  }
-  
-  .search-section-title {
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  
-  .search-box {
-    padding: 14px 20px !important;
-  }
 } 

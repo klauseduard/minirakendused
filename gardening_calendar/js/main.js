@@ -220,7 +220,38 @@ function setupNavigation() {
         clearLocationBtn.style.opacity = locationInput.value ? '0.7' : '0.2';
     }
     
-    // Navigation menu functionality
+    // Desktop Navigation menu functionality
+    setupDesktopNavigation();
+    
+    // Mobile Bottom Navigation
+    setupMobileNavigation();
+    
+    // Listen for month button clicks to update activeMonth
+    document.querySelectorAll('.month-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            window.GardeningApp.activeMonth = button.dataset.month;
+        });
+    });
+
+    // Hide scroll-to-top button when bottom nav is visible (mobile)
+    const scrollToTopBtn = document.getElementById('scrollToTop');
+    function updateScrollToTopVisibility() {
+        if (window.innerWidth <= 600) {
+            if (scrollToTopBtn) scrollToTopBtn.style.display = 'none';
+        } else {
+            // Existing logic (show/hide based on scroll)
+            if (scrollToTopBtn) scrollToTopBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
+        }
+    }
+    window.addEventListener('resize', updateScrollToTopVisibility);
+    window.addEventListener('orientationchange', updateScrollToTopVisibility);
+    updateScrollToTopVisibility();
+}
+
+/**
+ * Set up desktop quick-jump navigation menu
+ */
+function setupDesktopNavigation() {
     const quickJumpMenu = document.getElementById('quickJumpMenu');
     if (quickJumpMenu) {
         quickJumpMenu.addEventListener('click', (e) => {
@@ -244,13 +275,8 @@ function setupNavigation() {
                 }
                 
                 // Hide ALL main page content
-                document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.scroll-to-top)').forEach(el => {
+                document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav)').forEach(el => {
                     el.style.display = 'none';
-                });
-                
-                // Also explicitly hide all category cards
-                document.querySelectorAll('.category-card').forEach(card => {
-                    card.style.display = 'none';
                 });
                 
                 // Show ONLY journal section
@@ -268,35 +294,7 @@ function setupNavigation() {
                 }
                 
                 // Show all regular sections
-                document.querySelectorAll('.main-layout > section:not(#garden-journal)').forEach(section => {
-                    if (section.id === 'calendarContent') {
-                        section.style.display = 'grid';
-                    } else {
-                        section.style.display = 'block';
-                    }
-                });
-                
-                // Make sure the custom entries toolbar is visible
-                const customEntriesToolbar = document.querySelector('.custom-entries-toolbar');
-                if (customEntriesToolbar) {
-                    customEntriesToolbar.style.display = 'flex';
-                }
-                
-                // Restore all category cards visibility
-                document.querySelectorAll('.category-card').forEach(card => {
-                    card.style.display = 'flex';  // Cards use flex layout internally
-                });
-                
-                // Ensure calendar content has grid display
-                const calendarContent = document.getElementById('calendarContent');
-                if (calendarContent) {
-                    // Restore the original display type (should be grid)
-                    const originalDisplay = calendarContent.getAttribute('data-original-display') || 'grid';
-                    calendarContent.style.display = originalDisplay;
-                    
-                    // Always explicitly set grid template for consistency
-                    calendarContent.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
-                }
+                showAllMainSections();
                 
                 // Re-render the calendar if clicking on calendar section
                 if (sectionId === 'monthly-calendar') {
@@ -307,20 +305,17 @@ function setupNavigation() {
                 // Scroll to the target section with offset for header
                 const targetSection = document.getElementById(sectionId);
                 if (targetSection) {
-                    uiModule.scrollToElement(targetSection, 200);
+                    uiModule.scrollToElement(targetSection, 80);
                 }
             }
         });
     }
-    
-    // Listen for month button clicks to update activeMonth
-    document.querySelectorAll('.month-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            window.GardeningApp.activeMonth = button.dataset.month;
-        });
-    });
+}
 
-    // --- Bottom Navigation Bar (mobile only) ---
+/**
+ * Set up mobile bottom navigation bar
+ */
+function setupMobileNavigation() {
     const bottomNav = document.querySelector('.bottom-nav');
     if (bottomNav) {
         const navButtons = bottomNav.querySelectorAll('.bottom-nav-btn');
@@ -334,7 +329,7 @@ function setupNavigation() {
                 const sectionId = btn.dataset.section;
                 const section = document.getElementById(sectionId);
                 
-                // Handle Journal view separately (toggle between views)
+                // Handle different sections appropriately
                 if (sectionId === 'garden-journal') {
                     // First, store the current state of calendarContent
                     const calendarContent = document.getElementById('calendarContent');
@@ -343,13 +338,8 @@ function setupNavigation() {
                     }
                     
                     // Hide ALL main page content except journal
-                    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.scroll-to-top)').forEach(el => {
+                    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav)').forEach(el => {
                         el.style.display = 'none';
-                    });
-                    
-                    // Also explicitly hide all category cards
-                    document.querySelectorAll('.category-card').forEach(card => {
-                        card.style.display = 'none';
                     });
                     
                     // Show ONLY journal section
@@ -359,79 +349,97 @@ function setupNavigation() {
                         // Force rendering of journal
                         journalModule.renderJournal();
                     }
-                } else {
-                    // Coming back to main view - hide journal
+                } else if (sectionId === 'monthly-calendar') {
+                    // Return to main view and show calendar content
+                    showAllMainSections();
+                    
+                    // Make sure calendar content is visible
+                    const calendarContent = document.getElementById('calendarContent');
+                    if (calendarContent) {
+                        calendarContent.style.display = 'grid';
+                    }
+                    
+                    // Hide journal
                     const journalSection = document.getElementById('garden-journal');
                     if (journalSection) {
                         journalSection.style.display = 'none';
                     }
                     
-                    // Show all regular sections
-                    document.querySelectorAll('.main-layout > section:not(#garden-journal)').forEach(section => {
-                        if (section.id === 'calendarContent') {
-                            section.style.display = 'grid';
-                        } else {
-                            section.style.display = 'block';
-                        }
-                    });
+                    // Render the active month
+                    const activeMonth = window.GardeningApp.activeMonth || 'april';
+                    calendarModule.renderCalendar(activeMonth);
+                } else if (sectionId === 'weather-info' || sectionId === 'search-section') {
+                    // Return to main view for these sections
+                    showAllMainSections();
                     
-                    // Make sure the custom entries toolbar is visible
-                    const customEntriesToolbar = document.querySelector('.custom-entries-toolbar');
-                    if (customEntriesToolbar) {
-                        customEntriesToolbar.style.display = 'flex';
+                    // Hide journal
+                    const journalSection = document.getElementById('garden-journal');
+                    if (journalSection) {
+                        journalSection.style.display = 'none';
                     }
-                    
-                    // Restore all category cards visibility
-                    document.querySelectorAll('.category-card').forEach(card => {
-                        card.style.display = 'flex';  // Cards use flex layout internally
-                    });
-                    
-                    // Ensure calendar content has grid display
-                    const calendarContent = document.getElementById('calendarContent');
-                    if (calendarContent) {
-                        const originalDisplay = calendarContent.getAttribute('data-original-display') || 'grid';
-                        calendarContent.style.display = originalDisplay;
-                        calendarContent.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
-                    }
-                    
-                    // Scroll the section into view
-                    if (section) {
-                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                }
+                
+                // Scroll the section into view
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
             });
         });
+        
         // Optionally, highlight the nav button for the current section on scroll
         window.addEventListener('scroll', () => {
-            let found = false;
+            // Skip scroll-based activation when in journal mode
+            const journalSection = document.getElementById('garden-journal');
+            if (journalSection && journalSection.style.display === 'block') {
+                return;
+            }
+            
+            let visibleSections = [];
+            
+            // Check which sections are visible
             navButtons.forEach(btn => {
                 const sectionId = btn.dataset.section;
+                // Skip journal since it's a special case
+                if (sectionId === 'garden-journal') return;
+                
                 const section = document.getElementById(sectionId);
-                if (section && !found) {
+                if (section) {
                     const rect = section.getBoundingClientRect();
-                    if (rect.top <= 80 && rect.bottom > 80) {
-                        btn.classList.add('active');
-                        found = true;
-                    } else {
-                        btn.classList.remove('active');
+                    // Consider a section visible if a significant portion is in view
+                    if (rect.top < window.innerHeight/2 && rect.bottom > 100) {
+                        visibleSections.push({btn, distance: Math.abs(rect.top)});
                     }
                 }
             });
+            
+            // Sort by closest to top
+            visibleSections.sort((a, b) => a.distance - b.distance);
+            
+            // Reset all buttons
+            navButtons.forEach(b => b.classList.remove('active'));
+            
+            // Activate the closest visible section's button
+            if (visibleSections.length > 0) {
+                visibleSections[0].btn.classList.add('active');
+            }
         });
     }
-    // Hide scroll-to-top button when bottom nav is visible (mobile)
-    const scrollToTopBtn = document.getElementById('scrollToTop');
-    function updateScrollToTopVisibility() {
-        if (window.innerWidth <= 600) {
-            if (scrollToTopBtn) scrollToTopBtn.style.display = 'none';
+}
+
+/**
+ * Helper function to show all main sections
+ */
+function showAllMainSections() {
+    // Show all main sections except journal
+    document.querySelectorAll('.main-layout > section:not(#garden-journal)').forEach(el => {
+        if (el.id === 'calendarContent') {
+            // Use stored display value if available
+            const originalDisplay = el.getAttribute('data-original-display');
+            el.style.display = originalDisplay || 'grid';
         } else {
-            // Existing logic (show/hide based on scroll)
-            if (scrollToTopBtn) scrollToTopBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
+            el.style.display = 'block';
         }
-    }
-    window.addEventListener('resize', updateScrollToTopVisibility);
-    window.addEventListener('orientationchange', updateScrollToTopVisibility);
-    updateScrollToTopVisibility();
+    });
 }
 
 // Initialize the application when DOM is loaded

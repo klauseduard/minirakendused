@@ -29,6 +29,25 @@
     <div class="container">
         <header>
             <h1>Spring Gardening and Planting Calendar</h1>
+            <!-- Desktop-only Quick Navigation Menu -->
+            <div class="quick-jump-menu desktop-only-nav" id="quickJumpMenu">
+                <div class="quick-jump-title">Quick Navigation:</div>
+                <button class="quick-jump-btn" data-section="location-setup">
+                    <span class="nav-icon">📍</span> Location
+                </button>
+                <button class="quick-jump-btn" data-section="weather-info">
+                    <span class="nav-icon">🌤️</span> Weather
+                </button>
+                <button class="quick-jump-btn" data-section="search-section">
+                    <span class="nav-icon">🤖</span> Search & AI
+                </button>
+                <button class="quick-jump-btn" data-section="monthly-calendar">
+                    <span class="nav-icon">📅</span> Schedule
+                </button>
+                <button class="quick-jump-btn" data-section="garden-journal">
+                    <span class="nav-icon">📔</span> Journal
+                </button>
+            </div>
         </header>
 
         <main class="main-layout">
@@ -81,8 +100,9 @@
                 <h2 class="search-section-title">Search & AI Garden Assistant</h2>
                 <button id="aiAdviceBtn" class="ai-advice-btn">
                     <span style="font-size: 1.2em;">🤖</span>
-                    <span>Generate AI gardening advice prompt</span>
+                    <span>Generate AI advice with selected plants</span>
                 </button>
+                <div class="ai-hint-text">Tip: Check plants in the Planting Schedule below to include them in your AI prompt</div>
                 <div class="search-container">
                     <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
                     <input type="text" class="search-box" id="searchBox" 
@@ -93,24 +113,23 @@
 
             <!-- Month Navigation -->
             <section class="month-navigation" id="monthly-calendar">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 class="month-nav-title">Select Growing Period</h2>
-                    <div class="data-management-buttons" style="display: flex; gap: 10px;">
-                        <button id="exportCustomEntriesBtn" class="data-manage-btn" style="padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">
-                            <span style="font-size: 1.1em;">📤</span>
-                            <span>Export Custom Entries</span>
+                <div class="month-nav-header">
+                    <h2 class="month-nav-title">Planting Schedule</h2>
+                    <div class="data-management-buttons">
+                        <button id="exportCustomEntriesBtn" class="data-manage-btn">
+                            <span style="font-size: 1.1em;">📤</span> Export
                         </button>
-                        <button id="importCustomEntriesBtn" class="data-manage-btn" style="padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;">
-                            <span style="font-size: 1.1em;">📥</span>
-                            <span>Import Custom Entries</span>
+                        <button id="importCustomEntriesBtn" class="data-manage-btn">
+                            <span style="font-size: 1.1em;">📥</span> Import
                         </button>
                         <div class="social-share-container" id="calendarShareContainer"></div>
                     </div>
                 </div>
+                <div class="calendar-explainer">Choose a growing period to see recommended plants and tasks:</div>
                 <div class="calendar-nav">
-                    <button class="month-btn active" data-month="april">April</button>
-                    <button class="month-btn" data-month="may">May</button>
-                    <button class="month-btn" data-month="early_june">Early June</button>
+                    <button class="month-btn active" data-month="april">April Plants</button>
+                    <button class="month-btn" data-month="may">May Plants</button>
+                    <button class="month-btn" data-month="early_june">Early June Plants</button>
                 </div>
             </section>
 
@@ -173,7 +192,7 @@
                     <span style="font-size: 2rem;">➕</span>
                 </button>
                 <!-- Expanded FAB Actions (vertical stack) -->
-                <div id="journalFabActions" class="journal-fab-actions" style="display: none; position: fixed; left: 16px; bottom: 88px; z-index: 1203; flex-direction: column; gap: 12px; align-items: flex-start;">
+                <div id="journalFabActions" class="journal-fab-actions" style="display: none;">
                     <button id="fabAddEntryBtn" class="journal-fab-action-btn" aria-label="Add Entry"><span style="font-size: 1.3rem;">➕</span> Add Entry</button>
                     <button id="fabExportBtn" class="journal-fab-action-btn" aria-label="Export Journal"><span style="font-size: 1.3rem;">📤</span> Export</button>
                     <button id="fabImportBtn" class="journal-fab-action-btn" aria-label="Import Journal"><span style="font-size: 1.3rem;">📥</span> Import</button>
@@ -516,9 +535,9 @@
         <span style="font-size: 1.5em;">🌤️</span>
         <span class="bottom-nav-label">Weather</span>
       </button>
-      <button class="bottom-nav-btn" data-section="monthly-calendar" aria-label="Calendar">
+      <button class="bottom-nav-btn" data-section="monthly-calendar" aria-label="Schedule">
         <span style="font-size: 1.5em;">📅</span>
-        <span class="bottom-nav-label">Calendar</span>
+        <span class="bottom-nav-label">Schedule</span>
       </button>
       <button class="bottom-nav-btn" data-section="garden-journal" aria-label="Journal">
         <span style="font-size: 1.5em;">📔</span>
