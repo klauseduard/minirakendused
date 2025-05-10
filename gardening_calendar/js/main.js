@@ -319,6 +319,119 @@ function setupNavigation() {
             window.GardeningApp.activeMonth = button.dataset.month;
         });
     });
+
+    // --- Bottom Navigation Bar (mobile only) ---
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav) {
+        const navButtons = bottomNav.querySelectorAll('.bottom-nav-btn');
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active from all
+                navButtons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Get target section
+                const sectionId = btn.dataset.section;
+                const section = document.getElementById(sectionId);
+                
+                // Handle Journal view separately (toggle between views)
+                if (sectionId === 'garden-journal') {
+                    // First, store the current state of calendarContent
+                    const calendarContent = document.getElementById('calendarContent');
+                    if (calendarContent) {
+                        calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
+                    }
+                    
+                    // Hide ALL main page content except journal
+                    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.scroll-to-top)').forEach(el => {
+                        el.style.display = 'none';
+                    });
+                    
+                    // Also explicitly hide all category cards
+                    document.querySelectorAll('.category-card').forEach(card => {
+                        card.style.display = 'none';
+                    });
+                    
+                    // Show ONLY journal section
+                    const journalSection = document.getElementById('garden-journal');
+                    if (journalSection) {
+                        journalSection.style.display = 'block';
+                        // Force rendering of journal
+                        journalModule.renderJournal();
+                    }
+                } else {
+                    // Coming back to main view - hide journal
+                    const journalSection = document.getElementById('garden-journal');
+                    if (journalSection) {
+                        journalSection.style.display = 'none';
+                    }
+                    
+                    // Show all regular sections
+                    document.querySelectorAll('.main-layout > section:not(#garden-journal)').forEach(section => {
+                        if (section.id === 'calendarContent') {
+                            section.style.display = 'grid';
+                        } else {
+                            section.style.display = 'block';
+                        }
+                    });
+                    
+                    // Make sure the custom entries toolbar is visible
+                    const customEntriesToolbar = document.querySelector('.custom-entries-toolbar');
+                    if (customEntriesToolbar) {
+                        customEntriesToolbar.style.display = 'flex';
+                    }
+                    
+                    // Restore all category cards visibility
+                    document.querySelectorAll('.category-card').forEach(card => {
+                        card.style.display = 'flex';  // Cards use flex layout internally
+                    });
+                    
+                    // Ensure calendar content has grid display
+                    const calendarContent = document.getElementById('calendarContent');
+                    if (calendarContent) {
+                        const originalDisplay = calendarContent.getAttribute('data-original-display') || 'grid';
+                        calendarContent.style.display = originalDisplay;
+                        calendarContent.style.gridTemplateColumns = 'repeat(auto-fit, minmax(300px, 1fr))';
+                    }
+                    
+                    // Scroll the section into view
+                    if (section) {
+                        section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+        });
+        // Optionally, highlight the nav button for the current section on scroll
+        window.addEventListener('scroll', () => {
+            let found = false;
+            navButtons.forEach(btn => {
+                const sectionId = btn.dataset.section;
+                const section = document.getElementById(sectionId);
+                if (section && !found) {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top <= 80 && rect.bottom > 80) {
+                        btn.classList.add('active');
+                        found = true;
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                }
+            });
+        });
+    }
+    // Hide scroll-to-top button when bottom nav is visible (mobile)
+    const scrollToTopBtn = document.getElementById('scrollToTop');
+    function updateScrollToTopVisibility() {
+        if (window.innerWidth <= 600) {
+            if (scrollToTopBtn) scrollToTopBtn.style.display = 'none';
+        } else {
+            // Existing logic (show/hide based on scroll)
+            if (scrollToTopBtn) scrollToTopBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
+        }
+    }
+    window.addEventListener('resize', updateScrollToTopVisibility);
+    window.addEventListener('orientationchange', updateScrollToTopVisibility);
+    updateScrollToTopVisibility();
 }
 
 // Initialize the application when DOM is loaded
@@ -328,65 +441,5 @@ document.addEventListener('DOMContentLoaded', initApp);
 console.log('Main module loaded');
 
 // --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) ---
-document.addEventListener('DOMContentLoaded', function() {
-  const quickNavToggleBtn = document.getElementById('quickNavToggleBtn');
-  const quickNavMenuContainer = document.getElementById('quickNavMenuContainer');
-  const quickJumpMenu = document.getElementById('quickJumpMenu');
-  const header = document.querySelector('header');
-
-  function isMobile() {
-    return window.innerWidth <= 600;
-  }
-
-  function closeQuickNavMenu() {
-    if (quickNavMenuContainer) quickNavMenuContainer.classList.remove('open');
-    if (header) header.style.display = '';
-  }
-
-  if (quickNavToggleBtn && quickNavMenuContainer) {
-    quickNavToggleBtn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      if (quickNavMenuContainer.classList.contains('open')) {
-        closeQuickNavMenu();
-      } else {
-        quickNavMenuContainer.classList.add('open');
-        // Optionally hide the title bar/header for more space
-        if (header) header.style.display = 'block';
-      }
-    });
-  }
-
-  // Close menu when clicking a quick-jump-btn
-  if (quickJumpMenu) {
-    quickJumpMenu.addEventListener('click', function(e) {
-      if (e.target.classList.contains('quick-jump-btn')) {
-        closeQuickNavMenu();
-      }
-    });
-  }
-
-  // Close menu when clicking outside
-  document.addEventListener('click', function(e) {
-    if (
-      quickNavMenuContainer &&
-      quickNavMenuContainer.classList.contains('open') &&
-      !quickNavMenuContainer.contains(e.target) &&
-      e.target !== quickNavToggleBtn
-    ) {
-      closeQuickNavMenu();
-    }
-  });
-
-  // Hide hamburger and menu on desktop resize
-  function updateQuickNavVisibility() {
-    if (isMobile()) {
-      if (quickNavToggleBtn) quickNavToggleBtn.style.display = 'block';
-    } else {
-      if (quickNavToggleBtn) quickNavToggleBtn.style.display = 'none';
-      if (quickNavMenuContainer) quickNavMenuContainer.classList.remove('open');
-    }
-  }
-  window.addEventListener('resize', updateQuickNavVisibility);
-  updateQuickNavVisibility();
-});
+// Removed: All quick navigation hamburger and menu logic (no longer needed)
 // --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- 

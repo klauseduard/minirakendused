@@ -29,31 +29,6 @@
     <div class="container">
         <header>
             <h1>Spring Gardening and Planting Calendar</h1>
-            <!-- --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) --- -->
-            <button id="quickNavToggleBtn" class="quick-nav-toggle-btn" aria-label="Open navigation menu" style="display: none;">
-                <span style="font-size: 2rem;">☰</span>
-            </button>
-            <div id="quickNavMenuContainer" class="quick-nav-menu-container">
-                <div class="quick-jump-menu" id="quickJumpMenu">
-                    <div class="quick-jump-title">Quick Navigation:</div>
-                    <button class="quick-jump-btn" data-section="location-setup">
-                        <span class="nav-icon">📍</span> Location
-                    </button>
-                    <button class="quick-jump-btn" data-section="weather-info">
-                        <span class="nav-icon">🌤️</span> Weather
-                    </button>
-                    <button class="quick-jump-btn" data-section="search-section">
-                        <span class="nav-icon">🤖</span> Search & AI
-                    </button>
-                    <button class="quick-jump-btn" data-section="monthly-calendar">
-                        <span class="nav-icon">📅</span> Calendar
-                    </button>
-                    <button class="quick-jump-btn" data-section="garden-journal">
-                        <span class="nav-icon">📔</span> Journal
-                    </button>
-                </div>
-            </div>
-            <!-- --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- -->
         </header>
 
         <main class="main-layout">
@@ -103,15 +78,11 @@
 
             <!-- Search Bar -->
             <section class="search-bar" id="search-section">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <h2 class="search-section-title">Search & AI Garden Assistant</h2>
-                    <div style="display: flex; gap: 10px;">
-                    <button id="aiAdviceBtn" class="ai-advice-btn" style="padding: 8px 16px; background: var(--secondary-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 8px; font-weight: 500; cursor: pointer; transition: background-color 0.3s;">
-                        <span style="font-size: 1.2em;">🤖</span>
-                        <span>Generate AI gardening advice prompt</span>
-                    </button>
-                    </div>
-                </div>
+                <h2 class="search-section-title">Search & AI Garden Assistant</h2>
+                <button id="aiAdviceBtn" class="ai-advice-btn">
+                    <span style="font-size: 1.2em;">🤖</span>
+                    <span>Generate AI gardening advice prompt</span>
+                </button>
                 <div class="search-container">
                     <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
                     <input type="text" class="search-box" id="searchBox" 
@@ -538,6 +509,26 @@
             </div>
         </div>
     </div>
+
+    <!-- Bottom Navigation Bar (mobile only) -->
+    <nav class="bottom-nav" aria-label="Main navigation">
+      <button class="bottom-nav-btn" data-section="weather-info" aria-label="Weather">
+        <span style="font-size: 1.5em;">🌤️</span>
+        <span class="bottom-nav-label">Weather</span>
+      </button>
+      <button class="bottom-nav-btn" data-section="monthly-calendar" aria-label="Calendar">
+        <span style="font-size: 1.5em;">📅</span>
+        <span class="bottom-nav-label">Calendar</span>
+      </button>
+      <button class="bottom-nav-btn" data-section="garden-journal" aria-label="Journal">
+        <span style="font-size: 1.5em;">📔</span>
+        <span class="bottom-nav-label">Journal</span>
+      </button>
+      <button class="bottom-nav-btn" data-section="search-section" aria-label="AI Helper">
+        <span style="font-size: 1.5em;">🤖</span>
+        <span class="bottom-nav-label">AI Helper</span>
+      </button>
+    </nav>
 
     <!-- Import main application module -->
     <script type="module" src="gardening_calendar/js/main.js"></script>
