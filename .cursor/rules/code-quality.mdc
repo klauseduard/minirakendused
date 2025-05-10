@@ -1,0 +1,8 @@
+---
+description: 
+globs: *js
+alwaysApply: false
+---
+- Use ES6+ features (const/let, arrow functions, template literals).
+- Keep functions small and focused; prefer pure functions where possible.
+- Comment non-obvious logic, especially around image processing and export/import.

@@ -1,0 +1,8 @@
+---
+description: Updates to export-import functionalities of the gardening app
+globs: 
+alwaysApply: false
+---
+- Exported JSON should be as small as possible (no uncompressed images).
+- Always provide user guidance for exporting/importing on iOS (e.g., "On My iPhone" storage tips).
+- If export includes images, warn users about potential file size.
