@@ -1312,6 +1312,87 @@ export function initJournal() {
             }
         });
     }
+
+    /** --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- **/
+
+    // Mobile journal UI controls
+    const fabBtn = document.getElementById('journalFabBtn');
+    const moreMenuContainer = document.getElementById('journalMoreMenuContainer');
+    const moreBtn = document.getElementById('journalMoreBtn');
+    const moreMenu = document.getElementById('journalMoreMenu');
+    const exportMenuBtn = document.getElementById('journalExportMenuBtn');
+    const importMenuBtn = document.getElementById('journalImportMenuBtn');
+    const viewDropdownContainer = document.getElementById('journalViewDropdownContainer');
+    const viewDropdown = document.getElementById('journalViewDropdown');
+
+    function isMobile() {
+        return window.innerWidth <= 600;
+    }
+
+    function updateMobileJournalUI() {
+        if (isMobile()) {
+            if (fabBtn) fabBtn.style.display = 'flex';
+            if (moreMenuContainer) moreMenuContainer.style.display = 'flex';
+            if (viewDropdownContainer) viewDropdownContainer.style.display = 'block';
+        } else {
+            if (fabBtn) fabBtn.style.display = 'none';
+            if (moreMenuContainer) moreMenuContainer.style.display = 'none';
+            if (viewDropdownContainer) viewDropdownContainer.style.display = 'none';
+            if (moreMenu) moreMenu.style.display = 'none';
+        }
+    }
+    window.addEventListener('resize', updateMobileJournalUI);
+    updateMobileJournalUI();
+
+    // FAB opens journal entry modal
+    if (fabBtn) {
+        fabBtn.addEventListener('click', () => openJournalEntryModal());
+    }
+
+    // More button toggles menu
+    if (moreBtn && moreMenu) {
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moreMenu.style.display = moreMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+        // Hide menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (moreMenu.style.display === 'flex' && !moreMenu.contains(e.target) && e.target !== moreBtn) {
+                moreMenu.style.display = 'none';
+            }
+        });
+    }
+    // Export/Import menu actions
+    if (exportMenuBtn) {
+        exportMenuBtn.addEventListener('click', () => {
+            moreMenu.style.display = 'none';
+            showExportOptionsModal();
+        });
+    }
+    if (importMenuBtn) {
+        importMenuBtn.addEventListener('click', () => {
+            moreMenu.style.display = 'none';
+            // Simulate click on original import button
+            if (importJournalBtn) importJournalBtn.click();
+        });
+    }
+    // Dropdown for journal views
+    if (viewDropdown) {
+        viewDropdown.addEventListener('change', (e) => {
+            const view = e.target.value;
+            // Hide all views
+            document.getElementById('journalTimeline').style.display = view === 'timeline' ? 'block' : 'none';
+            document.getElementById('journalGallery').style.display = view === 'gallery' ? 'block' : 'none';
+            document.getElementById('journalCalendar').style.display = view === 'calendar' ? 'block' : 'none';
+            // Render if needed
+            if (view === 'gallery') renderGallery();
+            if (view === 'calendar') renderJournalCalendar();
+        });
+        // Set default view
+        viewDropdown.value = 'timeline';
+    }
+
+    /** --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- **/
 }
 
 /**

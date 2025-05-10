@@ -325,4 +325,68 @@ function setupNavigation() {
 document.addEventListener('DOMContentLoaded', initApp);
 
 // Notify that main.js has loaded
-console.log('Main module loaded'); 
+console.log('Main module loaded');
+
+// --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) ---
+document.addEventListener('DOMContentLoaded', function() {
+  const quickNavToggleBtn = document.getElementById('quickNavToggleBtn');
+  const quickNavMenuContainer = document.getElementById('quickNavMenuContainer');
+  const quickJumpMenu = document.getElementById('quickJumpMenu');
+  const header = document.querySelector('header');
+
+  function isMobile() {
+    return window.innerWidth <= 600;
+  }
+
+  function closeQuickNavMenu() {
+    if (quickNavMenuContainer) quickNavMenuContainer.classList.remove('open');
+    if (header) header.style.display = '';
+  }
+
+  if (quickNavToggleBtn && quickNavMenuContainer) {
+    quickNavToggleBtn.addEventListener('click', function(e) {
+      e.stopPropagation();
+      if (quickNavMenuContainer.classList.contains('open')) {
+        closeQuickNavMenu();
+      } else {
+        quickNavMenuContainer.classList.add('open');
+        // Optionally hide the title bar/header for more space
+        if (header) header.style.display = 'block';
+      }
+    });
+  }
+
+  // Close menu when clicking a quick-jump-btn
+  if (quickJumpMenu) {
+    quickJumpMenu.addEventListener('click', function(e) {
+      if (e.target.classList.contains('quick-jump-btn')) {
+        closeQuickNavMenu();
+      }
+    });
+  }
+
+  // Close menu when clicking outside
+  document.addEventListener('click', function(e) {
+    if (
+      quickNavMenuContainer &&
+      quickNavMenuContainer.classList.contains('open') &&
+      !quickNavMenuContainer.contains(e.target) &&
+      e.target !== quickNavToggleBtn
+    ) {
+      closeQuickNavMenu();
+    }
+  });
+
+  // Hide hamburger and menu on desktop resize
+  function updateQuickNavVisibility() {
+    if (isMobile()) {
+      if (quickNavToggleBtn) quickNavToggleBtn.style.display = 'block';
+    } else {
+      if (quickNavToggleBtn) quickNavToggleBtn.style.display = 'none';
+      if (quickNavMenuContainer) quickNavMenuContainer.classList.remove('open');
+    }
+  }
+  window.addEventListener('resize', updateQuickNavVisibility);
+  updateQuickNavVisibility();
+});
+// --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- 

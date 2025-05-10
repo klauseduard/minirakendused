@@ -1566,4 +1566,381 @@ footer p {
         flex-direction: column;
         gap: 15px;
     }
+}
+
+/* --- MOBILE USABILITY IMPROVEMENTS (mobile-usability branch) --- */
+
+@media (max-width: 600px) {
+    /* Add vertical spacing between rows and buttons */
+    .location-row,
+    .units-row,
+    .unit-group,
+    .search-container,
+    .month-navigation,
+    .calendar-nav,
+    .garden-journal,
+    .weather-display,
+    .search-bar,
+    .top-controls {
+        margin-bottom: 12px !important;
+    }
+    .location-action-btn,
+    .location-btn,
+    .month-btn {
+        margin-bottom: 10px !important;
+    }
+    /* Increase input and select padding for comfort */
+    .location-input,
+    .search-box,
+    select,
+    input[type="date"],
+    input[type="file"] {
+        padding-top: 14px !important;
+        padding-bottom: 14px !important;
+        font-size: 1.05rem !important;
+    }
+    /* Minimum font size for labels and controls */
+    label,
+    .unit-group label,
+    .month-nav-title,
+    .search-section-title {
+        font-size: 1.05rem !important;
+    }
+    /* Add horizontal padding to main container/sections */
+    .container,
+    .main-layout,
+    .top-controls,
+    .weather-display,
+    .search-bar,
+    .month-navigation,
+    .calendar-content,
+    .garden-journal {
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+    /* Section separation: subtle divider */
+    .top-controls,
+    .weather-display,
+    .search-bar,
+    .month-navigation,
+    .garden-journal {
+        border-bottom: 1px solid #e0e0e0;
+    }
+    /* Quick-jump menu: make more compact */
+    .quick-jump-menu {
+        padding-top: 2px;
+        padding-bottom: 2px;
+        gap: 4px;
+    }
+    /* Stack main layout sections vertically and adjust padding */
+    .main-layout,
+    .top-controls,
+    .weather-display,
+    .search-bar,
+    .month-navigation,
+    .calendar-content,
+    .garden-journal {
+        padding: 8px 0 !important;
+        margin-bottom: 12px !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        max-width: 100vw !important;
+    }
+    .container {
+        padding: 0 !important;
+        max-width: 100vw !important;
+    }
+    header {
+        padding: 8px 4px !important;
+        font-size: 1rem !important;
+    }
+    h1 {
+        font-size: 1.1rem !important;
+    }
+    /* Ensure all buttons and inputs are at least 44px tall and wide */
+    button, .location-input, .search-box, select, input[type="date"], input[type="file"] {
+        min-height: 44px !important;
+        min-width: 44px !important;
+        font-size: 1rem !important;
+    }
+    /* Mobile warning banner for very small screens */
+    .mobile-warning {
+        display: block !important;
+        font-size: 0.95rem;
+        color: #b71c1c;
+        background: #fff3e0;
+        border: 1px solid #ffccbc;
+        border-radius: 6px;
+        margin: 8px 0;
+        padding: 10px 8px;
+        text-align: center;
+    }
+    /* Weather forecast table: card/list view for each day */
+    .weather-forecast-table {
+        display: block;
+        width: 100%;
+        border-spacing: 0;
+        background: none;
+    }
+    .weather-forecast-table thead {
+        display: none;
+    }
+    .weather-forecast-table tbody {
+        display: block;
+        width: 100%;
+    }
+    .weather-forecast-table tr {
+        display: block;
+        background: #f8faf5;
+        margin-bottom: 12px;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(74,142,58,0.07);
+        padding: 10px 8px;
+        width: 100%;
+    }
+    .weather-forecast-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 6px 0;
+        border: none;
+        font-size: 1.05rem;
+        background: none;
+        width: 100%;
+    }
+    .weather-forecast-table td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        color: #4a8e3a;
+        flex: 1 0 50%;
+        text-align: left;
+        font-size: 0.98rem;
+    }
+    .weather-forecast-table td:last-child {
+        border-bottom: none;
+    }
+}
+
+/* --- END MOBILE USABILITY IMPROVEMENTS --- */ 
+
+@media (max-width: 600px) {
+  .journal-header {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
+  }
+  .journal-title {
+    font-size: 1.1rem !important;
+    margin-bottom: 6px !important;
+    text-align: center !important;
+  }
+  .journal-btn, .journal-add-btn {
+    width: 100% !important;
+    margin-bottom: 6px !important;
+    justify-content: center !important;
+    display: flex !important;
+  }
+  .journal-tabs {
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+  }
+  .journal-tab {
+    width: 100% !important;
+    text-align: center !important;
+  }
+} 
+
+/* --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- */
+
+@media (max-width: 600px) {
+  /* Hide original Export/Import/New Entry buttons and tab row */
+  .journal-header .journal-btn,
+  .journal-header .journal-add-btn,
+  .journal-tabs {
+    display: none !important;
+  }
+  /* Show FAB for New Entry */
+  .journal-fab-btn {
+    display: flex !important;
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 1200;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 56px;
+    height: 56px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+  }
+  .journal-fab-btn:active {
+    background: var(--accent-color);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  }
+  /* Show More (⋮) button in journal header */
+  .journal-more-menu-container {
+    display: flex !important;
+    align-items: center;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 1100;
+  }
+  .journal-more-btn {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    font-size: 1.5rem;
+    padding: 8px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .journal-more-btn:active {
+    background: #e8f5e9;
+  }
+  .journal-more-menu {
+    min-width: 120px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 6px 0;
+    position: absolute;
+    right: 0;
+    top: 40px;
+    z-index: 1201;
+    display: none;
+    flex-direction: column;
+  }
+  .journal-more-menu-item {
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 12px 18px;
+    font-size: 1rem;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .journal-more-menu-item:hover,
+  .journal-more-menu-item:focus {
+    background: #f1f8e9;
+    outline: none;
+  }
+  /* Show journal view dropdown, hide tab row */
+  .journal-view-dropdown-container {
+    display: block !important;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .journal-view-dropdown {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 20px;
+    border: 2px solid var(--secondary-color);
+    font-size: 1.05rem;
+    color: var(--primary-color);
+    background: #f8faf5;
+    margin-bottom: 8px;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+  }
+}
+
+/* --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- */ 
+
+/* --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) --- */
+@media (max-width: 600px) {
+  /* Show hamburger button, hide quick nav menu by default */
+  .quick-nav-toggle-btn {
+    display: block !important;
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 1201;
+    background: none;
+    border: none;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 8px;
+    font-size: 2rem;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .quick-nav-toggle-btn:active {
+    background: rgba(255,255,255,0.1);
+  }
+  .quick-nav-menu-container {
+    display: none !important;
+    position: absolute;
+    top: 56px;
+    left: 0;
+    width: 100vw;
+    background: var(--primary-color);
+    z-index: 1200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+    transition: max-height 0.3s;
+  }
+  .quick-nav-menu-container.open {
+    display: block !important;
+    animation: fadeIn 0.2s;
+  }
+  .quick-jump-menu {
+    flex-direction: column;
+    gap: 8px;
+    padding: 18px 10px 10px 10px;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+    max-width: 100vw;
+    margin: 0;
+  }
+  .quick-jump-title {
+    text-align: left;
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+}
+/* --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- */ 
+
+@media (max-width: 600px) {
+  .app-title, .app-icon-mobile {
+    display: none !important;
+  }
+  header {
+    min-height: 0 !important;
+    height: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    position: relative !important;
+    display: block !important;
+  }
+  .quick-nav-toggle-btn {
+    position: fixed !important;
+    top: 10px !important;
+    left: 10px !important;
+    z-index: 2000 !important;
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.12) !important;
+    font-size: 2rem !important;
+    padding: 6px 10px !important;
+    border: none !important;
+    display: block !important;
+  }
 } 
