@@ -1,7 +1,7 @@
 ---
 description: 
 globs: 
-alwaysApply: false
+alwaysApply: true
 ---
 - All interactive elements must be easily tappable (min 44x44px).
 - Floating action buttons (FAB) should only be visible in their relevant context (e.g., Journal view).
