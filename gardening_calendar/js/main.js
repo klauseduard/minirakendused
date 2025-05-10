@@ -292,6 +292,12 @@ function setupDesktopNavigation() {
                     journalSection.style.display = 'block';
                     // Force rendering of journal
                     journalModule.renderJournal();
+                    
+                    // Ensure we scroll to the top of the journal
+                    window.scrollTo({
+                        top: 0,
+                        behavior: 'smooth'
+                    });
                 }
             } else {
                 // Coming back to main view - hide journal
@@ -366,6 +372,12 @@ function setupMobileNavigation() {
                         journalSection.style.display = 'block';
                         // Force rendering of journal
                         journalModule.renderJournal();
+                        
+                        // Ensure we scroll to the top of the journal
+                        window.scrollTo({
+                            top: 0,
+                            behavior: 'smooth'
+                        });
                     }
                 } else {
                     // Coming back from journal or any other section
