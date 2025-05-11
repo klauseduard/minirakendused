@@ -39,7 +39,6 @@
 This project follows modern JavaScript practices with a modular architecture. For technical details about the codebase:
 
 - [Technical Architecture Documentation](docs/technical-architecture.md) - Module structure, development tools, and coding standards
-- [Journal Module Refactoring Plan](docs/refactor-journal-module-split.md) - Detailed plan for splitting the journal module
 
 ### Development
 
