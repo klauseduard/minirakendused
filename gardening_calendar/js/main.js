@@ -93,6 +93,7 @@ window.saveJournalEntries = journalModule.saveJournalEntries;
 window.createJournalEntry = journalModule.createJournalEntry;
 window.updateJournalEntry = journalModule.updateJournalEntry;
 window.deleteJournalEntry = journalModule.deleteJournalEntry;
+window.removeImageFromEntry = journalModule.removeImageFromEntry;
 
 // Custom entries module exports
 window.initCustomEntries = customEntriesModule.initCustomEntries;

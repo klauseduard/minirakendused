@@ -82,6 +82,35 @@ export function deleteJournalEntry(id) {
 }
 
 /**
+ * Remove a specific image from a journal entry
+ * @param {string} entryId - ID of the entry to update
+ * @param {number} imageIndex - Index of the image to remove
+ * @returns {Object|null} The updated entry or null if not found
+ */
+export function removeImageFromEntry(entryId, imageIndex) {
+  const entries = getJournalEntries();
+  const entryIndex = entries.findIndex(entry => entry.id === entryId);
+  
+  if (entryIndex === -1) {
+    return null; // Entry not found
+  }
+  
+  const entry = entries[entryIndex];
+  
+  if (!entry.images || !Array.isArray(entry.images) || imageIndex < 0 || imageIndex >= entry.images.length) {
+    return entry; // No images or invalid index
+  }
+  
+  // Remove the image at the specified index
+  entry.images.splice(imageIndex, 1);
+  
+  // Save the updated entries
+  saveJournalEntries(entries);
+  
+  return entry;
+}
+
+/**
  * Export journal entries to JSON
  * @param {boolean} includeImages - Whether to include images in export
  */

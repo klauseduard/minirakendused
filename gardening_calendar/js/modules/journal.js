@@ -15,6 +15,7 @@ export {
   createJournalEntry,
   updateJournalEntry,
   deleteJournalEntry,
+  removeImageFromEntry,
   exportJournal,
   handleImport,
   fileToBase64,
@@ -90,7 +91,7 @@ function renderGallery() {
                 day: 'numeric'
             });
             
-            html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}">
+            html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}" data-img-index="${img.imgIndex}">
                 <div style="position: relative; padding-bottom: 100%;">
                     <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px 8px; font-size: 0.8rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">${formattedDate}</div>
@@ -108,7 +109,8 @@ function renderGallery() {
         img.addEventListener('click', () => {
             const fullImg = img.dataset.fullImg;
             const entryId = img.dataset.entryId;
-            showImageLightbox(fullImg, entryId);
+            const imgIndex = parseInt(img.dataset.imgIndex, 10);
+            showImageLightbox(fullImg, entryId, imgIndex);
         });
     });
 }

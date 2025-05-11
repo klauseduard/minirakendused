@@ -15,7 +15,8 @@ import {
   fileToBase64,
   compressImage,
   generateThumbnail,
-  weatherCodeToIconTextColor
+  weatherCodeToIconTextColor,
+  removeImageFromEntry
 } from './journal-logic.js';
 
 // Import storage functions
@@ -23,6 +24,11 @@ import { getJournalEntries, saveJournalEntries } from './journal-storage.js';
 
 // Import social functionality
 import { shareContent } from './social.js';
+
+// Re-export logic functions that might be needed by other modules
+export { 
+  removeImageFromEntry
+};
 
 /**
  * Show the export options modal
@@ -281,10 +287,12 @@ export function openJournalEntryModal(entryId = null) {
       
       // Show photos if available
       if (entry.images && entry.images.length > 0) {
-        entry.images.forEach(imgData => {
+        entry.images.forEach((imgData, index) => {
           // Create container for the image preview
           const imgContainer = document.createElement('div');
           imgContainer.className = 'photo-preview';
+          // Store the original index for removal
+          imgContainer.dataset.originalIndex = index.toString();
           
           // Create image element
           const img = document.createElement('img');
@@ -310,14 +318,19 @@ export function openJournalEntryModal(entryId = null) {
           img.dataset.fullImage = fullImageSource;
           
           // Set click handler for lightbox view
-          img.onclick = () => showImageLightbox(fullImageSource, entry.id);
+          img.onclick = () => showImageLightbox(fullImageSource, entry.id, index);
           
           // Add remove button
           const removeBtn = document.createElement('button');
           removeBtn.innerHTML = '&times;';
           removeBtn.className = 'photo-remove-btn';
-          removeBtn.onclick = () => {
-            imgContainer.remove();
+          removeBtn.onclick = (e) => {
+            e.stopPropagation();
+            if (confirm('Are you sure you want to remove this image?')) {
+              // When editing in the modal, we don't need to call removeImageFromEntry directly
+              // Just remove from the preview, the save function will handle the updates
+              imgContainer.remove();
+            }
           };
           
           // Add elements to the container
@@ -716,103 +729,145 @@ export function renderJournalCalendar() {
  * @param {string} imgSrc - Source of the image
  * @param {string|null} entryId - ID of the entry, if applicable
  */
-export function showImageLightbox(imgSrc, entryId = null) {
-  // Ensure we have a valid image source
-  if (!imgSrc) {
-    console.error('No image source provided to lightbox');
-    return;
+export function showImageLightbox(imgSrc, entryId = null, imgIndex = null) {
+  // Check if we already have a lightbox
+  let lightbox = document.getElementById('imageLightbox');
+  
+  // If not, create one
+  if (!lightbox) {
+    lightbox = document.createElement('div');
+    lightbox.id = 'imageLightbox';
+    lightbox.className = 'image-lightbox';
+    lightbox.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    `;
+    
+    // Close on click
+    lightbox.addEventListener('click', function(e) {
+      if (e.target === lightbox) {
+        lightbox.remove();
+      }
+    });
+    
+    // Close on escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('imageLightbox')) {
+        document.getElementById('imageLightbox').remove();
+      }
+    });
+    
+    document.body.appendChild(lightbox);
   }
   
-  // Handle both string and object formats
-  const imageUrl = typeof imgSrc === 'object' ? (imgSrc.data || imgSrc.thumbnail) : imgSrc;
+  // Create container for image and buttons
+  const contentContainer = document.createElement('div');
+  contentContainer.style.cssText = `
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+  `;
   
-  // Remove any existing lightbox
-  const oldLightbox = document.getElementById('imageLightbox');
-  if (oldLightbox) oldLightbox.remove();
+  // Create image element
+  const img = document.createElement('img');
+  img.src = imgSrc;
+  img.style.cssText = `
+    max-width: 100%;
+    max-height: 80vh;
+    border: 2px solid white;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  `;
   
-  // Create lightbox
-  const lightbox = document.createElement('div');
-  lightbox.id = 'imageLightbox';
-  lightbox.style.position = 'fixed';
-  lightbox.style.top = '0';
-  lightbox.style.left = '0';
-  lightbox.style.width = '100%';
-  lightbox.style.height = '100%';
-  lightbox.style.backgroundColor = 'rgba(0, 0, 0, 0.9)';
-  lightbox.style.display = 'flex';
-  lightbox.style.alignItems = 'center';
-  lightbox.style.justifyContent = 'center';
-  lightbox.style.zIndex = '9999';
-  
-  // Add close button
+  // Create close button
   const closeBtn = document.createElement('button');
   closeBtn.innerHTML = '&times;';
-  closeBtn.style.position = 'absolute';
-  closeBtn.style.top = '20px';
-  closeBtn.style.right = '20px';
-  closeBtn.style.backgroundColor = 'transparent';
-  closeBtn.style.border = 'none';
-  closeBtn.style.color = 'white';
-  closeBtn.style.fontSize = '2rem';
-  closeBtn.style.cursor = 'pointer';
-  closeBtn.style.zIndex = '10000';
-  closeBtn.addEventListener('click', () => lightbox.remove());
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: white;
+    color: black;
+    font-size: 20px;
+    line-height: 28px;
+    text-align: center;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  `;
+  closeBtn.onclick = function(e) {
+    e.stopPropagation();
+    lightbox.remove();
+  };
   
-  // Add image
-  const img = document.createElement('img');
-  img.src = imageUrl;
-  img.style.maxWidth = '90%';
-  img.style.maxHeight = '90%';
-  img.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.3)';
+  // Add image and close button to container
+  contentContainer.appendChild(img);
+  contentContainer.appendChild(closeBtn);
   
-  // Add caption if entry ID is provided
-  if (entryId) {
-    const entries = getJournalEntries();
-    const entry = entries.find(e => e.id === entryId);
+  // Add remove button if we have an entry ID and image index
+  if (entryId && imgIndex !== null) {
+    const removeBtn = document.createElement('button');
+    removeBtn.textContent = 'Remove Image';
+    removeBtn.style.cssText = `
+      margin-top: 15px;
+      padding: 8px 16px;
+      background: #d32f2f;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+    `;
+    removeBtn.onclick = function(e) {
+      e.stopPropagation();
+      
+      if (confirm('Are you sure you want to remove this image? This action cannot be undone.')) {
+        // Remove the image
+        const updatedEntry = removeImageFromEntry(entryId, imgIndex);
+        
+        if (updatedEntry) {
+          // Close the lightbox
+          lightbox.remove();
+          
+          // Refresh the journal views
+          renderJournal();
+          
+          // Show feedback
+          alert('Image removed successfully.');
+        }
+      }
+    };
     
-    if (entry) {
-      const caption = document.createElement('div');
-      caption.style.position = 'absolute';
-      caption.style.bottom = '20px';
-      caption.style.left = '0';
-      caption.style.width = '100%';
-      caption.style.textAlign = 'center';
-      caption.style.color = 'white';
-      caption.style.padding = '10px';
-      caption.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      
-      const dateObj = new Date(entry.date);
-      const formattedDate = dateObj.toLocaleDateString(undefined, {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-      
-      caption.textContent = `${formattedDate} - ${journalEntryTypes[entry.type]?.name || 'Journal Entry'}`;
-      
-      lightbox.appendChild(caption);
-    }
+    // Create buttons container
+    const buttonsContainer = document.createElement('div');
+    buttonsContainer.style.cssText = `
+      display: flex;
+      justify-content: center;
+      margin-top: 15px;
+      gap: 15px;
+    `;
+    buttonsContainer.appendChild(removeBtn);
+    
+    // Add buttons container to lightbox
+    lightbox.innerHTML = '';
+    lightbox.appendChild(contentContainer);
+    lightbox.appendChild(buttonsContainer);
+  } else {
+    // Just show the image without remove button
+    lightbox.innerHTML = '';
+    lightbox.appendChild(contentContainer);
   }
-  
-  // Add to document
-  lightbox.appendChild(closeBtn);
-  lightbox.appendChild(img);
-  document.body.appendChild(lightbox);
-  
-  // Add click event to close on background click
-  lightbox.addEventListener('click', (e) => {
-    if (e.target === lightbox) {
-      lightbox.remove();
-    }
-  });
-  
-  // Add escape key to close
-  document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape' && document.getElementById('imageLightbox')) {
-      document.getElementById('imageLightbox').remove();
-    }
-  });
 }
 
 /**
@@ -1060,26 +1115,90 @@ export function initJournal() {
             // Add photos if any
             const photoPreviewContainer = document.getElementById('photoPreviewContainer');
             if (photoPreviewContainer) {
-                const photoElements = photoPreviewContainer.querySelectorAll('.photo-preview img');
-                if (photoElements.length > 0) {
-                    entryData.images = [];
-                    photoElements.forEach(img => {
-                        // Get full image and thumbnail
-                        const fullImage = img.dataset.fullImage || img.src;
-                        const thumbnail = img.src;
+                // If editing an existing entry, we need to handle the original image indices
+                if (entryId) {
+                    const entries = getJournalEntries();
+                    const entry = entries.find(e => e.id === entryId);
+                    
+                    if (entry && entry.images && entry.images.length > 0) {
+                        // Initialize images array
+                        entryData.images = [];
                         
-                        // Skip if the image data is invalid
-                        if (!fullImage) {
-                            console.warn('Skipping image with no data');
-                            return;
-                        }
+                        // Get all preview containers
+                        const previewElements = photoPreviewContainer.querySelectorAll('.photo-preview');
                         
-                        // Always store images in the same format (object with data and thumbnail)
-                        entryData.images.push({
-                            data: fullImage,
-                            thumbnail: thumbnail
+                        previewElements.forEach(preview => {
+                            const img = preview.querySelector('img');
+                            if (!img || !img.src) return;
+                            
+                            // If this preview has an original index, use the original image data
+                            const originalIndex = preview.dataset.originalIndex;
+                            if (originalIndex !== undefined && !isNaN(parseInt(originalIndex, 10))) {
+                                const index = parseInt(originalIndex, 10);
+                                if (index >= 0 && index < entry.images.length) {
+                                    entryData.images.push(entry.images[index]);
+                                    return;
+                                }
+                            }
+                            
+                            // Otherwise use the current image data
+                            const fullImage = img.dataset.fullImage || img.src;
+                            const thumbnail = img.src;
+                            
+                            if (fullImage) {
+                                entryData.images.push({
+                                    data: fullImage,
+                                    thumbnail: thumbnail
+                                });
+                            }
                         });
-                    });
+                    } else {
+                        // Handle as a new entry with new images
+                        const photoElements = photoPreviewContainer.querySelectorAll('.photo-preview img');
+                        if (photoElements.length > 0) {
+                            entryData.images = [];
+                            photoElements.forEach(img => {
+                                // Get full image and thumbnail
+                                const fullImage = img.dataset.fullImage || img.src;
+                                const thumbnail = img.src;
+                                
+                                // Skip if the image data is invalid
+                                if (!fullImage) {
+                                    console.warn('Skipping image with no data');
+                                    return;
+                                }
+                                
+                                // Store images
+                                entryData.images.push({
+                                    data: fullImage,
+                                    thumbnail: thumbnail
+                                });
+                            });
+                        }
+                    }
+                } else {
+                    // New entry - collect images simply
+                    const photoElements = photoPreviewContainer.querySelectorAll('.photo-preview img');
+                    if (photoElements.length > 0) {
+                        entryData.images = [];
+                        photoElements.forEach(img => {
+                            // Get full image and thumbnail
+                            const fullImage = img.dataset.fullImage || img.src;
+                            const thumbnail = img.src;
+                            
+                            // Skip if the image data is invalid
+                            if (!fullImage) {
+                                console.warn('Skipping image with no data');
+                                return;
+                            }
+                            
+                            // Store images
+                            entryData.images.push({
+                                data: fullImage,
+                                thumbnail: thumbnail
+                            });
+                        });
+                    }
                 }
             }
             
