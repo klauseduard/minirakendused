@@ -140,6 +140,12 @@ export function showModal(title, content, options = {}) {
     modalOverlay.appendChild(modalElement);
     document.body.appendChild(modalOverlay);
     
+    // Hide bottom navigation when modal is open on mobile devices
+    const bottomNav = document.querySelector('.bottom-nav');
+    if (bottomNav && window.innerWidth <= 600) {
+        bottomNav.style.display = 'none';
+    }
+    
     // Trap focus inside modal
     const focusableElements = modalElement.querySelectorAll(focusableSelectors);
     const firstFocusable = focusableElements[0];
@@ -200,6 +206,12 @@ export function showModal(title, content, options = {}) {
     
     function closeModal() {
         modalOverlay.remove();
+        
+        // Restore bottom navigation bar when modal is closed
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav && window.innerWidth <= 600) {
+            bottomNav.style.display = 'flex';
+        }
         
         // Restore focus
         if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
@@ -770,14 +782,65 @@ IMPORTANT: This is a current gardening request for the date specified above. Ple
 }
 
 /**
+ * Setup event handlers for static modals in HTML to hide/show bottom navigation bar
+ */
+export function setupModalNavigationHandling() {
+    // Function to handle modal visibility changes
+    const handleModalChange = (modalId) => {
+        const modalElement = document.getElementById(modalId);
+        if (!modalElement) return;
+        
+        // Setup a MutationObserver to watch for display changes
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.attributeName === 'style') {
+                    const isVisible = modalElement.style.display !== 'none';
+                    const bottomNav = document.querySelector('.bottom-nav');
+                    
+                    if (bottomNav && window.innerWidth <= 600) {
+                        bottomNav.style.display = isVisible ? 'none' : 'flex';
+                    }
+                }
+            });
+        });
+        
+        observer.observe(modalElement, { attributes: true, attributeFilter: ['style'] });
+    };
+    
+    // List of static modals from HTML
+    const modalIds = [
+        'promptGeneratorModal',
+        'customConfirmModal', 
+        'customEntriesImportModal',
+        'importOptionsModal',
+        'journalEntryViewModal'
+    ];
+    
+    // Setup observers for each modal
+    modalIds.forEach(handleModalChange);
+}
+
+/**
  * Initialize UI module
  */
 export function initUI() {
+    // Initialize scroll-to-top functionality
     initScrollToTop();
-    initHeaderScroll();
-    initPromptGenerator();
     
-    // Initialize any other UI elements or behaviors
+    // Initialize header scroll behavior if header exists
+    const headerElement = document.querySelector('header');
+    if (headerElement) {
+        initHeaderScroll();
+    }
+    
+    // Initialize prompt generator if available
+    const promptGeneratorBtn = document.getElementById('aiAdviceBtn');
+    if (promptGeneratorBtn) {
+        initPromptGenerator();
+    }
+    
+    // Setup modal navigation handling
+    setupModalNavigationHandling();
     
     console.log('UI module initialized');
 } 

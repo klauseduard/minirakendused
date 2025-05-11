@@ -536,20 +536,35 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
         modalOverlay.appendChild(modal);
         document.body.appendChild(modalOverlay);
         
-        // Add event listeners
-        closeBtn.addEventListener('click', () => {
+        // Hide bottom navigation when modal is open on mobile devices
+        const bottomNav = document.querySelector('.bottom-nav');
+        if (bottomNav && window.innerWidth <= 600) {
+            bottomNav.style.display = 'none';
+        }
+        
+        // Function to close modal and restore navigation
+        const closeModal = () => {
             modalOverlay.remove();
-        });
+            
+            // Restore bottom navigation bar when modal is closed
+            const bottomNav = document.querySelector('.bottom-nav');
+            if (bottomNav && window.innerWidth <= 600) {
+                bottomNav.style.display = 'flex';
+            }
+        };
+        
+        // Add event listeners
+        closeBtn.addEventListener('click', closeModal);
         
         modalOverlay.addEventListener('click', (e) => {
             if (e.target === modalOverlay) {
-                modalOverlay.remove();
+                closeModal();
             }
         });
         
         document.addEventListener('keydown', function closeOnEsc(e) {
             if (e.key === 'Escape') {
-                modalOverlay.remove();
+                closeModal();
                 document.removeEventListener('keydown', closeOnEsc);
             }
         });
