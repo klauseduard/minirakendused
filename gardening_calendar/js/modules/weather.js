@@ -163,13 +163,13 @@ export function renderWeatherData(data) {
         
         html += `<tr>
             <td>${data.daily.time[i]}</td>
-            <td>${getTempHtml(nightMin)}</td>
-            <td>${getTempHtml(nightMax)}</td>
-            <td>${getTempHtml(dayMin)}</td>
-            <td>${getTempHtml(dayMax)}</td>
-            <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol(precipUnit)}</td>
-            <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
-            <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
+            <td data-label="Night Min">${getTempHtml(nightMin)}</td>
+            <td data-label="Night Max">${getTempHtml(nightMax)}</td>
+            <td data-label="Day Min">${getTempHtml(dayMin)}</td>
+            <td data-label="Day Max">${getTempHtml(dayMax)}</td>
+            <td data-label="Precip">${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol(precipUnit)}</td>
+            <td data-label="Weather"><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
+            <td data-label="Trend">${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
         </tr>`;
     }
     
@@ -463,10 +463,10 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
             const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
             
             content += `<tr>`;
-            content += `<td>${hourDisplay}</td>`;
-            content += `<td><span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol(tempUnit)}</span></td>`;
-            content += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
-            content += `<td>${wind} km/h</td>`;
+            content += `<td data-label="Hour">${hourDisplay}</td>`;
+            content += `<td data-label="Temp"><span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol(tempUnit)}</span></td>`;
+            content += `<td data-label="Precip">${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
+            content += `<td data-label="Wind">${wind} km/h</td>`;
             content += `</tr>`;
         }
         
@@ -518,10 +518,10 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
             const wind = winds[i] !== undefined ? winds[i] : '-';
             
             tableHtml += `<tr>`;
-            tableHtml += `<td>${hourDisplay}</td>`;
-            tableHtml += `<td>${temp}${getTempUnitSymbol(tempUnit)}</td>`;
-            tableHtml += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
-            tableHtml += `<td>${wind} km/h</td>`;
+            tableHtml += `<td data-label="Hour">${hourDisplay}</td>`;
+            tableHtml += `<td data-label="Temp">${temp}${getTempUnitSymbol(tempUnit)}</td>`;
+            tableHtml += `<td data-label="Precip">${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
+            tableHtml += `<td data-label="Wind">${wind} km/h</td>`;
             tableHtml += `</tr>`;
         }
         

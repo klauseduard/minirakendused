@@ -1870,33 +1870,181 @@ footer p {
         width: 100%;
     }
     .weather-forecast-table tr {
-        display: block;
+        display: flex;
+        flex-wrap: wrap;
         background: #f8faf5;
-        margin-bottom: 12px;
-        border-radius: 10px;
+        margin-bottom: 10px;
+        border-radius: 8px;
         box-shadow: 0 1px 4px rgba(74,142,58,0.07);
-        padding: 10px 8px;
+        padding: 8px;
         width: 100%;
+        position: relative;
     }
     .weather-forecast-table td {
-        display: flex;
-        justify-content: space-between;
+        display: inline-flex;
+        justify-content: flex-start;
         align-items: center;
-        padding: 6px 0;
+        padding: 4px 8px;
         border: none;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         background: none;
-        width: 100%;
+        margin: 2px 4px;
     }
-    .weather-forecast-table td::before {
+    
+    /* Date header for each card */
+    .weather-forecast-table td:first-child {
+        width: 100%;
+        font-weight: 600;
+        color: #4a8e3a;
+        padding: 4px 4px 8px 4px;
+        margin-bottom: 4px;
+        border-bottom: 1px dashed rgba(74,142,58,0.2);
+        font-size: 1rem;
+    }
+    
+    /* Weather icon, positioned absolutely on the right side of date */
+    .weather-forecast-table td:nth-child(7) {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        padding: 0;
+        text-align: center;
+    }
+    
+    /* Weather icon adjustments */
+    .weather-forecast-table td:nth-child(7) span:first-child {
+        font-size: 1.2em !important;
+        padding: 4px 8px !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .weather-forecast-table td:nth-child(7) br,
+    .weather-forecast-table td:nth-child(7) span:last-child {
+        display: none; /* Hide weather text on mobile */
+    }
+    
+    /* Temperature cells - smaller, inline */
+    .weather-forecast-table td:nth-child(2),
+    .weather-forecast-table td:nth-child(3),
+    .weather-forecast-table td:nth-child(4),
+    .weather-forecast-table td:nth-child(5) {
+        flex: 0 0 auto;
+        padding: 2px 4px;
+        margin: 2px;
+        font-size: 0.9rem;
+    }
+    
+    /* Temp labels */
+    .weather-forecast-table td:nth-child(2)::before,
+    .weather-forecast-table td:nth-child(3)::before,
+    .weather-forecast-table td:nth-child(4)::before,
+    .weather-forecast-table td:nth-child(5)::before {
         content: attr(data-label);
         font-weight: 500;
-        color: #4a8e3a;
-        flex: 1 0 50%;
-        text-align: left;
-        font-size: 0.98rem;
+        color: #666;
+        font-size: 0.8rem;
+        margin-right: 4px;
     }
-} 
+    
+    /* Precipitation */
+    .weather-forecast-table td:nth-child(6) {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0,0,0,0.035);
+        border-radius: 4px;
+        margin-top: 4px;
+    }
+    
+    .weather-forecast-table td:nth-child(6)::before {
+        content: "💧";
+        margin-right: 5px;
+        font-size: 0.9rem;
+    }
+    
+    /* Sparkline chart */
+    .weather-forecast-table td:nth-child(8) {
+        width: 100%;
+        margin-top: 4px;
+        padding: 6px 0 0 0;
+        justify-content: center;
+    }
+    
+    /* Adjust size of sparkline SVG */
+    .weather-forecast-table td:nth-child(8) svg {
+        height: 40px;
+        width: 100%;
+    }
+}
+
+/* Weather modal styles for mobile */
+@media (max-width: 600px) {
+    .weather-modal {
+        padding: 18px 14px;
+        min-width: auto;
+        max-width: 95%;
+        max-height: 90vh;
+    }
+    
+    .weather-modal-hourly-table {
+        display: block;
+        width: 100%;
+        border-spacing: 0;
+        background: none;
+    }
+    
+    .weather-modal-hourly-table thead {
+        display: none;
+    }
+    
+    .weather-modal-hourly-table tbody {
+        display: block;
+        width: 100%;
+    }
+    
+    .weather-modal-hourly-table tr {
+        display: flex;
+        flex-wrap: wrap;
+        margin-bottom: 8px;
+        padding: 6px 10px;
+        border-radius: 6px;
+        background: #f8faf5;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    
+    .weather-modal-hourly-table tr:nth-child(even) {
+        background: #f1f8e9;
+    }
+    
+    .weather-modal-hourly-table td {
+        flex: 1 1 40%;
+        min-width: 80px;
+        padding: 4px 6px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .weather-modal-hourly-table td:first-child {
+        font-weight: 600;
+        color: #3e7d32;
+        flex: 1 1 100%;
+        border-bottom: 1px dashed rgba(74,142,58,0.15);
+        margin-bottom: 4px;
+        padding-bottom: 4px;
+    }
+    
+    .weather-modal-hourly-table td::before {
+        content: attr(data-label);
+        font-weight: 500;
+        font-size: 0.8rem;
+        color: #666;
+        margin-right: 8px;
+    }
+    
+    .weather-modal-hourly-table td:first-child::before {
+        display: none;
+    }
+}
 
 /* --- Journal Active Mode --- */
 body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav) {
