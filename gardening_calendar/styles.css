@@ -1815,21 +1815,55 @@ footer p {
     border: none;
   }
   
-  /* Show More (⋮) button in journal header */
-  .journal-more-menu-container {
-    display: flex !important;
-    align-items: center;
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 1100;
-  }
-  
-  /* Show journal view dropdown, hide tab row */
+  /* Improved journal view dropdown container */
   .journal-view-dropdown-container {
     display: block !important;
     width: 100%;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
+    position: relative;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.08);
+  }
+
+  /* Style the select dropdown to look more modern */
+  .journal-view-dropdown {
+    appearance: none;
+    -webkit-appearance: none;
+    background: white;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 10px;
+    padding: 12px 15px;
+    padding-right: 40px; /* Space for the custom arrow */
+    width: 100%;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #333;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .journal-view-dropdown:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  }
+
+  /* Add a custom dropdown arrow */
+  .journal-view-dropdown-container::after {
+    content: "▼";
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    transform: translateY(-50%);
+    pointer-events: none;
+    font-size: 0.7rem;
+    color: var(--primary-color);
+  }
+
+  /* Add a bit more padding to journal content when in mobile mode */
+  .journal-content {
+    padding: 15px !important;
   }
 }
 

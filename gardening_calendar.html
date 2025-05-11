@@ -197,23 +197,13 @@
                     <button id="fabExportBtn" class="journal-fab-action-btn" aria-label="Export Journal"><span style="font-size: 1.3rem;">📤</span> Export</button>
                     <button id="fabImportBtn" class="journal-fab-action-btn" aria-label="Import Journal"><span style="font-size: 1.3rem;">📥</span> Import</button>
                 </div>
-                <!-- More Menu for Export/Import (mobile only) -->
-                <div id="journalMoreMenuContainer" class="journal-more-menu-container" style="display: none; position: relative;">
-                    <button id="journalMoreBtn" class="journal-more-btn" aria-label="More actions">
-                        <span style="font-size: 1.5rem;">⋮</span>
-                    </button>
-                    <div id="journalMoreMenu" class="journal-more-menu" style="display: none; position: absolute; right: 0; top: 40px; background: white; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.15); z-index: 10; min-width: 120px;">
-                        <button id="journalExportMenuBtn" class="journal-more-menu-item">Export</button>
-                        <button id="journalImportMenuBtn" class="journal-more-menu-item">Import</button>
-                    </div>
-                </div>
                 <!-- Dropdown for Journal Views (mobile only) -->
                 <div id="journalViewDropdownContainer" class="journal-view-dropdown-container" style="display: none; margin-bottom: 10px;">
-                    <label for="journalViewDropdown" class="visually-hidden">Select Journal View</label>
+                    <label for="journalViewDropdown" style="font-size: 0.9rem; font-weight: 500; color: #666; margin-bottom: 6px; display: block;">View Journal As:</label>
                     <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View">
-                        <option value="timeline">Timeline</option>
-                        <option value="gallery">Photo Gallery</option>
-                        <option value="calendar">Calendar</option>
+                        <option value="timeline">📝 Timeline View</option>
+                        <option value="gallery">🖼️ Photo Gallery</option>
+                        <option value="calendar">📅 Calendar View</option>
                     </select>
                 </div>
             </section>
