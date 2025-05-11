@@ -2,7 +2,7 @@
 // This file initializes the journal module and serves as a bridge
 // while we incrementally refactor the JavaScript code
 
-import { initJournal } from './modules/journal.js';
+import { initJournal } from './modules/journal-ui.js';
 
 // Initialize when the DOM is fully loaded
 document.addEventListener('DOMContentLoaded', () => {

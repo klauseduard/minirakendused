@@ -1,0 +1,15 @@
+---
+description: Rule to be used when external libraries are being used in code edited
+globs: 
+alwaysApply: false
+---
+# Context 7 Documentation Tools
+
+Use this guide whenever interacting with the Context 7 documentation helpers that surface real-time library docs.
+
+1. ALWAYS invoke `resolve-library-id` first to obtain the exact Context 7-compatible library ID.
+2. After you have the ID, call `get-library-docs` **once** with that same ID. Supply an optional `topic` or `tokens` value only when genuinely required.
+3. If multiple IDs seem plausible, briefly explain why you picked one, then proceed with the single chosen ID.
+4. When speaking to the user, never reveal the internal tool names—describe the action in natural language instead (e.g., "I'm fetching documentation for React hooks").
+5. Follow the existing token-budget guidance: the default `tokens` parameter is usually sufficient; request more only when you truly need additional context.
+6. These rules sit alongside the other domain-specific helpers (Elasticsearch, JIRA, etc.) for consistency.

@@ -13,7 +13,7 @@ import * as weatherModule from './modules/weather.js';
 import * as climateModule from './modules/climate.js';
 import * as calendarModule from './modules/calendar.js';
 import * as searchModule from './modules/search.js';
-import * as journalModule from './modules/journal.js';
+import * as journalModule from './modules/journal-ui.js';
 import * as customEntriesModule from './modules/custom-entries.js';
 import * as socialModule from './modules/social.js';
 
