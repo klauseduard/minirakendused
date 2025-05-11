@@ -415,7 +415,7 @@ function handlePhotoSelection(input) {
         }
         
         fileToBase64(file).then(base64 => {
-            compressImage(base64, 1200, 0.7).then(compressed => {
+            compressImage(base64, 800, 0.7).then(compressed => {
                 generateThumbnail(compressed, 150).then(thumbnail => {
                     // Create image container
                     const imgContainer = document.createElement('div');
@@ -1312,6 +1312,170 @@ export function initJournal() {
             }
         });
     }
+
+    /** --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- **/
+
+    // Mobile journal UI controls
+    const fabBtn = document.getElementById('journalFabBtn');
+    const moreMenuContainer = document.getElementById('journalMoreMenuContainer');
+    const moreBtn = document.getElementById('journalMoreBtn');
+    const moreMenu = document.getElementById('journalMoreMenu');
+    const exportMenuBtn = document.getElementById('journalExportMenuBtn');
+    const importMenuBtn = document.getElementById('journalImportMenuBtn');
+    const viewDropdownContainer = document.getElementById('journalViewDropdownContainer');
+    const viewDropdown = document.getElementById('journalViewDropdown');
+
+    function isMobile() {
+        return window.innerWidth <= 600;
+    }
+
+    function updateMobileJournalUI() {
+        if (isMobile()) {
+            if (fabBtn) fabBtn.style.display = 'flex';
+            if (moreMenuContainer) moreMenuContainer.style.display = 'flex';
+            if (viewDropdownContainer) viewDropdownContainer.style.display = 'block';
+        } else {
+            if (fabBtn) fabBtn.style.display = 'none';
+            if (moreMenuContainer) moreMenuContainer.style.display = 'none';
+            if (viewDropdownContainer) viewDropdownContainer.style.display = 'none';
+            if (moreMenu) moreMenu.style.display = 'none';
+        }
+    }
+    window.addEventListener('resize', updateMobileJournalUI);
+    updateMobileJournalUI();
+
+    // More button toggles menu
+    if (moreBtn && moreMenu) {
+        moreBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            moreMenu.style.display = moreMenu.style.display === 'flex' ? 'none' : 'flex';
+        });
+        // Hide menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (moreMenu.style.display === 'flex' && !moreMenu.contains(e.target) && e.target !== moreBtn) {
+                moreMenu.style.display = 'none';
+            }
+        });
+    }
+    // Export/Import menu actions
+    if (exportMenuBtn) {
+        exportMenuBtn.addEventListener('click', () => {
+            moreMenu.style.display = 'none';
+            showExportOptionsModal();
+        });
+    }
+    if (importMenuBtn) {
+        importMenuBtn.addEventListener('click', () => {
+            moreMenu.style.display = 'none';
+            // Simulate click on original import button
+            if (importJournalBtn) importJournalBtn.click();
+        });
+    }
+    // Dropdown for journal views
+    if (viewDropdown) {
+        viewDropdown.addEventListener('change', (e) => {
+            const view = e.target.value;
+            // Hide all views
+            document.getElementById('journalTimeline').style.display = view === 'timeline' ? 'block' : 'none';
+            document.getElementById('journalGallery').style.display = view === 'gallery' ? 'block' : 'none';
+            document.getElementById('journalCalendar').style.display = view === 'calendar' ? 'block' : 'none';
+            // Render if needed
+            if (view === 'gallery') renderGallery();
+            if (view === 'calendar') renderJournalCalendar();
+        });
+        // Set default view
+        viewDropdown.value = 'timeline';
+    }
+
+    /** --- END MOBILE JOURNAL USABILITY IMPROVEMENTS --- **/
+
+    // --- Journal floating UI visibility: only show when journal section is visible (mobile) ---
+    const journalSection = document.getElementById('garden-journal');
+    function updateJournalFloatingUIVisibility() {
+        if (fabBtn && moreMenuContainer && viewDropdownContainer && journalSection) {
+            const isJournalVisible = journalSection.style.display !== 'none';
+            if (isMobile()) {
+                fabBtn.style.display = isJournalVisible ? 'flex' : 'none';
+                moreMenuContainer.style.display = isJournalVisible ? 'flex' : 'none';
+                viewDropdownContainer.style.display = isJournalVisible ? 'block' : 'none';
+            } else {
+                fabBtn.style.display = 'none';
+                moreMenuContainer.style.display = 'none';
+                viewDropdownContainer.style.display = 'none';
+            }
+        }
+    }
+    // Observe changes to journal section visibility
+    if (journalSection) {
+        const observer = new MutationObserver(updateJournalFloatingUIVisibility);
+        observer.observe(journalSection, { attributes: true, attributeFilter: ['style'] });
+    }
+    // Also update on navigation and resize
+    window.addEventListener('resize', updateJournalFloatingUIVisibility);
+    updateJournalFloatingUIVisibility();
+    // --- END Journal floating UI visibility ---
+
+    // --- FAB Expansion Logic ---
+    const fabActions = document.getElementById('journalFabActions');
+    const fabAddEntryBtn = document.getElementById('fabAddEntryBtn');
+    const fabExportBtn = document.getElementById('fabExportBtn');
+    const fabImportBtn = document.getElementById('fabImportBtn');
+
+    function closeFabActions() {
+        if (fabActions) fabActions.style.display = 'none';
+        if (fabBtn) fabBtn.setAttribute('aria-expanded', 'false');
+    }
+    function openFabActions() {
+        if (fabActions) fabActions.style.display = 'flex';
+        if (fabBtn) fabBtn.setAttribute('aria-expanded', 'true');
+    }
+    function toggleFabActions() {
+        if (!fabActions) return;
+        if (fabActions.style.display === 'flex') {
+            closeFabActions();
+        } else {
+            openFabActions();
+        }
+    }
+    if (fabBtn && fabActions) {
+        fabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            toggleFabActions();
+        });
+        // Close on outside click
+        document.addEventListener('click', (e) => {
+            if (fabActions.style.display === 'flex' && !fabActions.contains(e.target) && e.target !== fabBtn) {
+                closeFabActions();
+            }
+        });
+        // Keyboard accessibility: close on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeFabActions();
+        });
+    }
+    // Action handlers
+    if (fabAddEntryBtn) {
+        fabAddEntryBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            openJournalEntryModal();
+        });
+    }
+    if (fabExportBtn) {
+        fabExportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            showExportOptionsModal();
+        });
+    }
+    if (fabImportBtn) {
+        fabImportBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeFabActions();
+            if (importJournalBtn) importJournalBtn.click();
+        });
+    }
+    // --- END FAB Expansion Logic ---
 }
 
 /**

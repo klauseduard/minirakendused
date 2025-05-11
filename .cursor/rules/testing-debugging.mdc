@@ -1,0 +1,7 @@
+---
+description: When testing related tasks are performed or discussed
+globs: 
+alwaysApply: false
+---
+- Test all features on both desktop and mobile (especially iOS Safari).
+- Regularly check export/import with large journals to ensure performance and reliability.

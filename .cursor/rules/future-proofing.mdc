@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- When adding new features, always consider mobile-first and offline usability.
+- Document any changes to data format or export structure in a CHANGELOG.

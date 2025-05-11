@@ -1,0 +1,10 @@
+---
+description: Updates to image handling logic of the gardening app
+globs: 
+alwaysApply: false
+---
+- All user-uploaded images must be resized and compressed before storage:
+  - Max width: 800px
+  - JPEG quality: 0.7
+- Store both a thumbnail and a compressed full image for each photo.
+- Never store or export original, uncompressed images.

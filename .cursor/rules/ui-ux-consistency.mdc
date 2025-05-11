@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Use consistent button styles, colors, and iconography across the app.
+- All floating menus (FAB expansion, context menus) must close on outside click or Escape.
+- Only one floating menu can be open at a time.

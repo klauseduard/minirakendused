@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- All buttons and controls must have `aria-label` or visible text.
+- Modals and overlays must be dismissible via Escape key and outside click.
+- Use visually hidden labels for form fields where appropriate.

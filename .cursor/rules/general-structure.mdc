@@ -1,0 +1,8 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Keep feature logic modular (journal, calendar, weather, etc.) in separate JS modules.
+- Use semantic HTML5 elements for structure and accessibility.
+- Place floating UI elements (FAB, menus) inside the section they control for easy visibility management.

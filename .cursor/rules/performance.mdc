@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+- Avoid storing large blobs in localStorage; compress all data.
+- Lazy-load images in galleries and timelines if possible.
