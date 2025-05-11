@@ -202,6 +202,7 @@ export function handlePhotoSelection(input) {
           // Create and set up image
           const img = document.createElement('img');
           img.src = thumbnail;
+          img.loading = "lazy";
           img.dataset.fullImage = compressed;
           img.onclick = () => showImageLightbox(compressed);
           
@@ -315,6 +316,7 @@ export function openJournalEntryModal(entryId = null) {
           
           // Set image source and storage
           img.src = imageSource;
+          img.loading = "lazy";
           img.dataset.fullImage = fullImageSource;
           
           // Set click handler for lightbox view
@@ -498,7 +500,7 @@ export function renderTimeline() {
         // Handle both string format and object format for backward compatibility
         const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
         html += `<div class="journal-image" style="width: 100px; height: 100px; cursor: pointer;" data-full-img="${imgSrc}" data-entry-id="${entry.id}" data-img-index="${index}">
-          <img src="${typeof img === 'string' ? img : (img.thumbnail || img.data)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">
+          <img src="${typeof img === 'string' ? img : (img.thumbnail || img.data)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" loading="lazy" alt="Journal image">
         </div>`;
       });
       
@@ -585,7 +587,7 @@ export function renderGallery() {
       
       html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}">
         <div style="position: relative; padding-bottom: 100%;">
-          <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
+          <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" loading="lazy" alt="Garden photo">
           <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px 8px; font-size: 0.8rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">${formattedDate}</div>
         </div>
       </div>`;
@@ -780,6 +782,7 @@ export function showImageLightbox(imgSrc, entryId = null, imgIndex = null) {
   // Create image element
   const img = document.createElement('img');
   img.src = imgSrc;
+  img.loading = "lazy";
   img.style.cssText = `
     max-width: 100%;
     max-height: 80vh;
@@ -1391,7 +1394,7 @@ export function openViewModal(entry) {
             <div class="entry-view-photos">
                 ${entry.images.map(photo => 
                     `<div class="entry-view-photo">
-                        <img src="${typeof photo === 'string' ? photo : (photo.data || photo.thumbnail)}" alt="Garden journal photo">
+                        <img src="${typeof photo === 'string' ? photo : (photo.data || photo.thumbnail)}" loading="lazy" alt="Garden journal photo">
                     </div>`
                 ).join('')}
             </div>
@@ -1514,7 +1517,7 @@ export function renderTimelineEntry(entry, index) {
             <div class="entry-photos">
                 ${entry.images.slice(0, 3).map(photo => 
                     `<div class="entry-photo">
-                        <img src="${typeof photo === 'string' ? photo : (photo.data || photo.thumbnail)}" alt="Garden journal photo">
+                        <img src="${typeof photo === 'string' ? photo : (photo.data || photo.thumbnail)}" loading="lazy" alt="Garden journal photo">
                     </div>`
                 ).join('')}
                 ${entry.images.length > 3 ? `<div class="entry-photo entry-photo-more">+${entry.images.length - 3}</div>` : ''}

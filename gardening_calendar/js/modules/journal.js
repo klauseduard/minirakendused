@@ -93,7 +93,7 @@ function renderGallery() {
             
             html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}" data-img-index="${img.imgIndex}">
                 <div style="position: relative; padding-bottom: 100%;">
-                    <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
+                    <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" loading="lazy" alt="Garden photo">
                     <div style="position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.5); color: white; padding: 5px 8px; font-size: 0.8rem; border-bottom-left-radius: 8px; border-bottom-right-radius: 8px;">${formattedDate}</div>
                 </div>
             </div>`;
@@ -250,7 +250,7 @@ function openViewModal(entry) {
             <div class="entry-view-photos">
                 ${entry.images.map(photo => 
                     `<div class="entry-view-photo">
-                        <img src="${photo}" alt="Garden journal photo">
+                        <img src="${photo}" loading="lazy" alt="Garden journal photo">
                     </div>`
                 ).join('')}
             </div>
@@ -364,7 +364,7 @@ function renderTimelineEntry(entry, index) {
             <div class="entry-photos">
                 ${entry.images.slice(0, 3).map(photo => 
                     `<div class="entry-photo">
-                        <img src="${photo}" alt="Garden journal photo">
+                        <img src="${photo}" loading="lazy" alt="Garden journal photo">
                     </div>`
                 ).join('')}
                 ${entry.images.length > 3 ? `<div class="entry-photo entry-photo-more">+${entry.images.length - 3}</div>` : ''}
