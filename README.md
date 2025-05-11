@@ -33,3 +33,31 @@
 - **[Külvikalender](https://klauseduard.github.io/minirakendused/külvikalender.html)** — Estonian-language sowing and planting calendar.
 
 (Other HTML files or apps can be added here as they are developed.)
+
+## For Developers
+
+This project follows modern JavaScript practices with a modular architecture. For technical details about the codebase:
+
+- [Technical Architecture Documentation](docs/technical-architecture.md) - Module structure, development tools, and coding standards
+- [Journal Module Refactoring Plan](docs/refactor-journal-module-split.md) - Detailed plan for splitting the journal module
+
+### Development
+
+To set up the development environment:
+
+```bash
+# Clone the repository
+git clone https://github.com/klauseduard/minirakendused.git
+
+# Install development dependencies
+npm install
+
+# Run tests
+npm test
+
+# Run linting
+npm run lint
+
+# Format code
+npm run format
+```
