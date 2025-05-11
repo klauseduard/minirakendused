@@ -158,6 +158,17 @@
                     </div>
                 </div>
                 
+                <!-- Dropdown for Journal Views (mobile only) - Compact Version -->
+                <div id="journalViewDropdownContainer" class="journal-view-dropdown-container" style="display: none; margin-bottom: 15px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View" style="flex-grow: 1;">
+                            <option value="timeline">📝 Timeline View</option>
+                            <option value="gallery">🖼️ Photo Gallery</option>
+                            <option value="calendar">📅 Calendar View</option>
+                        </select>
+                    </div>
+                </div>
+                
                 <div class="journal-tabs">
                     <button class="journal-tab active" data-view="timeline">Timeline</button>
                     <button class="journal-tab" data-view="gallery">Photo Gallery</button>
@@ -196,15 +207,6 @@
                     <button id="fabAddEntryBtn" class="journal-fab-action-btn" aria-label="Add Entry"><span style="font-size: 1.3rem;">➕</span> Add Entry</button>
                     <button id="fabExportBtn" class="journal-fab-action-btn" aria-label="Export Journal"><span style="font-size: 1.3rem;">📤</span> Export</button>
                     <button id="fabImportBtn" class="journal-fab-action-btn" aria-label="Import Journal"><span style="font-size: 1.3rem;">📥</span> Import</button>
-                </div>
-                <!-- Dropdown for Journal Views (mobile only) -->
-                <div id="journalViewDropdownContainer" class="journal-view-dropdown-container" style="display: none; margin-bottom: 10px;">
-                    <label for="journalViewDropdown" style="font-size: 0.9rem; font-weight: 500; color: #666; margin-bottom: 6px; display: block;">View Journal As:</label>
-                    <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View">
-                        <option value="timeline">📝 Timeline View</option>
-                        <option value="gallery">🖼️ Photo Gallery</option>
-                        <option value="calendar">📅 Calendar View</option>
-                    </select>
                 </div>
             </section>
 

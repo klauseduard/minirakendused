@@ -1819,46 +1819,31 @@ footer p {
   .journal-view-dropdown-container {
     display: block !important;
     width: 100%;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
     position: relative;
-    padding-bottom: 12px;
+    padding-bottom: 10px;
     border-bottom: 1px solid rgba(0,0,0,0.08);
   }
-
-  /* Style the select dropdown to look more modern */
+  
+  /* Improved journal view dropdown */
   .journal-view-dropdown {
-    appearance: none;
-    -webkit-appearance: none;
-    background: white;
-    border: 1px solid rgba(0,0,0,0.12);
-    border-radius: 10px;
-    padding: 12px 15px;
-    padding-right: 40px; /* Space for the custom arrow */
     width: 100%;
+    padding: 10px 15px;
+    appearance: none;
+    background: #f5f8f5 url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23666%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E") no-repeat right 12px top 50%;
+    background-size: 10px auto;
+    border: 1px solid rgba(0,0,0,0.15);
+    border-radius: 8px;
     font-size: 0.95rem;
-    font-weight: 500;
-    color: #333;
-    cursor: pointer;
     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    transition: border-color 0.2s, box-shadow 0.2s;
+    color: #444;
+    transition: all 0.2s ease;
   }
-
+  
   .journal-view-dropdown:focus {
     outline: none;
     border-color: var(--primary-color);
-    box-shadow: 0 1px 6px rgba(0,0,0,0.1);
-  }
-
-  /* Add a custom dropdown arrow */
-  .journal-view-dropdown-container::after {
-    content: "▼";
-    position: absolute;
-    top: 50%;
-    right: 15px;
-    transform: translateY(-50%);
-    pointer-events: none;
-    font-size: 0.7rem;
-    color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
   }
 
   /* Add a bit more padding to journal content when in mobile mode */
