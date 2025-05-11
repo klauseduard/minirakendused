@@ -813,7 +813,8 @@ export function setupModalNavigationHandling() {
         'customConfirmModal', 
         'customEntriesImportModal',
         'importOptionsModal',
-        'journalEntryViewModal'
+        'journalEntryViewModal',
+        'journalEntryModal'
     ];
     
     // Setup observers for each modal
