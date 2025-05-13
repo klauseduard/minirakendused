@@ -491,6 +491,18 @@ document.addEventListener('DOMContentLoaded', initApp);
 // Notify that main.js has loaded
 console.log('Main module loaded');
 
+// Register service worker for PWA support
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+        navigator.serviceWorker.register('gardening_calendar/js/service-worker.js')
+            .then(function(registration) {
+                console.log('ServiceWorker registration successful with scope: ', registration.scope);
+            }, function(err) {
+                console.log('ServiceWorker registration failed: ', err);
+            });
+    });
+}
+
 // --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) ---
 // Removed: All quick navigation hamburger and menu logic (no longer needed)
 // --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- 

@@ -1,0 +1,21 @@
+{
+  "name": "Spring Gardening and Planting Calendar",
+  "short_name": "Garden Calendar",
+  "description": "Plan your garden tasks and sowing by month, with local weather forecasts and interactive features.",
+  "start_url": "../gardening_calendar.html",
+  "display": "standalone",
+  "background_color": "#f8faf5",
+  "theme_color": "#7cb342",
+  "icons": [
+    {
+      "src": "garden-calendar-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "garden-calendar-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+} 
