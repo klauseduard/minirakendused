@@ -1942,6 +1942,63 @@ footer p {
     gap: 10px;
 }
 
+/* Toolbar buttons — outlined, subtle */
+.toolbar-btn {
+    padding: 7px 14px;
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.toolbar-btn:hover {
+    background: var(--highlight);
+    border-color: var(--sage);
+}
+
+.toolbar-btn-add {
+    border-color: var(--terracotta);
+    color: var(--terracotta);
+}
+
+.toolbar-btn-add:hover {
+    background: rgba(196, 101, 58, 0.08);
+    border-color: var(--terracotta);
+}
+
+/* Modal form field input/select */
+.modal-field-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+.modal-field-input:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
+    outline: none;
+}
+
+@media (max-width: 768px) {
+    .toolbar-btn {
+        padding: 6px 10px;
+        font-size: 0.85rem;
+    }
+}
+
 /* When journal is visible, ensure it has proper spacing */
 .journal-content {
     height: 100%;

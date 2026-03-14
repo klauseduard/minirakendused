@@ -6,7 +6,7 @@
 import { calendarData, translations, categoryIcons, categoryNames } from './data.js';
 import { getSelectedItems, isItemSelected, toggleItemSelection,
          getAllPeriods, addCustomPeriod, renameCustomPeriod, deleteCustomPeriod,
-         initializeCustomPeriodData, getSelectionCount } from './storage.js';
+         movePeriod, initializeCustomPeriodData, getSelectionCount } from './storage.js';
 import { showNotification } from './ui.js';
 import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
 import { initSocialSharing, shareContent } from './social.js';
@@ -419,35 +419,52 @@ export function renderPeriodButtons(periods, activeMonth) {
         periodMenuListenerAdded = true;
     }
 
-    periods.forEach(period => {
-        if (period.builtin) {
-            // Simple button for built-in periods
-            const btn = document.createElement('button');
-            btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
-            btn.dataset.month = period.id;
-            btn.textContent = period.name;
-            btn.addEventListener('click', () => handlePeriodClick(period.id));
-            calendarNav.appendChild(btn);
-        } else {
-            // Wrapper with actions menu for custom periods
-            const wrapper = document.createElement('div');
-            wrapper.className = 'period-btn-wrapper';
+    periods.forEach((period, idx) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'period-btn-wrapper';
 
-            const btn = document.createElement('button');
-            btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
-            btn.dataset.month = period.id;
-            btn.textContent = period.name;
-            btn.addEventListener('click', () => handlePeriodClick(period.id));
+        const btn = document.createElement('button');
+        btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
+        btn.dataset.month = period.id;
+        btn.textContent = period.name;
+        btn.addEventListener('click', () => handlePeriodClick(period.id));
 
-            const actionsBtn = document.createElement('button');
-            actionsBtn.className = 'period-actions-btn';
-            actionsBtn.textContent = '\u22EE';
-            actionsBtn.title = 'Period options';
-            actionsBtn.setAttribute('aria-label', `Options for ${period.name}`);
+        // All periods get a ⋮ menu (for move + rename/delete on custom)
+        const actionsBtn = document.createElement('button');
+        actionsBtn.className = 'period-actions-btn';
+        actionsBtn.textContent = '\u22EE';
+        actionsBtn.title = 'Period options';
+        actionsBtn.setAttribute('aria-label', `Options for ${period.name}`);
 
-            const menu = document.createElement('div');
-            menu.className = 'period-actions-menu';
+        const menu = document.createElement('div');
+        menu.className = 'period-actions-menu';
 
+        // Move Left (if not first)
+        if (idx > 0) {
+            const moveLeftBtn = document.createElement('button');
+            moveLeftBtn.textContent = '\u2190 Move Left';
+            moveLeftBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.style.display = 'none';
+                handleMovePeriod(period.id, 'left');
+            });
+            menu.appendChild(moveLeftBtn);
+        }
+
+        // Move Right (if not last)
+        if (idx < periods.length - 1) {
+            const moveRightBtn = document.createElement('button');
+            moveRightBtn.textContent = 'Move Right \u2192';
+            moveRightBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.style.display = 'none';
+                handleMovePeriod(period.id, 'right');
+            });
+            menu.appendChild(moveRightBtn);
+        }
+
+        // Rename + Delete only for custom periods
+        if (!period.builtin) {
             const renameBtn = document.createElement('button');
             renameBtn.textContent = 'Rename';
             renameBtn.addEventListener('click', (e) => {
@@ -455,6 +472,7 @@ export function renderPeriodButtons(periods, activeMonth) {
                 menu.style.display = 'none';
                 handleRenamePeriod(period);
             });
+            menu.appendChild(renameBtn);
 
             const deleteBtn = document.createElement('button');
             deleteBtn.textContent = 'Delete';
@@ -464,24 +482,21 @@ export function renderPeriodButtons(periods, activeMonth) {
                 menu.style.display = 'none';
                 handleDeletePeriod(period);
             });
-
-            menu.appendChild(renameBtn);
             menu.appendChild(deleteBtn);
-
-            actionsBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                // Close all other menus
-                document.querySelectorAll('.period-actions-menu').forEach(m => {
-                    if (m !== menu) m.style.display = 'none';
-                });
-                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
-            });
-
-            wrapper.appendChild(btn);
-            wrapper.appendChild(actionsBtn);
-            wrapper.appendChild(menu);
-            calendarNav.appendChild(wrapper);
         }
+
+        actionsBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            document.querySelectorAll('.period-actions-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+            menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+        });
+
+        wrapper.appendChild(btn);
+        wrapper.appendChild(actionsBtn);
+        wrapper.appendChild(menu);
+        calendarNav.appendChild(wrapper);
     });
 }
 
@@ -538,23 +553,135 @@ function handleDeletePeriod(period) {
 }
 
 /**
- * Handle adding a new custom period
+ * Handle moving a period left or right
+ * @param {string} periodId - The period to move
+ * @param {string} direction - 'left' or 'right'
+ */
+function handleMovePeriod(periodId, direction) {
+    if (movePeriod(periodId, direction)) {
+        const periods = getAllPeriods();
+        renderPeriodButtons(periods, window.GardeningApp.activeMonth);
+    }
+}
+
+/**
+ * Handle adding a new custom period — opens a modal with name + position
  */
 function handleAddPeriod() {
-    const name = prompt('Enter a name for the new growing period:');
-    if (name && name.trim()) {
-        const newPeriod = addCustomPeriod(name.trim());
+    const previouslyFocused = document.activeElement;
+    const allPeriods = getAllPeriods();
 
-        // Switch to the new period
+    // Build modal
+    const overlay = document.createElement('div');
+    overlay.className = 'weather-modal-overlay';
+    overlay.style.display = 'flex';
+    overlay.style.zIndex = '1000';
+
+    const modal = document.createElement('div');
+    modal.className = 'weather-modal';
+    modal.style.maxWidth = '420px';
+    modal.style.padding = '25px';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'weather-modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+
+    const title = document.createElement('div');
+    title.className = 'modal-title';
+    title.textContent = 'Add Growing Period';
+
+    // Name field
+    const nameGroup = document.createElement('div');
+    nameGroup.className = 'modal-field-group';
+    const nameLabel = document.createElement('label');
+    nameLabel.className = 'modal-field-label';
+    nameLabel.textContent = 'Period name';
+    nameLabel.setAttribute('for', 'addPeriodName');
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.id = 'addPeriodName';
+    nameInput.className = 'modal-field-input';
+    nameInput.placeholder = 'e.g. March';
+    nameInput.required = true;
+    nameGroup.appendChild(nameLabel);
+    nameGroup.appendChild(nameInput);
+
+    // Position field
+    const posGroup = document.createElement('div');
+    posGroup.className = 'modal-field-group';
+    const posLabel = document.createElement('label');
+    posLabel.className = 'modal-field-label';
+    posLabel.textContent = 'Position';
+    posLabel.setAttribute('for', 'addPeriodPosition');
+    const posSelect = document.createElement('select');
+    posSelect.id = 'addPeriodPosition';
+    posSelect.className = 'modal-field-input';
+
+    allPeriods.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `Before ${p.name}`;
+        posSelect.appendChild(opt);
+    });
+    const endOpt = document.createElement('option');
+    endOpt.value = '';
+    endOpt.textContent = 'At the end';
+    posSelect.appendChild(endOpt);
+    posSelect.value = ''; // default to end
+    posGroup.appendChild(posLabel);
+    posGroup.appendChild(posSelect);
+
+    // Actions
+    const actions = document.createElement('div');
+    actions.className = 'modal-actions';
+    actions.style.marginTop = '20px';
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'modal-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    const addBtn = document.createElement('button');
+    addBtn.className = 'modal-btn-confirm';
+    addBtn.textContent = 'Add';
+    actions.appendChild(cancelBtn);
+    actions.appendChild(addBtn);
+
+    modal.appendChild(closeBtn);
+    modal.appendChild(title);
+    modal.appendChild(nameGroup);
+    modal.appendChild(posGroup);
+    modal.appendChild(actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function closeModal() {
+        overlay.remove();
+        if (previouslyFocused) previouslyFocused.focus();
+    }
+
+    function submit() {
+        const name = nameInput.value.trim();
+        if (!name) { nameInput.focus(); return; }
+        const insertBeforeId = posSelect.value || undefined;
+        const newPeriod = addCustomPeriod(name, insertBeforeId);
+        closeModal();
+
         window.GardeningApp.activeMonth = newPeriod.id;
-
-        // Re-render buttons and calendar
         const periods = getAllPeriods();
         renderPeriodButtons(periods, newPeriod.id);
         renderCalendar(newPeriod.id);
-
-        showNotification(`Period "${name.trim()}" added`, 'success');
+        showNotification(`Period "${name}" added`, 'success');
     }
+
+    addBtn.addEventListener('click', submit);
+    nameInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+    cancelBtn.addEventListener('click', closeModal);
+    closeBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
+
+    setTimeout(() => nameInput.focus(), 50);
 }
 
 /**

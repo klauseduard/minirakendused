@@ -20,10 +20,21 @@ const STORAGE_KEYS = {
 
 // Built-in periods definition
 const BUILTIN_PERIODS = [
-    { id: 'april', name: 'April', builtin: true },
-    { id: 'may', name: 'May', builtin: true },
-    { id: 'early_june', name: 'Early June', builtin: true }
+    { id: 'april', name: 'April', builtin: true, order: 1 },
+    { id: 'may', name: 'May', builtin: true, order: 2 },
+    { id: 'early_june', name: 'Early June', builtin: true, order: 3 }
 ];
+
+const BUILTIN_ORDER_KEY = 'gardenCal_builtinPeriodOrders';
+
+function getBuiltinOrderOverrides() {
+    const stored = localStorage.getItem(BUILTIN_ORDER_KEY);
+    return stored ? JSON.parse(stored) : {};
+}
+
+function saveBuiltinOrderOverrides(overrides) {
+    localStorage.setItem(BUILTIN_ORDER_KEY, JSON.stringify(overrides));
+}
 
 /**
  * Initialize the storage module
@@ -804,14 +815,30 @@ export function saveCustomPeriods(data) {
  * @param {string} name - Period name
  * @returns {Object} The newly created period
  */
-export function addCustomPeriod(name) {
+export function addCustomPeriod(name, insertBeforeId) {
     const data = getCustomPeriods();
+    const allPeriods = getAllPeriods();
+
+    let order;
+    if (insertBeforeId) {
+        const target = allPeriods.find(p => p.id === insertBeforeId);
+        if (target) {
+            order = target.order - 0.5;
+        }
+    }
+
+    if (order === undefined) {
+        // Append at the end
+        const maxOrder = allPeriods.length > 0
+            ? Math.max(...allPeriods.map(p => p.order || 0))
+            : 3;
+        order = maxOrder + 1;
+    }
+
     const newPeriod = {
         id: `period_${Date.now()}`,
         name: name,
-        order: data.periods.length > 0
-            ? Math.max(...data.periods.map(p => p.order || 0)) + 1
-            : 10
+        order: order
     };
     data.periods.push(newPeriod);
     saveCustomPeriods(data);
@@ -899,17 +926,66 @@ export function deleteCustomPeriod(id) {
 }
 
 /**
+ * Move a period left or right by swapping order values with its neighbor
+ * @param {string} periodId - The period ID to move
+ * @param {string} direction - 'left' or 'right'
+ * @returns {boolean} True if moved successfully
+ */
+export function movePeriod(periodId, direction) {
+    const sorted = getAllPeriods();
+    const idx = sorted.findIndex(p => p.id === periodId);
+    if (idx === -1) return false;
+
+    const swapIdx = direction === 'left' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sorted.length) return false;
+
+    const current = sorted[idx];
+    const neighbor = sorted[swapIdx];
+
+    // Swap order values
+    const tempOrder = current.order;
+    const newCurrentOrder = neighbor.order;
+    const newNeighborOrder = tempOrder;
+
+    // Apply to built-in overrides or custom periods
+    const overrides = getBuiltinOrderOverrides();
+    const customData = getCustomPeriods();
+
+    function applyOrder(period, newOrder) {
+        if (period.builtin) {
+            overrides[period.id] = newOrder;
+        } else {
+            const cp = customData.periods.find(p => p.id === period.id);
+            if (cp) cp.order = newOrder;
+        }
+    }
+
+    applyOrder(current, newCurrentOrder);
+    applyOrder(neighbor, newNeighborOrder);
+
+    saveBuiltinOrderOverrides(overrides);
+    saveCustomPeriods(customData);
+    return true;
+}
+
+/**
  * Get all periods (built-in + custom), ordered
  * @returns {Array} Array of period objects
  */
 export function getAllPeriods() {
+    const overrides = getBuiltinOrderOverrides();
+    const builtins = BUILTIN_PERIODS.map(p => ({
+        ...p,
+        order: overrides[p.id] !== undefined ? overrides[p.id] : p.order
+    }));
+
     const customData = getCustomPeriods();
     const customPeriods = customData.periods.map(p => ({
         ...p,
         builtin: false
     }));
 
-    return [...BUILTIN_PERIODS, ...customPeriods];
+    return [...builtins, ...customPeriods].sort((a, b) => a.order - b.order);
 }
 
 /**

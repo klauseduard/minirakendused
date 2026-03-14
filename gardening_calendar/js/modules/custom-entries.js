@@ -164,45 +164,19 @@ function addCustomEntryButtons() {
     // Create custom entry buttons container
     const customButtonsContainer = document.createElement('div');
     customButtonsContainer.className = 'custom-entries-toolbar';
-    customButtonsContainer.id = 'customEntriesToolbar'; // Add an ID for easier selection
-    customButtonsContainer.style.display = 'flex';
-    customButtonsContainer.style.justifyContent = 'flex-end';
-    customButtonsContainer.style.flexWrap = 'wrap';
-    customButtonsContainer.style.gap = '10px';
-    customButtonsContainer.style.marginTop = '15px';
-    customButtonsContainer.style.marginBottom = '15px';
-    
+    customButtonsContainer.id = 'customEntriesToolbar';
+
     // Create add plant button
     addCustomPlantBtn = document.createElement('button');
     addCustomPlantBtn.id = 'addCustomPlantBtn';
-    addCustomPlantBtn.className = 'custom-add-btn';
-    addCustomPlantBtn.style.background = 'var(--secondary-color)';
-    addCustomPlantBtn.style.color = 'white';
-    addCustomPlantBtn.style.border = 'none';
-    addCustomPlantBtn.style.borderRadius = '30px';
-    addCustomPlantBtn.style.display = 'flex';
-    addCustomPlantBtn.style.alignItems = 'center';
-    addCustomPlantBtn.style.gap = '5px';
-    addCustomPlantBtn.style.fontWeight = '500';
-    addCustomPlantBtn.style.cursor = 'pointer';
-    addCustomPlantBtn.style.boxShadow = '0 2px 5px var(--shadow)';
-    addCustomPlantBtn.innerHTML = '<span style="font-size: 1.1em;">🌸</span><span>Add Custom Plant</span>';
-    
+    addCustomPlantBtn.className = 'toolbar-btn toolbar-btn-add';
+    addCustomPlantBtn.innerHTML = '<span>🌸</span><span>Add Custom Plant</span>';
+
     // Create add task button
     addCustomTaskBtn = document.createElement('button');
     addCustomTaskBtn.id = 'addCustomTaskBtn';
-    addCustomTaskBtn.className = 'custom-add-btn';
-    addCustomTaskBtn.style.background = 'var(--secondary-color)';
-    addCustomTaskBtn.style.color = 'white';
-    addCustomTaskBtn.style.border = 'none';
-    addCustomTaskBtn.style.borderRadius = '30px';
-    addCustomTaskBtn.style.display = 'flex';
-    addCustomTaskBtn.style.alignItems = 'center';
-    addCustomTaskBtn.style.gap = '5px';
-    addCustomTaskBtn.style.fontWeight = '500';
-    addCustomTaskBtn.style.cursor = 'pointer';
-    addCustomTaskBtn.style.boxShadow = '0 2px 5px var(--shadow)';
-    addCustomTaskBtn.innerHTML = '<span style="font-size: 1.1em;">📝</span><span>Add Custom Task</span>';
+    addCustomTaskBtn.className = 'toolbar-btn toolbar-btn-add';
+    addCustomTaskBtn.innerHTML = '<span>📝</span><span>Add Custom Task</span>';
     
     // Add buttons to container
     customButtonsContainer.appendChild(addCustomPlantBtn);
@@ -213,15 +187,13 @@ function addCustomEntryButtons() {
         // Create new buttons instead of cloning to avoid event listener issues
         const newExportBtn = document.createElement('button');
         newExportBtn.id = 'customToolbarExportBtn';
-        newExportBtn.className = exportBtn.className;
+        newExportBtn.className = 'toolbar-btn';
         newExportBtn.innerHTML = exportBtn.innerHTML;
-        newExportBtn.style.cssText = 'padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;';
-        
+
         const newImportBtn = document.createElement('button');
         newImportBtn.id = 'customToolbarImportBtn';
-        newImportBtn.className = importBtn.className;
+        newImportBtn.className = 'toolbar-btn';
         newImportBtn.innerHTML = importBtn.innerHTML;
-        newImportBtn.style.cssText = 'padding: 8px 12px; background: var(--accent-color); color: white; border: none; border-radius: 20px; display: flex; align-items: center; gap: 5px; font-weight: 500; cursor: pointer;';
         
         // Add the new buttons to our container
         customButtonsContainer.appendChild(newExportBtn);
@@ -249,12 +221,7 @@ function addCustomEntryButtons() {
         monthNav.parentNode.insertBefore(customButtonsContainer, monthNav.nextSibling);
     }
     
-    // Make sure calendar nav is original (with just month buttons)
-    if (calendarNav) {
-        calendarNav.style.display = 'flex';
-        calendarNav.style.gap = '10px';
-        calendarNav.style.flexWrap = 'wrap';
-    }
+    // calendarNav styling handled by CSS
     
     // If the data management container is now empty, hide it
     if (dataManagementContainer && exportBtn && importBtn) {
