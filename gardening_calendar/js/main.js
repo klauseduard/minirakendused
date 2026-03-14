@@ -136,10 +136,10 @@ async function initApp() {
     // Set up navigation and remaining event listeners
     setupNavigation();
 
-    // Journal sidebar close button
-    const journalSidebarClose = document.getElementById('journalSidebarClose');
-    if (journalSidebarClose) {
-        journalSidebarClose.addEventListener('click', () => {
+    // Journal close button
+    const journalCloseBtn = document.getElementById('journalCloseBtn');
+    if (journalCloseBtn) {
+        journalCloseBtn.addEventListener('click', () => {
             closeJournalPanel();
             // Remove active state from journal nav buttons
             document.querySelectorAll('.quick-jump-btn, .bottom-nav-btn').forEach(b => {
@@ -281,13 +281,6 @@ function setupNavigation() {
 }
 
 /**
- * Check if viewport is desktop (sidebar-capable) width
- */
-function isDesktop() {
-    return window.innerWidth > 768;
-}
-
-/**
  * Navigate to a section - shared logic for both desktop and mobile nav.
  * @param {string} sectionId - The section to navigate to
  * @param {Object} options - Navigation options
@@ -295,40 +288,14 @@ function isDesktop() {
  */
 function navigateToSection(sectionId, { isMobile = false } = {}) {
     if (sectionId === 'garden-journal') {
-        if (isDesktop()) {
-            // Desktop: open journal as sidebar alongside existing content
-            document.body.classList.add('journal-active');
+        // Full-width journal view on all screen sizes
+        document.body.classList.add('journal-active');
 
-            // Show journal without hiding other sections (CSS grid handles layout)
-            const journalSection = document.getElementById('garden-journal');
-            if (journalSection) {
-                journalSection.style.display = 'block';
-                journalModule.renderJournal();
-            }
-
-            // Ensure calendar content stays visible
-            const calendarContent = document.getElementById('calendarContent');
-            if (calendarContent) calendarContent.style.display = 'grid';
-        } else {
-            // Mobile: full-screen journal (existing behavior)
-            const calendarContent = document.getElementById('calendarContent');
-            if (calendarContent) {
-                calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
-            }
-
-            document.body.classList.add('journal-active');
-            document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
-                if (el.id !== 'garden-journal' && el.id !== 'scrollToTop' && !el.classList.contains('bottom-nav')) {
-                    el.style.display = 'none';
-                }
-            });
-
-            const journalSection = document.getElementById('garden-journal');
-            if (journalSection) {
-                journalSection.style.display = 'block';
-                journalModule.renderJournal();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
+        const journalSection = document.getElementById('garden-journal');
+        if (journalSection) {
+            journalSection.style.display = 'block';
+            journalModule.renderJournal();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } else {
         // Leave journal view, restore main sections
