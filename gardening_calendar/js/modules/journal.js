@@ -4,7 +4,10 @@
  */
 
 import { saveJournalEntries, getJournalEntries } from './storage.js';
-import { shareContent } from './social.js';
+import { getLastWeatherData, weatherCodeToIconTextColor as weatherCodeToIconTextColorFn } from './weather.js';
+import { initSocialSharing, shareContent } from './social.js';
+import * as photoStorage from './photo-storage.js';
+import { showConfirmDialog, showOptionsModal } from './ui.js';
 
 // Journal entry types
 const journalEntryTypes = {
@@ -19,18 +22,18 @@ const journalEntryTypes = {
 function createJournalEntry(entryData) {
     const entries = getJournalEntries();
     const newEntry = {
-        id: `journal-${Date.now()}`,
+        id: entryData.id || `journal-${Date.now()}`,
         date: entryData.date || new Date().toISOString().split('T')[0],
         type: entryData.type || 'observation',
         plants: entryData.plants || [],
         notes: entryData.notes || '',
         location: entryData.location || '',
         metrics: entryData.metrics || {},
-        images: entryData.images || [],
-        weather: window.lastWeatherData ? {
-            temperature: window.lastWeatherData.current_weather.temperature,
-            weatherCode: window.lastWeatherData.current_weather.weathercode,
-            precipitation: window.lastWeatherData.daily.precipitation_sum[0] || 0
+        imageIds: entryData.imageIds || [],
+        weather: getLastWeatherData() ? {
+            temperature: getLastWeatherData().current_weather.temperature,
+            weatherCode: getLastWeatherData().current_weather.weathercode,
+            precipitation: getLastWeatherData().daily.precipitation_sum[0] || 0
         } : null,
         timestamp: Date.now()
     };
@@ -66,35 +69,51 @@ function deleteJournalEntry(id) {
 }
 
 // Export journal to JSON file
-function exportJournal(includeImages = true) {
+async function exportJournal(includeImages = true) {
     const entries = getJournalEntries();
-    
+
     // If no entries, show message
     if (entries.length === 0) {
         alert('No journal entries to export.');
         return;
     }
-    
+
     // Clone entries to avoid modifying the original data
     let exportData = JSON.parse(JSON.stringify(entries));
-    
-    // Remove images if not including them
-    if (!includeImages) {
+
+    if (includeImages) {
+        // For entries with imageIds, fetch photos from IndexedDB and inline as images
+        for (const entry of exportData) {
+            if (entry.imageIds && entry.imageIds.length > 0) {
+                try {
+                    const photos = await photoStorage.getPhotos(entry.id);
+                    entry.images = photos.map(p => ({ data: p.data, thumbnail: p.thumbnail }));
+                } catch (e) {
+                    console.warn(`Export: failed to fetch photos for entry ${entry.id}`, e);
+                    entry.images = [];
+                }
+                delete entry.imageIds;
+            }
+            // entries with legacy images are exported as-is
+        }
+    } else {
+        // Remove images/imageIds when not including them
         exportData = exportData.map(entry => {
             const entryCopy = {...entry};
             delete entryCopy.images;
+            delete entryCopy.imageIds;
             return entryCopy;
         });
     }
-    
+
     // Create the export file
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
+
     // Generate filename with timestamp
     const date = new Date().toISOString().slice(0, 10);
     const filename = `garden_journal_${date}${includeImages ? '_with_images' : '_no_images'}.json`;
-    
+
     // Create download link and trigger download
     const link = document.createElement('a');
     link.setAttribute('href', dataUri);
@@ -104,164 +123,85 @@ function exportJournal(includeImages = true) {
     document.body.removeChild(link);
 }
 
-// Show export options modal
+// Show export options modal (dynamically created via showOptionsModal)
 function showExportOptionsModal() {
-    const modal = document.getElementById('exportOptionsModal');
-    const exportOptions = modal.querySelectorAll('.export-option');
-    const cancelBtn = document.getElementById('exportOptionsCancelBtn');
-    const closeBtn = document.getElementById('exportModalCloseBtn');
-    
-    // Clear any previous selections
-    exportOptions.forEach(option => {
-        option.style.borderColor = '#ddd';
-        option.style.backgroundColor = 'transparent';
-    });
-    
-    // Set click behavior for options
-    exportOptions[0].onclick = () => {
-        modal.style.display = 'none';
-        exportJournal(true); // Full export with images
-    };
-    
-    exportOptions[1].onclick = () => {
-        modal.style.display = 'none';
-        exportJournal(false); // Lightweight export without images
-    };
-    
-    // Add hover effects
-    exportOptions.forEach(option => {
-        option.onmouseover = () => {
-            if (option.style.borderColor !== 'var(--primary-color)') {
-                option.style.backgroundColor = '#f5f5f5';
+    showOptionsModal(
+        'Export Options',
+        'Choose how you would like to export your journal:',
+        [
+            {
+                icon: '📷',
+                title: 'Complete Export',
+                description: 'Include all entries with images (larger file size)',
+                onClick: () => exportJournal(true)
+            },
+            {
+                icon: '📝',
+                title: 'Lightweight Export',
+                description: 'Text-only export without images (smaller file size)',
+                onClick: () => exportJournal(false)
             }
-        };
-        
-        option.onmouseout = () => {
-            if (option.style.borderColor !== 'var(--primary-color)') {
-                option.style.backgroundColor = 'transparent';
-            }
-        };
-    });
-    
-    // Cancel and close buttons close the modal
-    cancelBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    closeBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    // Click outside to close
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
-    
-    // Show modal
-    modal.style.display = 'flex';
-    
-    // Setup escape key handler
-    const handleEscapeKey = (e) => {
-        if (e.key === 'Escape') {
-            modal.style.display = 'none';
-            document.removeEventListener('keydown', handleEscapeKey);
-        }
-    };
-    document.addEventListener('keydown', handleEscapeKey);
+        ]
+    );
 }
 
-// Show import options modal
+// Show import options modal (dynamically created via showOptionsModal)
 function showImportOptionsModal(importData) {
-    const modal = document.getElementById('importOptionsModal');
-    const importOptions = modal.querySelectorAll('.import-option');
-    const cancelBtn = document.getElementById('importOptionsCancelBtn');
-    const closeBtn = document.getElementById('importModalCloseBtn');
-    const statsMessage = document.getElementById('importStatsMessage');
-    
-    // Update the stats message
-    statsMessage.textContent = `Found ${importData.length} journal ${importData.length === 1 ? 'entry' : 'entries'} to import.`;
-    
-    // Clear any previous selections
-    importOptions.forEach(option => {
-        option.style.borderColor = '#ddd';
-        option.style.backgroundColor = 'transparent';
-    });
-    
-    // Set click behavior for options
-    importOptions[0].onclick = () => {
-        // Merge option
-        modal.style.display = 'none';
-        handleImport(importData, true);
-    };
-    
-    importOptions[1].onclick = () => {
-        // Replace option
-        modal.style.display = 'none';
-        handleImport(importData, false);
-    };
-    
-    // Add hover effects
-    importOptions.forEach(option => {
-        option.onmouseover = () => {
-            if (option.style.borderColor !== 'var(--primary-color)') {
-                option.style.backgroundColor = '#f5f5f5';
+    const count = importData.length;
+    const description = `Found ${count} journal ${count === 1 ? 'entry' : 'entries'} to import.`;
+
+    showOptionsModal(
+        'Import Options',
+        description,
+        [
+            {
+                icon: '🔄',
+                title: 'Merge',
+                description: 'Add new entries and update existing ones',
+                onClick: () => handleImport(importData, true)
+            },
+            {
+                icon: '♻️',
+                title: 'Replace All',
+                description: 'Delete all existing entries and use imported ones',
+                onClick: () => handleImport(importData, false)
             }
-        };
-        
-        option.onmouseout = () => {
-            if (option.style.borderColor !== 'var(--primary-color)') {
-                option.style.backgroundColor = 'transparent';
-            }
-        };
-    });
-    
-    // Cancel and close buttons close the modal
-    cancelBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    closeBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    // Click outside to close
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
-    
-    // Show modal
-    modal.style.display = 'flex';
-    
-    // Setup escape key handler
-    const handleEscapeKey = (e) => {
-        if (e.key === 'Escape') {
-            modal.style.display = 'none';
-            document.removeEventListener('keydown', handleEscapeKey);
-        }
-    };
-    document.addEventListener('keydown', handleEscapeKey);
+        ]
+    );
 }
 
 // Handle import of journal entries
-function handleImport(importData, isMerge) {
+async function handleImport(importData, isMerge) {
     const existingEntries = getJournalEntries();
-    
+
+    // Migrate imported entries: extract inline images to IndexedDB
+    for (const entry of importData) {
+        if (entry.images && Array.isArray(entry.images) && entry.images.length > 0) {
+            try {
+                const photoIds = await photoStorage.importPhotos(entry.id, entry.images);
+                entry.imageIds = photoIds;
+                delete entry.images;
+            } catch (e) {
+                console.warn(`Import: failed to save photos for entry ${entry.id}`, e);
+                // Keep inline images as fallback
+            }
+        }
+    }
+
     if (isMerge) {
         // Merge: Keep existing entries and add new ones
         const mergedEntries = [...existingEntries];
-        
+
         // Track stats for user feedback
         let added = 0;
         let updated = 0;
-        
-        importData.forEach(importEntry => {
+
+        for (const importEntry of importData) {
             const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
-            
+
             if (existingIndex >= 0) {
+                // Delete old photos for the entry being replaced
+                await photoStorage.deletePhotos(mergedEntries[existingIndex].id);
                 // Update existing entry
                 mergedEntries[existingIndex] = importEntry;
                 updated++;
@@ -270,21 +210,26 @@ function handleImport(importData, isMerge) {
                 mergedEntries.push(importEntry);
                 added++;
             }
-        });
-        
+        }
+
         // Save merged entries
         saveJournalEntries(mergedEntries);
-        
+
         // Show success message
         alert(`Import successful!\nAdded ${added} new ${added === 1 ? 'entry' : 'entries'}\nUpdated ${updated} existing ${updated === 1 ? 'entry' : 'entries'}`);
     } else {
-        // Replace: Delete all existing entries and use imported ones
+        // Replace: Delete all existing photos first
+        for (const entry of existingEntries) {
+            await photoStorage.deletePhotos(entry.id);
+        }
+
+        // Replace all entries with imported ones
         saveJournalEntries(importData);
-        
+
         // Show success message
         alert(`Import successful!\nReplaced all entries with ${importData.length} imported ${importData.length === 1 ? 'entry' : 'entries'}`);
     }
-    
+
     // Refresh the journal display
     if (typeof renderJournal === 'function') {
         renderJournal();
@@ -292,106 +237,105 @@ function handleImport(importData, isMerge) {
 }
 
 // Function to open the journal entry modal (new or edit)
-function openJournalEntryModal(entryId = null) {
+async function openJournalEntryModal(entryId = null) {
     // Get required DOM elements
     const journalEntryForm = document.getElementById('journalEntryForm');
     const photoPreviewContainer = document.getElementById('photoPreviewContainer');
     const harvestMetricsContainer = document.getElementById('harvestMetricsContainer');
-    
+
     // Reset form
     journalEntryForm.reset();
     document.getElementById('journalEntryId').value = '';
     photoPreviewContainer.innerHTML = '';
     document.getElementById('journalEntryModalTitle').textContent = 'Add Journal Entry';
-    
+
     // Set today's date as default
     document.getElementById('entryDate').value = new Date().toISOString().split('T')[0];
-    
+
     // Hide harvest metrics by default
     harvestMetricsContainer.style.display = 'none';
-    
+
     // If editing an existing entry
     if (entryId) {
         const entries = getJournalEntries();
         const entry = entries.find(e => e.id === entryId);
-        
+
         if (entry) {
             // Set form title
             document.getElementById('journalEntryModalTitle').textContent = 'Edit Journal Entry';
-            
+
             // Set form values
             document.getElementById('journalEntryId').value = entry.id;
             document.getElementById('entryDate').value = entry.date;
             document.getElementById('entryType').value = entry.type;
             document.getElementById('entryNotes').value = entry.notes || '';
             document.getElementById('entryLocation').value = entry.location || '';
-            
+
             // Handle plants
             if (entry.plants && entry.plants.length > 0) {
                 document.getElementById('entryPlants').value = entry.plants.join(', ');
             }
-            
+
             // Show harvest metrics if relevant
             if (entry.type === 'harvest' && entry.metrics) {
                 harvestMetricsContainer.style.display = 'block';
                 document.getElementById('harvestWeight').value = entry.metrics.weight || '';
                 document.getElementById('harvestQuantity').value = entry.metrics.quantity || '';
             }
-            
-            // Show photos if available
-            if (entry.images && entry.images.length > 0) {
-                entry.images.forEach(imgData => {
-                    // Create container for the image preview
-                    const imgContainer = document.createElement('div');
-                    imgContainer.className = 'photo-preview';
-                    
-                    // Create image element
-                    const img = document.createElement('img');
-                    
-                    // Handle different image data formats (string or object)
-                    let imageSource, fullImageSource;
+
+            // Resolve photos: either from IndexedDB (imageIds) or legacy inline (images)
+            let photoDataArray = [];
+            if (entry.imageIds && entry.imageIds.length > 0) {
+                try {
+                    const photos = await photoStorage.getPhotos(entry.id);
+                    photoDataArray = photos.map(p => ({
+                        thumbnail: p.thumbnail || p.data,
+                        fullImage: p.data || p.thumbnail
+                    }));
+                } catch (e) {
+                    console.warn('Failed to load photos from IndexedDB for editing:', e);
+                }
+            } else if (entry.images && entry.images.length > 0) {
+                // Legacy inline images
+                photoDataArray = entry.images.map(imgData => {
                     if (typeof imgData === 'string') {
-                        // If it's just a string, use it for both thumbnail and full image
-                        imageSource = imgData;
-                        fullImageSource = imgData;
+                        return { thumbnail: imgData, fullImage: imgData };
                     } else if (typeof imgData === 'object') {
-                        // If it's an object with data and thumbnail properties
-                        imageSource = imgData.thumbnail || imgData.data || '';
-                        fullImageSource = imgData.data || imgData.thumbnail || '';
-                    } else {
-                        // Skip invalid image data
-                        console.warn('Invalid image data format:', imgData);
-                        return;
+                        return {
+                            thumbnail: imgData.thumbnail || imgData.data || '',
+                            fullImage: imgData.data || imgData.thumbnail || ''
+                        };
                     }
-                    
-                    // Set image source and storage
-                    img.src = imageSource;
-                    img.dataset.fullImage = fullImageSource;
-                    
-                    // Set click handler for lightbox view
-                    img.onclick = () => showImageLightbox(fullImageSource, entry.id);
-                    
-                    // Add remove button
-                    const removeBtn = document.createElement('button');
-                    removeBtn.innerHTML = '&times;';
-                    removeBtn.className = 'photo-remove-btn';
-                    removeBtn.onclick = () => {
-                        imgContainer.remove();
-                    };
-                    
-                    // Add elements to the container
-                    imgContainer.appendChild(img);
-                    imgContainer.appendChild(removeBtn);
-                    photoPreviewContainer.appendChild(imgContainer);
-                });
+                    return null;
+                }).filter(Boolean);
             }
+
+            // Render photo previews
+            photoDataArray.forEach(photoData => {
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'photo-preview';
+
+                const img = document.createElement('img');
+                img.src = photoData.thumbnail;
+                img.dataset.fullImage = photoData.fullImage;
+                img.onclick = () => showImageLightbox(photoData.fullImage, entry.id);
+
+                const removeBtn = document.createElement('button');
+                removeBtn.innerHTML = '&times;';
+                removeBtn.className = 'photo-remove-btn';
+                removeBtn.onclick = () => { imgContainer.remove(); };
+
+                imgContainer.appendChild(img);
+                imgContainer.appendChild(removeBtn);
+                photoPreviewContainer.appendChild(imgContainer);
+            });
         }
     }
-    
+
     // Show the modal
     const modal = document.getElementById('journalEntryModal');
     modal.style.display = 'flex';
-    
+
     // Setup escape key handler
     const handleEscapeKey = (e) => {
         if (e.key === 'Escape') {
@@ -640,11 +584,11 @@ function renderTimeline() {
             </div>`;
         }
         
-        // Images (if any)
+        // Images: either legacy inline or placeholder slots for IndexedDB photos
         if (entry.images && entry.images.length > 0) {
             html += `<div style="margin-top: 15px;">
                 <div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
-            
+
             entry.images.forEach((img, index) => {
                 // Handle both string format and object format for backward compatibility
                 const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
@@ -652,8 +596,14 @@ function renderTimeline() {
                     <img src="${typeof img === 'string' ? img : (img.thumbnail || img.data)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">
                 </div>`;
             });
-            
+
             html += `</div></div>`;
+        } else if (entry.imageIds && entry.imageIds.length > 0) {
+            // Placeholder container for async-loaded IndexedDB photos
+            html += `<div style="margin-top: 15px;">
+                <div class="journal-photos-slot" data-entry-id="${entry.id}" style="display: flex; flex-wrap: wrap; gap: 10px;">
+                    <div style="color: #999; font-size: 0.9rem;">Loading ${entry.imageIds.length} photo${entry.imageIds.length > 1 ? 's' : ''}...</div>
+                </div></div>`;
         }
         
         // Close entry card
@@ -684,18 +634,49 @@ function renderTimeline() {
             showImageLightbox(fullImg);
         });
     });
+
+    // Async-load photos from IndexedDB for entries with imageIds
+    journalTimeline.querySelectorAll('.journal-photos-slot').forEach(slot => {
+        const entryId = slot.dataset.entryId;
+        photoStorage.getPhotos(entryId).then(photos => {
+            if (photos.length === 0) {
+                slot.innerHTML = '';
+                return;
+            }
+            slot.innerHTML = '';
+            photos.forEach((photo, index) => {
+                const imgSrc = photo.data || photo.thumbnail;
+                const thumbSrc = photo.thumbnail || photo.data;
+                const div = document.createElement('div');
+                div.className = 'journal-image';
+                div.style.width = '100px';
+                div.style.height = '100px';
+                div.style.cursor = 'pointer';
+                div.dataset.fullImg = imgSrc;
+                div.dataset.entryId = entryId;
+                div.dataset.imgIndex = index;
+                div.innerHTML = `<img src="${thumbSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">`;
+                div.addEventListener('click', () => showImageLightbox(imgSrc, entryId));
+                slot.appendChild(div);
+            });
+        }).catch(e => {
+            console.warn(`Failed to load photos for entry ${entryId}:`, e);
+            slot.innerHTML = '';
+        });
+    });
 }
 
-function renderGallery() {
+async function renderGallery() {
     const entries = getJournalEntries();
     const journalGallery = document.getElementById('journalGallery');
-    
-    // Get all images from all entries
+
+    // Get all images from all entries (both legacy and IndexedDB)
     const allImages = [];
-    entries.forEach(entry => {
+
+    for (const entry of entries) {
         if (entry.images && entry.images.length > 0) {
+            // Legacy inline images
             entry.images.forEach((img, index) => {
-                // Handle both string format and object format for backward compatibility
                 const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
                 allImages.push({
                     src: imgSrc,
@@ -705,15 +686,31 @@ function renderGallery() {
                     imgIndex: index
                 });
             });
+        } else if (entry.imageIds && entry.imageIds.length > 0) {
+            // IndexedDB photos
+            try {
+                const photos = await photoStorage.getPhotos(entry.id);
+                photos.forEach((photo, index) => {
+                    allImages.push({
+                        src: photo.data || photo.thumbnail,
+                        thumbnail: photo.thumbnail || photo.data,
+                        date: entry.date,
+                        entryId: entry.id,
+                        imgIndex: index
+                    });
+                });
+            } catch (e) {
+                console.warn(`Gallery: failed to load photos for entry ${entry.id}`, e);
+            }
         }
-    });
-    
+    }
+
     // Sort by date (newest first)
     allImages.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
+
     // Build gallery HTML
     let html = '';
-    
+
     if (allImages.length === 0) {
         html = `<div style="text-align: center; padding: 40px 20px;">
             <div style="font-size: 3rem; margin-bottom: 20px;">📷</div>
@@ -722,7 +719,7 @@ function renderGallery() {
         </div>`;
     } else {
         html = `<div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px;">`;
-        
+
         allImages.forEach(img => {
             const dateObj = new Date(img.date);
             const formattedDate = dateObj.toLocaleDateString(undefined, {
@@ -730,7 +727,7 @@ function renderGallery() {
                 month: 'short',
                 day: 'numeric'
             });
-            
+
             html += `<div class="gallery-image" style="cursor: pointer;" data-full-img="${img.src}" data-entry-id="${img.entryId}">
                 <div style="position: relative; padding-bottom: 100%;">
                     <img src="${img.thumbnail}" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Garden photo">
@@ -738,12 +735,12 @@ function renderGallery() {
                 </div>
             </div>`;
         });
-        
+
         html += `</div>`;
     }
-    
+
     journalGallery.innerHTML = html;
-    
+
     // Add event listeners for image lightbox
     journalGallery.querySelectorAll('.gallery-image').forEach(img => {
         img.addEventListener('click', () => {
@@ -831,7 +828,7 @@ function renderJournalCalendar() {
                             <div style="font-weight: 500;">${entryType.name}</div>
                             <div style="font-size: 0.9rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${entry.plants && entry.plants.length ? entry.plants.join(', ') : (entry.notes ? entry.notes.substring(0, 30) + (entry.notes.length > 30 ? '...' : '') : 'No details')}</div>
                         </div>
-                        ${entry.images && entry.images.length ? `<div style="width: 30px; text-align: center; font-size: 0.9rem;">📷${entry.images.length}</div>` : ''}
+                        ${(entry.images && entry.images.length) ? `<div style="width: 30px; text-align: center; font-size: 0.9rem;">📷${entry.images.length}</div>` : (entry.imageIds && entry.imageIds.length ? `<div style="width: 30px; text-align: center; font-size: 0.9rem;">📷${entry.imageIds.length}</div>` : '')}
                     </div>`;
                 });
                 
@@ -869,53 +866,31 @@ function renderJournalCalendar() {
     });
 }
 
-// Function to show delete confirmation modal
+// Function to show delete confirmation modal (dynamically created via showConfirmDialog)
 function showDeleteConfirmModal(entryId) {
-    const modal = document.getElementById('deleteConfirmModal');
-    const cancelBtn = document.getElementById('deleteConfirmCancelBtn');
-    const confirmBtn = document.getElementById('deleteConfirmBtn');
-    const closeBtn = document.getElementById('deleteModalCloseBtn');
-    
-    // Set up confirm button action
-    confirmBtn.onclick = () => {
-        // Delete the entry
-        if (deleteJournalEntry(entryId)) {
-            // Update the journal display
-            renderJournal();
-            // Show success message
-            alert('Journal entry deleted successfully.');
-        }
-        // Hide modal
-        modal.style.display = 'none';
-    };
-    
-    // Cancel and close buttons close the modal
-    cancelBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    closeBtn.onclick = () => {
-        modal.style.display = 'none';
-    };
-    
-    // Click outside to close
-    modal.onclick = (e) => {
-        if (e.target === modal) {
-            modal.style.display = 'none';
-        }
-    };
-    
-    // Show modal
-    modal.style.display = 'flex';
-    
-    // Setup escape key handler
-    const handleEscapeKey = (e) => {
-        if (e.key === 'Escape') {
-            modal.style.display = 'none';
-            document.removeEventListener('keydown', handleEscapeKey);
-        }
-    };
-    document.addEventListener('keydown', handleEscapeKey);
+    showConfirmDialog(
+        'Delete Entry',
+        'Are you sure you want to delete this journal entry? This action cannot be undone.',
+        async () => {
+            // Delete photos from IndexedDB first
+            try {
+                await photoStorage.deletePhotos(entryId);
+            } catch (e) {
+                console.warn('Failed to delete photos from IndexedDB:', e);
+            }
+            // Delete the entry
+            if (deleteJournalEntry(entryId)) {
+                // Update the journal display
+                renderJournal();
+                // Show success message
+                alert('Journal entry deleted successfully.');
+            }
+        },
+        null, // onCancel - no action needed
+        'Delete',
+        'Cancel',
+        { titleClass: 'modal-title-danger', confirmClass: 'modal-btn-danger' }
+    );
 }
 
 function showImageLightbox(imgSrc, entryId = null) {
@@ -1017,21 +992,9 @@ function showImageLightbox(imgSrc, entryId = null) {
     });
 }
 
-// The weather code function is still in main code - we'll need to handle dependency temporarily
-// This is a dependency we need to handle when we refactor the weather module
+// Delegate to the weather module's exported function
 function weatherCodeToIconTextColor(code) {
-    // Temporary fallback if the function isn't available yet
-    if (typeof window.weatherCodeToIconTextColor === 'function') {
-        return window.weatherCodeToIconTextColor(code);
-    }
-    
-    // Simple fallback implementation
-    return { 
-        icon: '🌡️', 
-        text: 'Weather info', 
-        bg: '#f5f5f5', 
-        color: '#666' 
-    };
+    return weatherCodeToIconTextColorFn(code);
 }
 
 // Export functions
@@ -1080,7 +1043,7 @@ export function initJournal() {
     
     // Initialize share button
     if (shareContainer) {
-        window.GardeningApp.modules.social.initSocialSharing({
+        initSocialSharing({
             selector: '#journalShareContainer',
             defaultTitle: 'My Garden Journal',
             defaultDescription: 'Check out my gardening journey!'
@@ -1229,9 +1192,9 @@ export function initJournal() {
     
     // Form submission
     if (journalEntryForm) {
-        journalEntryForm.addEventListener('submit', function(e) {
+        journalEntryForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
+
             // Get form data
             const entryId = document.getElementById('journalEntryId').value;
             const entryData = {
@@ -1241,7 +1204,7 @@ export function initJournal() {
                 location: document.getElementById('entryLocation').value,
                 plants: document.getElementById('entryPlants').value.split(',').map(p => p.trim()).filter(p => p)
             };
-            
+
             // Add harvest metrics if applicable
             if (entryData.type === 'harvest') {
                 entryData.metrics = {
@@ -1249,43 +1212,64 @@ export function initJournal() {
                     quantity: document.getElementById('harvestQuantity').value
                 };
             }
-            
-            // Add photos if any
+
+            // Collect photos from the preview container
             const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            const photos = [];
             if (photoPreviewContainer) {
                 const photoElements = photoPreviewContainer.querySelectorAll('.photo-preview img');
-                if (photoElements.length > 0) {
-                    entryData.images = [];
-                    photoElements.forEach(img => {
-                        // Get full image and thumbnail
-                        const fullImage = img.dataset.fullImage || img.src;
-                        const thumbnail = img.src;
-                        
-                        // Skip if the image data is invalid
-                        if (!fullImage) {
-                            console.warn('Skipping image with no data');
-                            return;
-                        }
-                        
-                        // Always store images in the same format (object with data and thumbnail)
-                        entryData.images.push({
-                            data: fullImage,
-                            thumbnail: thumbnail
-                        });
-                    });
-                }
+                photoElements.forEach(img => {
+                    const fullImage = img.dataset.fullImage || img.src;
+                    const thumbnail = img.src;
+                    if (!fullImage) {
+                        console.warn('Skipping image with no data');
+                        return;
+                    }
+                    photos.push({ data: fullImage, thumbnail: thumbnail });
+                });
             }
-            
+
+            // Determine the entry ID (existing or new)
+            let finalEntryId;
+            if (entryId) {
+                // Editing: delete old photos from IndexedDB, then save new ones
+                try {
+                    await photoStorage.deletePhotos(entryId);
+                } catch (e) {
+                    console.warn('Failed to delete old photos:', e);
+                }
+                finalEntryId = entryId;
+            } else {
+                // Creating: generate the ID the same way createJournalEntry does
+                finalEntryId = `journal-${Date.now()}`;
+            }
+
+            // Save photos to IndexedDB and get IDs
+            if (photos.length > 0) {
+                try {
+                    const imageIds = await photoStorage.savePhotos(finalEntryId, photos);
+                    entryData.imageIds = imageIds;
+                } catch (err) {
+                    console.error('Failed to save photos to IndexedDB:', err);
+                    // Fallback: store inline (legacy mode)
+                    entryData.images = photos;
+                }
+            } else {
+                entryData.imageIds = [];
+            }
+
             // Create or update entry
             if (entryId) {
                 updateJournalEntry(entryId, entryData);
             } else {
+                // Use the pre-generated ID
+                entryData.id = finalEntryId;
                 createJournalEntry(entryData);
             }
-            
+
             // Update view
             renderJournal();
-            
+
             // Close modal
             journalEntryModal.style.display = 'none';
         });
@@ -1505,17 +1489,24 @@ function renderTimelineEntry(entry, index) {
         ? entry.notes.substring(0, 120) + '...' 
         : entry.notes;
     
-    // Create photo gallery if there are images
+    // Create photo gallery if there are images (legacy) or placeholder for IndexedDB
     let photoGallery = '';
+    const photoCount = (entry.images && entry.images.length) || (entry.imageIds && entry.imageIds.length) || 0;
     if (entry.images && entry.images.length > 0) {
         photoGallery = `
             <div class="entry-photos">
-                ${entry.images.slice(0, 3).map(photo => 
+                ${entry.images.slice(0, 3).map(photo =>
                     `<div class="entry-photo">
                         <img src="${photo}" alt="Garden journal photo">
                     </div>`
                 ).join('')}
                 ${entry.images.length > 3 ? `<div class="entry-photo entry-photo-more">+${entry.images.length - 3}</div>` : ''}
+            </div>
+        `;
+    } else if (entry.imageIds && entry.imageIds.length > 0) {
+        photoGallery = `
+            <div class="entry-photos entry-photos-slot" data-entry-id="${entry.id}">
+                <div style="color: #999; font-size: 0.9rem;">Loading ${entry.imageIds.length} photo${entry.imageIds.length > 1 ? 's' : ''}...</div>
             </div>
         `;
     }
@@ -1598,11 +1589,11 @@ function renderTimelineEntry(entry, index) {
  * Open the journal entry view modal
  * @param {Object} entry - Journal entry to view
  */
-function openViewModal(entry) {
+async function openViewModal(entry) {
     if (!entry) return;
-    
+
     const entryType = journalEntryTypes[entry.type] || { icon: '📝', label: 'Note' };
-    
+
     // Format date
     const entryDate = new Date(entry.date);
     const formattedDate = entryDate.toLocaleDateString(undefined, {
@@ -1610,19 +1601,38 @@ function openViewModal(entry) {
         month: 'long',
         day: 'numeric'
     });
-    
+
     // Create photo gallery
     let photoGallery = '';
     if (entry.images && entry.images.length > 0) {
+        // Legacy inline images
         photoGallery = `
             <div class="entry-view-photos">
-                ${entry.images.map(photo => 
+                ${entry.images.map(photo =>
                     `<div class="entry-view-photo">
                         <img src="${photo}" alt="Garden journal photo">
                     </div>`
                 ).join('')}
             </div>
         `;
+    } else if (entry.imageIds && entry.imageIds.length > 0) {
+        // Load from IndexedDB
+        try {
+            const photos = await photoStorage.getPhotos(entry.id);
+            if (photos.length > 0) {
+                photoGallery = `
+                    <div class="entry-view-photos">
+                        ${photos.map(photo =>
+                            `<div class="entry-view-photo">
+                                <img src="${photo.data || photo.thumbnail}" alt="Garden journal photo">
+                            </div>`
+                        ).join('')}
+                    </div>
+                `;
+            }
+        } catch (e) {
+            console.warn('Failed to load photos for view modal:', e);
+        }
     }
     
     // Fill the modal content
@@ -1686,7 +1696,7 @@ function openViewModal(entry) {
     viewModal.style.display = 'flex';
     
     // Initialize share button for this entry
-    window.initSocialSharing({
+    initSocialSharing({
         selector: '#journalEntryShareContainer',
         defaultTitle: `Garden Journal: ${entryType.label} - ${formattedDate}`,
         defaultDescription: `Plants: ${entry.plants || 'None'}\n${entry.notes || ''}`,
@@ -1705,5 +1715,5 @@ function shareJournalEntry(entry) {
     if (!entry) return;
     
     // Use the shareContent function from social module
-    window.shareContent('journal', { entry });
+    shareContent('journal', { entry });
 } 

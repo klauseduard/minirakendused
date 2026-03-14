@@ -3,8 +3,13 @@
  * Handles all calendar rendering and interaction functionality
  */
 
-import { getSelectedItems, toggleItemSelection } from './storage.js';
-import { shareContent } from './social.js';
+import { calendarData, translations, categoryIcons, categoryNames } from './data.js';
+import { getSelectedItems, isItemSelected, toggleItemSelection,
+         getAllPeriods, addCustomPeriod, renameCustomPeriod, deleteCustomPeriod,
+         initializeCustomPeriodData } from './storage.js';
+import { showNotification } from './ui.js';
+import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
+import { initSocialSharing, shareContent } from './social.js';
 
 /**
  * Render the calendar for the specified month with optional search filtering
@@ -21,14 +26,8 @@ export function renderCalendar(month, searchTerm = '') {
     // Clear content
     calendarContent.innerHTML = '';
     
-    // Make sure necessary globals are available
-    const calendarData = window.calendarData;
-    const isItemSelected = window.isItemSelected;
-    const toggleItemSelection = window.toggleItemSelection;
-    const translations = window.translations;
-    const currentLang = window.currentLang || 'en';
-    const categoryIcons = window.categoryIcons;
-    const categoryNames = window.categoryNames;
+    // Get current language from shared app state
+    const currentLang = window.GardeningApp?.currentLang || 'en';
     
     // Check if month has data
     if (!calendarData[month]) {
@@ -161,28 +160,28 @@ export function renderCalendar(month, searchTerm = '') {
                     const id = editBtn.dataset.id;
                     const type = editBtn.dataset.type;
                     
-                    if (type === 'plant' && window.openCustomPlantModal) {
-                        window.openCustomPlantModal(id);
-                    } else if (type === 'task' && window.openCustomTaskModal) {
-                        window.openCustomTaskModal(id);
+                    if (type === 'plant') {
+                        openPlantModal(id);
+                    } else if (type === 'task') {
+                        openTaskModal(id);
                     }
                 }
             });
         });
-        
+
         // Add edit buttons for custom items
         categoryCard.querySelectorAll('.custom-item-edit-btn').forEach(button => {
             button.addEventListener('click', (e) => {
                 e.preventDefault(); // Prevent the checkbox from being toggled
                 e.stopPropagation(); // Stop event bubbling
-                
+
                 const id = button.dataset.id;
                 const type = button.dataset.type;
-                
-                if (type === 'plant' && window.openCustomPlantModal) {
-                    window.openCustomPlantModal(id);
-                } else if (type === 'task' && window.openCustomTaskModal) {
-                    window.openCustomTaskModal(id);
+
+                if (type === 'plant') {
+                    openPlantModal(id);
+                } else if (type === 'task') {
+                    openTaskModal(id);
                 }
             });
         });
@@ -207,23 +206,19 @@ export function renderCalendar(month, searchTerm = '') {
                                 itemLi.style.opacity = '0.5';
                                 itemLi.style.pointerEvents = 'none';
                             }
-                            
+
                             // Import function directly
                             import('../modules/storage.js').then(module => {
                                 const success = module.deleteCustomPlant(id);
-                                
+
                                 if (success) {
                                     // Clean all custom entries and reload them
-                                    if (window.loadCustomEntries) {
-                                        window.loadCustomEntries();
-                                    }
-                                    
+                                    loadCustomEntries();
+
                                     // Re-render the calendar
                                     renderCalendar(month, searchTerm);
-                                    
-                                    if (window.showNotification) {
-                                        window.showNotification('Custom plant deleted successfully', 'success');
-                                    }
+
+                                    showNotification('Custom plant deleted successfully', 'success');
                                 } else {
                                     // Restore the item if deletion failed
                                     if (itemLi) {
@@ -240,23 +235,19 @@ export function renderCalendar(month, searchTerm = '') {
                                 itemLi.style.opacity = '0.5';
                                 itemLi.style.pointerEvents = 'none';
                             }
-                            
+
                             // Import function directly
                             import('../modules/storage.js').then(module => {
                                 const success = module.deleteCustomTask(id);
-                                
+
                                 if (success) {
                                     // Clean all custom entries and reload them
-                                    if (window.loadCustomEntries) {
-                                        window.loadCustomEntries();
-                                    }
-                                    
+                                    loadCustomEntries();
+
                                     // Re-render the calendar
                                     renderCalendar(month, searchTerm);
-                                    
-                                    if (window.showNotification) {
-                                        window.showNotification('Custom task deleted successfully', 'success');
-                                    }
+
+                                    showNotification('Custom task deleted successfully', 'success');
                                 } else {
                                     // Restore the item if deletion failed
                                     if (itemLi) {
@@ -370,9 +361,6 @@ export function updateSelectAllCheckbox(month, category) {
     const selectAllCheckbox = document.querySelector(`.select-all-checkbox[data-category="${category}"]`);
     if (!selectAllCheckbox) return;
     
-    const calendarData = window.calendarData;
-    const isItemSelected = window.isItemSelected;
-    
     const categoryItems = calendarData[month][category] || [];
     if (categoryItems.length === 0) return;
     
@@ -388,42 +376,201 @@ export function updateSelectAllCheckbox(month, category) {
     selectAllCheckbox.checked = allSelected;
 }
 
+// Track whether the global menu close listener has been registered
+let periodMenuListenerAdded = false;
+
+/**
+ * Render period buttons dynamically
+ * @param {Array} periods - Array of period objects from getAllPeriods()
+ * @param {string} activeMonth - The currently active month/period ID
+ */
+export function renderPeriodButtons(periods, activeMonth) {
+    const calendarNav = document.getElementById('calendarNav');
+    if (!calendarNav) return;
+
+    calendarNav.innerHTML = '';
+
+    // Close any open menus when clicking outside (register only once)
+    if (!periodMenuListenerAdded) {
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.period-btn-wrapper')) {
+                document.querySelectorAll('.period-actions-menu').forEach(menu => {
+                    menu.style.display = 'none';
+                });
+            }
+        });
+        periodMenuListenerAdded = true;
+    }
+
+    periods.forEach(period => {
+        if (period.builtin) {
+            // Simple button for built-in periods
+            const btn = document.createElement('button');
+            btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
+            btn.dataset.month = period.id;
+            btn.textContent = period.name;
+            btn.addEventListener('click', () => handlePeriodClick(period.id));
+            calendarNav.appendChild(btn);
+        } else {
+            // Wrapper with actions menu for custom periods
+            const wrapper = document.createElement('div');
+            wrapper.className = 'period-btn-wrapper';
+
+            const btn = document.createElement('button');
+            btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
+            btn.dataset.month = period.id;
+            btn.textContent = period.name;
+            btn.addEventListener('click', () => handlePeriodClick(period.id));
+
+            const actionsBtn = document.createElement('button');
+            actionsBtn.className = 'period-actions-btn';
+            actionsBtn.textContent = '\u22EE';
+            actionsBtn.title = 'Period options';
+            actionsBtn.setAttribute('aria-label', `Options for ${period.name}`);
+
+            const menu = document.createElement('div');
+            menu.className = 'period-actions-menu';
+
+            const renameBtn = document.createElement('button');
+            renameBtn.textContent = 'Rename';
+            renameBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.style.display = 'none';
+                handleRenamePeriod(period);
+            });
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.style.color = '#f44336';
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.style.display = 'none';
+                handleDeletePeriod(period);
+            });
+
+            menu.appendChild(renameBtn);
+            menu.appendChild(deleteBtn);
+
+            actionsBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                // Close all other menus
+                document.querySelectorAll('.period-actions-menu').forEach(m => {
+                    if (m !== menu) m.style.display = 'none';
+                });
+                menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+            });
+
+            wrapper.appendChild(btn);
+            wrapper.appendChild(actionsBtn);
+            wrapper.appendChild(menu);
+            calendarNav.appendChild(wrapper);
+        }
+    });
+}
+
+/**
+ * Handle clicking a period button
+ * @param {string} periodId - The period ID to switch to
+ */
+function handlePeriodClick(periodId) {
+    // Update active state on all month buttons
+    document.querySelectorAll('.month-btn').forEach(btn => btn.classList.remove('active'));
+    const activeBtn = document.querySelector(`.month-btn[data-month="${periodId}"]`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    window.GardeningApp.activeMonth = periodId;
+    renderCalendar(periodId);
+}
+
+/**
+ * Handle renaming a custom period
+ * @param {Object} period - The period to rename
+ */
+function handleRenamePeriod(period) {
+    const newName = prompt('Enter new name for this period:', period.name);
+    if (newName && newName.trim() && newName.trim() !== period.name) {
+        renameCustomPeriod(period.id, newName.trim());
+        // Re-render buttons
+        const periods = getAllPeriods();
+        renderPeriodButtons(periods, window.GardeningApp.activeMonth);
+        showNotification(`Period renamed to "${newName.trim()}"`, 'success');
+    }
+}
+
+/**
+ * Handle deleting a custom period
+ * @param {Object} period - The period to delete
+ */
+function handleDeletePeriod(period) {
+    if (confirm(`Delete period "${period.name}"? All plants and tasks in this period will be lost. This cannot be undone.`)) {
+        const wasActive = window.GardeningApp.activeMonth === period.id;
+        deleteCustomPeriod(period.id);
+
+        // If the deleted period was active, switch to the first available period
+        if (wasActive) {
+            const periods = getAllPeriods();
+            window.GardeningApp.activeMonth = periods[0]?.id || 'april';
+            renderCalendar(window.GardeningApp.activeMonth);
+        }
+
+        // Re-render buttons
+        const periods = getAllPeriods();
+        renderPeriodButtons(periods, window.GardeningApp.activeMonth);
+        showNotification(`Period "${period.name}" deleted`, 'success');
+    }
+}
+
+/**
+ * Handle adding a new custom period
+ */
+function handleAddPeriod() {
+    const name = prompt('Enter a name for the new growing period:');
+    if (name && name.trim()) {
+        const newPeriod = addCustomPeriod(name.trim());
+
+        // Switch to the new period
+        window.GardeningApp.activeMonth = newPeriod.id;
+
+        // Re-render buttons and calendar
+        const periods = getAllPeriods();
+        renderPeriodButtons(periods, newPeriod.id);
+        renderCalendar(newPeriod.id);
+
+        showNotification(`Period "${name.trim()}" added`, 'success');
+    }
+}
+
 /**
  * Initialize the calendar module
  * @param {string} initialMonth - The initial month to display
  */
 export function initCalendar(initialMonth) {
     console.log('Initializing calendar module...');
-    
-    // Set up event listeners for month buttons
-    const monthButtons = document.querySelectorAll('.month-btn');
-    
-    monthButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Update active state
-            monthButtons.forEach(btn => btn.classList.remove('active'));
-            this.classList.add('active');
-            
-            // Get month from data attribute
-            const month = this.dataset.month;
-            window.GardeningApp.activeMonth = month;
-            
-            // Render the calendar for this month
-            renderCalendar(month);
-        });
-    });
-    
+
+    // Initialize calendar data for custom periods
+    initializeCustomPeriodData();
+
+    // Render period buttons dynamically
+    const periods = getAllPeriods();
+    renderPeriodButtons(periods, initialMonth);
+
+    // Set up the "Add Period" button
+    const addPeriodBtn = document.getElementById('addPeriodBtn');
+    if (addPeriodBtn) {
+        addPeriodBtn.addEventListener('click', handleAddPeriod);
+    }
+
     // Initialize share button for calendar selections
     const shareContainer = document.getElementById('calendarShareContainer');
     if (shareContainer) {
-        window.initSocialSharing({
+        initSocialSharing({
             selector: '#calendarShareContainer',
             defaultTitle: 'My Garden Planner Selections',
             defaultDescription: 'Check out my garden planning!',
             addShareCallback: () => shareCalendarSelections()
         });
     }
-    
+
     // Render the calendar with the initial month
     renderCalendar(initialMonth);
 }
@@ -459,7 +606,7 @@ function shareCalendarSelections() {
     // Only share if there are items
     if (selectedItems.length > 0) {
         // Use the shareContent function from social module
-        window.shareContent('selection', { 
+        shareContent('selection', {
             items: selectedItems,
             month: currentMonth
         });

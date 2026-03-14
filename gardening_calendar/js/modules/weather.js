@@ -5,6 +5,7 @@
 
 import * as uiUtils from './ui.js';
 import * as storageUtils from './storage.js';
+import { showClimateZone } from './climate.js';
 
 // Weather icon and color mappings
 const weatherCodeMap = {
@@ -54,6 +55,14 @@ let lastWeatherCoords = null;
 let lastWeatherAction = null;
 let lastWeatherLat = null;
 let lastWeatherLon = null;
+
+/**
+ * Get the last fetched weather data
+ * @returns {Object|null} Last weather data or null if not fetched yet
+ */
+export function getLastWeatherData() {
+    return lastWeatherData;
+}
 
 /**
  * Convert weather code to icon, text, and colors
@@ -705,10 +714,8 @@ export async function geocodeLocation(query) {
         fetchWeatherData(result.latitude, result.longitude);
         
         // Directly update climate zone if the function exists
-        if (typeof window.showClimateZone === 'function') {
-            console.log(`Directly calling showClimateZone with ${result.latitude}, ${result.longitude}`);
-            window.showClimateZone(result.latitude, result.longitude);
-        }
+        console.log(`Calling showClimateZone with ${result.latitude}, ${result.longitude}`);
+        showClimateZone(result.latitude, result.longitude);
     } catch (e) {
         console.error('Error during geocoding:', e);
         displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
@@ -788,10 +795,8 @@ export function initWeather() {
                 fetchWeatherData(lat, lon);
                 
                 // Directly update climate zone
-                if (typeof window.showClimateZone === 'function') {
-                    console.log(`Directly calling showClimateZone with ${lat}, ${lon} from geolocation`);
-                    window.showClimateZone(lat, lon);
-                }
+                console.log(`Calling showClimateZone with ${lat}, ${lon} from geolocation`);
+                showClimateZone(lat, lon);
             },
             (err) => {
                 displayLocationError('Could not get your location. Please allow location access or enter a place name.', 'geocode');
@@ -853,10 +858,8 @@ export function initWeather() {
                     fetchWeatherData(lastLocation.lat, lastLocation.lon);
                     
                     // Directly update climate zone
-                    if (typeof window.showClimateZone === 'function') {
-                        console.log(`Directly calling showClimateZone with ${lastLocation.lat}, ${lastLocation.lon} from restored location`);
-                        window.showClimateZone(lastLocation.lat, lastLocation.lon);
-                    }
+                    console.log(`Calling showClimateZone with ${lastLocation.lat}, ${lastLocation.lon} from restored location`);
+                    showClimateZone(lastLocation.lat, lastLocation.lon);
                 } else if (lastLocation.type === 'query' && lastLocation.value) {
                     locationInput.value = lastLocation.value;
                     geocodeLocation(lastLocation.value);

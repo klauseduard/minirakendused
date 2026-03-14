@@ -3,6 +3,8 @@
  * Handles all localStorage interactions
  */
 
+import { calendarData } from './data.js';
+
 // Constants for storage keys
 const STORAGE_KEYS = {
     SELECTED_ITEMS: 'gardening_selected_items',
@@ -13,7 +15,15 @@ const STORAGE_KEYS = {
     CLIMATE_ZONE_OVERRIDE: 'gardening_climate_zone_override',
     JOURNAL_DATA: 'gardening_journal_entries',
     CUSTOM_ENTRIES: 'gardening_custom_entries',
+    CUSTOM_PERIODS: 'gardening_custom_periods',
 };
+
+// Built-in periods definition
+const BUILTIN_PERIODS = [
+    { id: 'april', name: 'April', builtin: true },
+    { id: 'may', name: 'May', builtin: true },
+    { id: 'early_june', name: 'Early June', builtin: true }
+];
 
 /**
  * Initialize the storage module
@@ -275,19 +285,23 @@ export function addCustomPlant(plant) {
     entries.plants.push(plant);
     
     // Add to calendar data
-    const calendarData = window.calendarData;
     
     // For each month specified in the plant's months array
     if (plant.months && Array.isArray(plant.months) && plant.months.length > 0) {
         plant.months.forEach(month => {
             // Add to the specified category or default to custom_plants
             const category = plant.category || 'custom_plants';
-            
+
+            // Make sure the month exists in calendar data
+            if (!calendarData[month]) {
+                calendarData[month] = { custom_plants: [], custom_tasks: [] };
+            }
+
             // Make sure the category exists for this month
             if (!calendarData[month][category]) {
                 calendarData[month][category] = [];
             }
-            
+
             // Add the plant to the category
             calendarData[month][category].push({
                 en: plant.name,
@@ -297,10 +311,10 @@ export function addCustomPlant(plant) {
             });
         });
     }
-    
+
     // Save the updated custom entries
     saveCustomEntries(entries);
-    
+
     return entries;
 }
 
@@ -320,19 +334,23 @@ export function addCustomTask(task) {
     entries.tasks.push(task);
     
     // Add to calendar data
-    const calendarData = window.calendarData;
     
     // For each month specified in the task's months array
     if (task.months && Array.isArray(task.months) && task.months.length > 0) {
         task.months.forEach(month => {
             // Always add custom tasks to custom_tasks category
             const category = 'custom_tasks';
-            
+
+            // Make sure the month exists in calendar data
+            if (!calendarData[month]) {
+                calendarData[month] = { custom_plants: [], custom_tasks: [] };
+            }
+
             // Make sure the category exists for this month
             if (!calendarData[month][category]) {
                 calendarData[month][category] = [];
             }
-            
+
             // Add the task to the category
             calendarData[month][category].push({
                 en: task.name,
@@ -342,10 +360,10 @@ export function addCustomTask(task) {
             });
         });
     }
-    
+
     // Save the updated custom entries
     saveCustomEntries(entries);
-    
+
     return entries;
 }
 
@@ -376,8 +394,6 @@ export function updateCustomPlant(id, updatedPlant) {
     };
     
     // Update plant in calendar data
-    const calendarData = window.calendarData;
-    
     // First, remove the plant from all old month categories
     if (oldPlant.months && Array.isArray(oldPlant.months)) {
         oldPlant.months.forEach(month => {
@@ -395,12 +411,17 @@ export function updateCustomPlant(id, updatedPlant) {
     if (updatedMethods.months && Array.isArray(updatedMethods.months)) {
         updatedMethods.months.forEach(month => {
             const category = updatedMethods.category || 'custom_plants';
-            
+
+            // Make sure the month exists in calendar data
+            if (!calendarData[month]) {
+                calendarData[month] = { custom_plants: [], custom_tasks: [] };
+            }
+
             // Make sure the category exists for this month
             if (!calendarData[month][category]) {
                 calendarData[month][category] = [];
             }
-            
+
             // Add the plant to the category
             calendarData[month][category].push({
                 en: updatedMethods.name,
@@ -410,10 +431,10 @@ export function updateCustomPlant(id, updatedPlant) {
             });
         });
     }
-    
+
     // Save the updated custom entries
     saveCustomEntries(entries);
-    
+
     return entries.plants[index];
 }
 
@@ -444,8 +465,6 @@ export function updateCustomTask(id, updatedTask) {
     };
     
     // Update task in calendar data
-    const calendarData = window.calendarData;
-    
     // First, remove the task from all old month categories
     if (oldTask.months && Array.isArray(oldTask.months)) {
         oldTask.months.forEach(month => {
@@ -463,12 +482,17 @@ export function updateCustomTask(id, updatedTask) {
         updatedPlant.months.forEach(month => {
             // Always use custom_tasks category
             const category = 'custom_tasks';
-            
+
+            // Make sure the month exists in calendar data
+            if (!calendarData[month]) {
+                calendarData[month] = { custom_plants: [], custom_tasks: [] };
+            }
+
             // Make sure the category exists for this month
             if (!calendarData[month][category]) {
                 calendarData[month][category] = [];
             }
-            
+
             // Add the task to the category
             calendarData[month][category].push({
                 en: updatedPlant.name,
@@ -478,10 +502,10 @@ export function updateCustomTask(id, updatedTask) {
             });
         });
     }
-    
+
     // Save the updated custom entries
     saveCustomEntries(entries);
-    
+
     return entries.tasks[index];
 }
 
@@ -505,8 +529,6 @@ export function deleteCustomPlant(id) {
     entries.plants.splice(index, 1);
     
     // Remove from calendar data
-    const calendarData = window.calendarData;
-    
     if (plant.months && Array.isArray(plant.months)) {
         plant.months.forEach(month => {
             const category = plant.category || 'custom_plants';
@@ -544,8 +566,6 @@ export function deleteCustomTask(id) {
     entries.tasks.splice(index, 1);
     
     // Remove from calendar data
-    const calendarData = window.calendarData;
-    
     if (task.months && Array.isArray(task.months)) {
         task.months.forEach(month => {
             if (calendarData[month] && calendarData[month]['custom_tasks']) {
@@ -567,15 +587,22 @@ export function deleteCustomTask(id) {
  */
 export function exportCustomEntries() {
     const entries = getCustomEntries();
-    
-    // If no entries, show message
-    if (entries.plants.length === 0 && entries.tasks.length === 0) {
+    const customPeriods = getCustomPeriods();
+
+    // If no entries and no custom periods, show message
+    if (entries.plants.length === 0 && entries.tasks.length === 0 && customPeriods.periods.length === 0) {
         alert('No custom entries to export.');
         return;
     }
-    
+
+    // Include custom periods in the export
+    const exportData = {
+        ...entries,
+        customPeriods: customPeriods.periods
+    };
+
     // Create the export file
-    const dataStr = JSON.stringify(entries, null, 2);
+    const dataStr = JSON.stringify(exportData, null, 2);
     const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     
     // Generate filename with timestamp
@@ -599,13 +626,44 @@ export function exportCustomEntries() {
  */
 export function importCustomEntries(importData, replaceExisting = false) {
     let entries = replaceExisting ? { plants: [], tasks: [] } : getCustomEntries();
-    
+
     // Validate import data structure
     if (!importData || typeof importData !== 'object') {
         console.error('Invalid import data format');
         return entries;
     }
-    
+
+    // Import custom periods if present
+    if (importData.customPeriods && Array.isArray(importData.customPeriods)) {
+        const existingPeriods = getCustomPeriods();
+        if (replaceExisting) {
+            existingPeriods.periods = [];
+        }
+
+        importData.customPeriods.forEach(period => {
+            // Check if period with this ID already exists
+            const existingIndex = existingPeriods.periods.findIndex(p => p.id === period.id);
+            if (existingIndex !== -1) {
+                // Update existing period name
+                existingPeriods.periods[existingIndex].name = period.name;
+            } else {
+                // Add new period
+                existingPeriods.periods.push({
+                    id: period.id,
+                    name: period.name,
+                    order: period.order || existingPeriods.periods.length
+                });
+            }
+
+            // Initialize calendar data for this period
+            if (!calendarData[period.id]) {
+                calendarData[period.id] = { custom_plants: [], custom_tasks: [] };
+            }
+        });
+
+        saveCustomPeriods(existingPeriods);
+    }
+
     // Import plants
     if (importData.plants && Array.isArray(importData.plants)) {
         importData.plants.forEach(plant => {
@@ -656,8 +714,6 @@ export function importCustomEntries(importData, replaceExisting = false) {
     saveCustomEntries(entries);
     
     // Update calendar data with custom entries
-    const calendarData = window.calendarData;
-    
     // Clear existing custom entries from calendar data
     Object.keys(calendarData).forEach(month => {
         if (calendarData[month]['custom_plants']) {
@@ -673,12 +729,17 @@ export function importCustomEntries(importData, replaceExisting = false) {
         if (plant.months && Array.isArray(plant.months)) {
             plant.months.forEach(month => {
                 const category = plant.category || 'custom_plants';
-                
+
+                // Make sure the month exists in calendar data
+                if (!calendarData[month]) {
+                    calendarData[month] = { custom_plants: [], custom_tasks: [] };
+                }
+
                 // Make sure the category exists for this month
                 if (!calendarData[month][category]) {
                     calendarData[month][category] = [];
                 }
-                
+
                 // Add the plant to the category
                 calendarData[month][category].push({
                     en: plant.name,
@@ -689,19 +750,24 @@ export function importCustomEntries(importData, replaceExisting = false) {
             });
         }
     });
-    
+
     // Add tasks to calendar
     entries.tasks.forEach(task => {
         if (task.months && Array.isArray(task.months)) {
             task.months.forEach(month => {
                 // Always use custom_tasks category
                 const category = 'custom_tasks';
-                
+
+                // Make sure the month exists in calendar data
+                if (!calendarData[month]) {
+                    calendarData[month] = { custom_plants: [], custom_tasks: [] };
+                }
+
                 // Make sure the category exists for this month
                 if (!calendarData[month][category]) {
                     calendarData[month][category] = [];
                 }
-                
+
                 // Add the task to the category
                 calendarData[month][category].push({
                     en: task.name,
@@ -712,8 +778,154 @@ export function importCustomEntries(importData, replaceExisting = false) {
             });
         }
     });
-    
+
     return entries;
+}
+
+/**
+ * Get custom periods from storage
+ * @returns {Object} Object with periods array
+ */
+export function getCustomPeriods() {
+    const stored = localStorage.getItem(STORAGE_KEYS.CUSTOM_PERIODS);
+    return stored ? JSON.parse(stored) : { periods: [] };
+}
+
+/**
+ * Save custom periods to storage
+ * @param {Object} data - Object with periods array
+ */
+export function saveCustomPeriods(data) {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_PERIODS, JSON.stringify(data));
+}
+
+/**
+ * Add a new custom period
+ * @param {string} name - Period name
+ * @returns {Object} The newly created period
+ */
+export function addCustomPeriod(name) {
+    const data = getCustomPeriods();
+    const newPeriod = {
+        id: `period_${Date.now()}`,
+        name: name,
+        order: data.periods.length > 0
+            ? Math.max(...data.periods.map(p => p.order || 0)) + 1
+            : 10
+    };
+    data.periods.push(newPeriod);
+    saveCustomPeriods(data);
+
+    // Initialize empty calendar data for this period
+    if (!calendarData[newPeriod.id]) {
+        calendarData[newPeriod.id] = {
+            custom_plants: [],
+            custom_tasks: []
+        };
+    }
+
+    return newPeriod;
+}
+
+/**
+ * Rename a custom period
+ * @param {string} id - Period ID
+ * @param {string} newName - New name for the period
+ * @returns {boolean} True if renamed successfully
+ */
+export function renameCustomPeriod(id, newName) {
+    const data = getCustomPeriods();
+    const period = data.periods.find(p => p.id === id);
+    if (!period) return false;
+
+    period.name = newName;
+    saveCustomPeriods(data);
+    return true;
+}
+
+/**
+ * Delete a custom period and all its associated data
+ * @param {string} id - Period ID
+ * @returns {boolean} True if deleted successfully
+ */
+export function deleteCustomPeriod(id) {
+    const data = getCustomPeriods();
+    const index = data.periods.findIndex(p => p.id === id);
+    if (index === -1) return false;
+
+    // Remove period from list
+    data.periods.splice(index, 1);
+    saveCustomPeriods(data);
+
+    // Remove calendar data for this period
+    delete calendarData[id];
+
+    // Remove selected items for this period
+    const selections = getSelectedItems();
+    if (selections[id]) {
+        delete selections[id];
+        localStorage.setItem(STORAGE_KEYS.SELECTED_ITEMS, JSON.stringify(selections));
+    }
+
+    // Remove custom entries that reference this period
+    const entries = getCustomEntries();
+    let entriesChanged = false;
+
+    entries.plants.forEach(plant => {
+        if (plant.months && Array.isArray(plant.months)) {
+            const idx = plant.months.indexOf(id);
+            if (idx !== -1) {
+                plant.months.splice(idx, 1);
+                entriesChanged = true;
+            }
+        }
+    });
+
+    entries.tasks.forEach(task => {
+        if (task.months && Array.isArray(task.months)) {
+            const idx = task.months.indexOf(id);
+            if (idx !== -1) {
+                task.months.splice(idx, 1);
+                entriesChanged = true;
+            }
+        }
+    });
+
+    if (entriesChanged) {
+        saveCustomEntries(entries);
+    }
+
+    return true;
+}
+
+/**
+ * Get all periods (built-in + custom), ordered
+ * @returns {Array} Array of period objects
+ */
+export function getAllPeriods() {
+    const customData = getCustomPeriods();
+    const customPeriods = customData.periods.map(p => ({
+        ...p,
+        builtin: false
+    }));
+
+    return [...BUILTIN_PERIODS, ...customPeriods];
+}
+
+/**
+ * Initialize calendar data entries for all custom periods
+ * Ensures custom periods have their data structures in calendarData
+ */
+export function initializeCustomPeriodData() {
+    const customData = getCustomPeriods();
+    customData.periods.forEach(period => {
+        if (!calendarData[period.id]) {
+            calendarData[period.id] = {
+                custom_plants: [],
+                custom_tasks: []
+            };
+        }
+    });
 }
 
 /**

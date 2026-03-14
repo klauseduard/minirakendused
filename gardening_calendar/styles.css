@@ -224,6 +224,74 @@ body {
     box-shadow: 0 4px 8px var(--shadow);
 }
 
+/* Custom period buttons */
+.add-period-btn {
+    padding: 8px 16px;
+    background: transparent;
+    border: 2px dashed var(--secondary-color);
+    border-radius: 30px;
+    color: var(--secondary-color);
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 8px;
+}
+
+.add-period-btn:hover {
+    background: var(--light-bg);
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+.period-btn-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    position: relative;
+}
+
+.period-actions-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 6px;
+    font-size: 1.1rem;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+    color: var(--white);
+}
+
+.period-actions-btn:hover {
+    opacity: 1;
+}
+
+.period-actions-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+    min-width: 100px;
+    display: none;
+}
+
+.period-actions-menu button {
+    display: block;
+    width: 100%;
+    padding: 8px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.9rem;
+}
+
+.period-actions-menu button:hover {
+    background: var(--light-bg);
+}
+
 .scroll-indicator {
     text-align: center;
     padding: 15px;
@@ -1913,4 +1981,480 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     body.journal-active header {
         display: block !important;
     }
-} 
+}
+
+/* ============================================================
+   Refactored inline styles - moved from HTML style attributes
+   ============================================================ */
+
+/* --- Icon sizing classes --- */
+.icon-size-sm {
+    font-size: 1.1em;
+}
+
+.icon-size-md {
+    font-size: 1.2em;
+}
+
+.icon-size-lg {
+    font-size: 1.3rem;
+}
+
+.icon-size-xl {
+    font-size: 1.5rem;
+}
+
+.icon-size-xxl {
+    font-size: 2rem;
+}
+
+.icon-size-jumbo {
+    font-size: 3rem;
+    margin-bottom: 20px;
+}
+
+/* --- Hidden by default (JS-toggled sections) --- */
+.hidden-default {
+    display: none;
+}
+
+/* --- Journal section styles --- */
+.journal-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.journal-title-text {
+    color: var(--primary-color);
+    font-size: 1.4rem;
+}
+
+.journal-actions-group {
+    display: flex;
+    gap: 10px;
+}
+
+.journal-btn-inline {
+    padding: 8px 12px;
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.journal-add-btn-inline {
+    padding: 8px 12px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.journal-content-box {
+    background: var(--white);
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 2px 8px var(--shadow);
+}
+
+/* --- Journal empty state --- */
+.journal-empty-state {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.journal-empty-title {
+    margin-bottom: 15px;
+    color: var(--primary-color);
+}
+
+.journal-empty-text {
+    margin-bottom: 20px;
+    color: #666;
+}
+
+.journal-empty-add-btn {
+    padding: 10px 20px;
+    background: var(--secondary-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* --- Journal mobile more menu --- */
+.journal-more-menu-popup {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 10;
+    min-width: 120px;
+}
+
+.journal-more-menu-wrapper {
+    position: relative;
+}
+
+/* --- Journal view dropdown --- */
+.journal-view-dropdown-wrapper {
+    margin-bottom: 10px;
+}
+
+/* --- Modal shared styles --- */
+.modal-overlay-high-z {
+    z-index: 1000;
+}
+
+.modal-body-compact {
+    max-width: 450px;
+    padding: 25px;
+}
+
+.modal-body-wide {
+    width: 90%;
+    max-width: 800px;
+}
+
+.modal-body-form {
+    max-width: 800px;
+    padding: 25px;
+}
+
+.modal-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 15px;
+}
+
+.modal-title-danger {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #d32f2f;
+    margin-bottom: 15px;
+}
+
+.modal-message {
+    margin-bottom: 25px;
+    line-height: 1.5;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+}
+
+.modal-actions-spread {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.modal-actions-end {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.modal-btn-cancel {
+    background: #e0e0e0;
+    color: #333;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.modal-btn-confirm {
+    background: var(--primary-color);
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.modal-btn-danger {
+    background: #d32f2f;
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.modal-btn-accent {
+    background: var(--accent-color);
+}
+
+.modal-btn-close {
+    padding: 8px 16px;
+    background: #e0e0e0;
+    color: #333;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+}
+
+.modal-btn-cancel-mr {
+    background: #e0e0e0;
+    color: #333;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    margin-right: 12px;
+}
+
+/* --- Prompt generator modal styles --- */
+.modal-section {
+    margin: 20px 0;
+}
+
+.modal-description {
+    margin-bottom: 15px;
+    color: #666;
+}
+
+.modal-field-group {
+    margin-bottom: 15px;
+}
+
+.modal-field-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.modal-textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--secondary-color);
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.modal-info-box {
+    margin-bottom: 15px;
+    padding: 12px;
+    background: #fff3e0;
+    border-radius: 8px;
+}
+
+.modal-info-title {
+    margin-bottom: 10px;
+    color: #e65100;
+    font-size: 1rem;
+}
+
+.modal-checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.modal-checkbox-label {
+    display: block;
+}
+
+.modal-checkbox-hint {
+    margin-left: 5px;
+    color: #666;
+    font-size: 0.9em;
+}
+
+.modal-button-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.modal-generated-output {
+    background: #f8faf5;
+    border-radius: 8px;
+    padding: 15px;
+    white-space: pre-wrap;
+    font-family: monospace;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* --- AI Assistants section in prompt modal --- */
+.modal-ai-section {
+    margin-top: 20px;
+}
+
+.modal-ai-section-title {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.ai-icon-chatgpt {
+    background-color: #10a37f;
+    color: white;
+    border-radius: 8px;
+}
+
+.ai-icon-claude {
+    background-color: #9A5CF2;
+    color: white;
+    border-radius: 8px;
+}
+
+.ai-icon-gemini {
+    background-color: #1E88E5;
+    color: white;
+    border-radius: 8px;
+}
+
+.ai-icon-copilot {
+    background-color: #0078d4;
+    color: white;
+    border-radius: 8px;
+}
+
+/* --- Import/Export option card styles --- */
+.modal-option-icon {
+    margin-right: 15px;
+    font-size: 1.5rem;
+}
+
+.modal-option-content {
+    flex-grow: 1;
+}
+
+.modal-option-title {
+    font-weight: 500;
+}
+
+.modal-option-desc {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.modal-file-input {
+    margin-bottom: 20px;
+}
+
+/* --- Journal entry form styles --- */
+.form-row-flex {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.form-column-flex {
+    flex: 1;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-input {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.form-textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.form-harvest-container {
+    margin-bottom: 15px;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+.form-harvest-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-harvest-fields {
+    display: flex;
+    gap: 10px;
+}
+
+.form-harvest-field {
+    flex: 1;
+}
+
+.form-harvest-sublabel {
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-notes-group {
+    margin-bottom: 15px;
+}
+
+.form-photos-group {
+    margin-bottom: 15px;
+}
+
+.form-photo-select-btn {
+    padding: 8px 12px;
+    background: var(--accent-color);
+    color: white;
+    border: none;
+    border-radius: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.form-photo-preview-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+    justify-content: flex-start;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+/* --- Bottom navigation icon styles --- */
+.nav-icon-emoji {
+    font-size: 1.5em;
+}
+
+/* --- Scroll to top (hidden default handled by hidden-default) --- */

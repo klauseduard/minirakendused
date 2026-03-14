@@ -16,6 +16,7 @@ import * as searchModule from './modules/search.js';
 import * as journalModule from './modules/journal.js';
 import * as customEntriesModule from './modules/custom-entries.js';
 import * as socialModule from './modules/social.js';
+import * as photoStorage from './modules/photo-storage.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -31,7 +32,8 @@ window.GardeningApp = {
         search: searchModule,
         journal: journalModule,
         customEntries: customEntriesModule,
-        social: socialModule
+        social: socialModule,
+        photoStorage: photoStorage
     },
     state: {
         currentMonth: null,
@@ -40,110 +42,65 @@ window.GardeningApp = {
     }
 };
 
-// Export modules for backward compatibility (replacing individual loaders)
-// Data module exports
-window.translations = dataModule.translations;
-window.calendarData = dataModule.calendarData;
-window.categoryIcons = dataModule.categoryIcons;
-window.categoryNames = dataModule.categoryNames;
-window.journalEntryTypes = dataModule.journalEntryTypes;
-window.customEntryTypes = dataModule.customEntryTypes;
-
-// Storage module exports
-window.getSelectedItems = storageModule.getSelectedItems;
-window.isItemSelected = storageModule.isItemSelected;
-window.toggleItemSelection = storageModule.toggleItemSelection;
-window.saveUserPreference = storageModule.saveUserPreference;
-window.getUserPreference = storageModule.getUserPreference;
-
-// UI module exports
-window.showModal = uiModule.showModal;
-window.hideModal = uiModule.hideModal;
-window.showConfirmation = uiModule.showConfirmation;
-window.showNotification = uiModule.showNotification;
-window.scrollToElement = uiModule.scrollToElement;
-window.generatePrompt = uiModule.generatePrompt;
-window.copyPrompt = uiModule.copyPrompt;
-
-// Weather module exports
-window.fetchWeatherData = weatherModule.fetchWeatherData;
-window.geocodeLocation = weatherModule.geocodeLocation;
-window.renderWeatherData = weatherModule.renderWeatherData;
-window.convertTemperature = weatherModule.convertTemperature;
-window.convertPrecipitation = weatherModule.convertPrecipitation;
-
-// Climate module exports
-window.showClimateZone = climateModule.showClimateZone;
-window.renderClimateZoneUI = climateModule.renderClimateZoneUI;
-window.getCurrentClimateZone = climateModule.getCurrentClimateZone;
-
-// Calendar module exports
-window.renderCalendar = calendarModule.renderCalendar;
-window.updateSelectAllCheckbox = calendarModule.updateSelectAllCheckbox;
-
-// Search module exports
-window.searchCalendar = searchModule.searchCalendar;
-window.highlightText = searchModule.highlightText;
-window.escapeRegExp = searchModule.escapeRegExp;
-
-// Journal module exports
-window.renderJournal = journalModule.renderJournal;
-window.getJournalEntries = journalModule.getJournalEntries;
-window.saveJournalEntries = journalModule.saveJournalEntries;
-window.createJournalEntry = journalModule.createJournalEntry;
-window.updateJournalEntry = journalModule.updateJournalEntry;
-window.deleteJournalEntry = journalModule.deleteJournalEntry;
-
-// Custom entries module exports
-window.initCustomEntries = customEntriesModule.initCustomEntries;
-window.openCustomPlantModal = customEntriesModule.openPlantModal;
-window.openCustomTaskModal = customEntriesModule.openTaskModal;
-window.loadCustomEntries = customEntriesModule.loadCustomEntries;
-
-// Social module exports
-window.initSocialSharing = socialModule.initSocialSharing;
-window.shareContent = socialModule.shareContent;
+// Note: All cross-module references now use proper ES6 imports.
+// Only window.GardeningApp remains as the intentional shared state container.
 
 /**
  * Initialize all modules in the correct order
  */
-function initApp() {
+async function initApp() {
     console.log('Initializing Gardening Calendar App...');
-    
+
     // Step 1: Dispatch data module loaded event
     document.dispatchEvent(new CustomEvent('dataModuleLoaded'));
     console.log('Data module initialized');
-    
+
     // Step 2: Initialize UI module
     uiModule.initUI();
     document.dispatchEvent(new CustomEvent('uiModuleLoaded'));
     console.log('UI module initialized');
-    
+
     // Step 3: Initialize storage module
     storageModule.initStorage();
     document.dispatchEvent(new CustomEvent('storageModuleLoaded'));
     console.log('Storage module initialized');
-    
+
+    // Step 3b: Initialize photo storage (IndexedDB) and run one-time migration
+    try {
+        await photoStorage.initPhotoStorage();
+        console.log('Photo storage (IndexedDB) initialized');
+        const migrationResult = await photoStorage.migrateFromLocalStorage();
+        if (migrationResult.migrated > 0) {
+            console.log(`Photo migration: ${migrationResult.migrated} entries migrated from localStorage to IndexedDB`);
+        }
+    } catch (e) {
+        console.error('Failed to initialize photo storage:', e);
+    }
+
     // Step 4: Initialize weather module
     weatherModule.initWeather();
     document.dispatchEvent(new CustomEvent('weatherModuleLoaded'));
     console.log('Weather module initialized');
-    
+
     // Step 5: Initialize climate module (depends on weather)
     climateModule.initClimateZone();
     document.dispatchEvent(new CustomEvent('climateModuleLoaded'));
     console.log('Climate module initialized');
-    
+
+    // Step 5b: Initialize custom period data structures before loading entries
+    storageModule.initializeCustomPeriodData();
+    console.log('Custom period data initialized');
+
     // Step 6: Initialize custom entries module (moved before calendar)
     customEntriesModule.initCustomEntries(window.GardeningApp.activeMonth);
     document.dispatchEvent(new CustomEvent('customEntriesModuleLoaded'));
     console.log('Custom Entries module initialized');
-    
+
     // Step 7: Initialize calendar module (now after custom entries are loaded)
     calendarModule.initCalendar(window.GardeningApp.activeMonth);
     document.dispatchEvent(new CustomEvent('calendarModuleLoaded'));
     console.log('Calendar module initialized');
-    
+
     // Step 8: Initialize search module
     const searchBox = document.getElementById('searchBox');
     if (searchBox) {
@@ -151,8 +108,8 @@ function initApp() {
             searchBox,
             onSearch: (searchTerm) => {
                 searchModule.searchCalendar(
-                    searchTerm, 
-                    window.GardeningApp.activeMonth, 
+                    searchTerm,
+                    window.GardeningApp.activeMonth,
                     calendarModule.renderCalendar
                 );
             }
@@ -160,7 +117,7 @@ function initApp() {
     }
     document.dispatchEvent(new CustomEvent('searchModuleLoaded'));
     console.log('Search module initialized');
-    
+
     // Step 9: Initialize journal module
     journalModule.initJournal();
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
@@ -226,12 +183,8 @@ function setupNavigation() {
     // Mobile Bottom Navigation
     setupMobileNavigation();
     
-    // Listen for month button clicks to update activeMonth
-    document.querySelectorAll('.month-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            window.GardeningApp.activeMonth = button.dataset.month;
-        });
-    });
+    // Month button clicks are handled dynamically by calendar.js renderPeriodButtons()
+    // The activeMonth is updated via handlePeriodClick() in calendar.js
 
     // Hide scroll-to-top button when bottom nav is visible (mobile)
     const scrollToTopBtn = document.getElementById('scrollToTop');
@@ -249,235 +202,137 @@ function setupNavigation() {
 }
 
 /**
+ * Navigate to a section - shared logic for both desktop and mobile nav.
+ * @param {string} sectionId - The section to navigate to
+ * @param {Object} options - Navigation options
+ * @param {boolean} options.isMobile - Whether this is mobile navigation
+ */
+function navigateToSection(sectionId, { isMobile = false } = {}) {
+    if (sectionId === 'garden-journal') {
+        // Save calendar state before hiding
+        const calendarContent = document.getElementById('calendarContent');
+        if (calendarContent) {
+            calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
+        }
+
+        // Hide all sections except journal
+        document.body.classList.add('journal-active');
+        document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
+            if (el.id !== 'garden-journal' && el.id !== 'scrollToTop' && !el.classList.contains('bottom-nav')) {
+                el.style.display = 'none';
+            }
+        });
+
+        // Show journal
+        const journalSection = document.getElementById('garden-journal');
+        if (journalSection) {
+            journalSection.style.display = 'block';
+            journalModule.renderJournal();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+    } else {
+        // Leave journal view, restore main sections
+        const journalSection = document.getElementById('garden-journal');
+        if (journalSection) journalSection.style.display = 'none';
+        showAllMainSections();
+        document.body.classList.remove('journal-active');
+
+        // Re-render calendar when navigating to schedule
+        if (sectionId === 'monthly-calendar') {
+            const calendarContent = document.getElementById('calendarContent');
+            if (calendarContent) calendarContent.style.display = 'grid';
+            calendarModule.renderCalendar(window.GardeningApp.activeMonth || 'april');
+        }
+
+        // Scroll to target section
+        const targetSection = document.getElementById(sectionId);
+        if (targetSection) {
+            if (isMobile && sectionId === 'search-section') {
+                setTimeout(() => {
+                    window.scrollTo({ top: targetSection.offsetTop - 20, behavior: 'smooth' });
+                }, 100);
+            } else if (isMobile) {
+                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } else {
+                const offset = sectionId === 'search-section' ? 160 : 80;
+                uiModule.scrollToElement(targetSection, offset);
+            }
+        }
+    }
+}
+
+/**
+ * Set up a nav container (works for both desktop quick-jump and mobile bottom nav)
+ * @param {string} containerSelector - CSS selector for the nav container
+ * @param {string} buttonSelector - CSS selector for nav buttons within the container
+ * @param {boolean} isMobile - Whether this is the mobile nav
+ */
+function setupNavContainer(containerSelector, buttonSelector, isMobile) {
+    const container = document.querySelector(containerSelector);
+    if (!container) return;
+
+    const navButtons = container.querySelectorAll(buttonSelector);
+
+    container.addEventListener('click', (e) => {
+        const btn = e.target.closest(buttonSelector);
+        if (!btn) return;
+
+        navButtons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        navigateToSection(btn.dataset.section, { isMobile });
+    });
+
+    // Mobile-only: scroll spy to highlight active section
+    if (isMobile) {
+        window.addEventListener('scroll', () => {
+            const journalSection = document.getElementById('garden-journal');
+            if (journalSection && journalSection.style.display === 'block') return;
+
+            let visibleSections = [];
+            navButtons.forEach(btn => {
+                if (btn.dataset.section === 'garden-journal') return;
+                const section = document.getElementById(btn.dataset.section);
+                if (section) {
+                    const rect = section.getBoundingClientRect();
+                    if (rect.top < window.innerHeight / 2 && rect.bottom > 100) {
+                        visibleSections.push({ btn, distance: Math.abs(rect.top) });
+                    }
+                }
+            });
+
+            visibleSections.sort((a, b) => a.distance - b.distance);
+            navButtons.forEach(b => b.classList.remove('active'));
+            if (visibleSections.length > 0) visibleSections[0].btn.classList.add('active');
+        });
+    }
+}
+
+/**
  * Set up desktop quick-jump navigation menu
  */
 function setupDesktopNavigation() {
-    const quickJumpMenu = document.getElementById('quickJumpMenu');
-    if (quickJumpMenu) {
-        quickJumpMenu.addEventListener('click', (e) => {
-            const btn = e.target.closest('.quick-jump-btn');
-            if (!btn) return;
-            
-            // Set active state
-            quickJumpMenu.querySelectorAll('.quick-jump-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            // Get target section
-            const sectionId = btn.dataset.section;
-            
-            // Handle Journal separately - completely different view
-            if (sectionId === 'garden-journal') {
-                // Add journal active class on body
-                document.body.classList.add('journal-active');
-                
-                // First, store the current state of calendarContent
-                const calendarContent = document.getElementById('calendarContent');
-                if (calendarContent) {
-                    // Save the current grid layout for later restoration
-                    calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
-                }
-                
-               // Hide ALL sections including calendar-related sections
-                document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
-                    if (el.id !== 'garden-journal' && 
-                        el.id !== 'scrollToTop' && 
-                        !el.classList.contains('bottom-nav')) {
-                        el.style.display = 'none';
-                    }
-                });
-                
-                // Show ONLY journal section
-                const journalSection = document.getElementById('garden-journal');
-                if (journalSection) {
-                    journalSection.style.display = 'block';
-                    // Force rendering of journal
-                    journalModule.renderJournal();
-                    
-                    // Ensure we scroll to the top of the journal
-                    window.scrollTo({
-                        top: 0,
-                        behavior: 'smooth'
-                    });
-                }
-            } else {
-                // Coming back to main view - hide journal
-                const journalSection = document.getElementById('garden-journal');
-                if (journalSection) {
-                    journalSection.style.display = 'none';
-                }
-                
-                // Show all regular sections
-                showAllMainSections();
-                // Remove journal active class
-                document.body.classList.remove('journal-active');
-                
-                // Re-render the calendar if clicking on calendar section
-                if (sectionId === 'monthly-calendar') {
-                    const activeMonth = window.GardeningApp.activeMonth || 'april';
-                    calendarModule.renderCalendar(activeMonth);
-                }
-                
-                // Scroll to the target section with offset for header
-                const targetSection = document.getElementById(sectionId);
-                if (targetSection) {
-                    // Use larger offset for search section to ensure prompt generator buttons are visible
-                    const offset = sectionId === 'search-section' ? 160 : 80;
-                    uiModule.scrollToElement(targetSection, offset);
-                }
-            }
-        });
-    }
+    setupNavContainer('#quickJumpMenu', '.quick-jump-btn', false);
 }
 
 /**
  * Set up mobile bottom navigation bar
  */
 function setupMobileNavigation() {
-    const bottomNav = document.querySelector('.bottom-nav');
-    if (bottomNav) {
-        const navButtons = bottomNav.querySelectorAll('.bottom-nav-btn');
-        navButtons.forEach(btn => {
-            btn.addEventListener('click', () => {
-                // Remove active from all
-                navButtons.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                
-                // Get target section
-                const sectionId = btn.dataset.section;
-                const section = document.getElementById(sectionId);
-                
-                // Handle different sections appropriately
-                if (sectionId === 'garden-journal') {
-                    // Add journal active class
-                    document.body.classList.add('journal-active');
-                    
-                    // First, store the current state of calendarContent
-                    const calendarContent = document.getElementById('calendarContent');
-                    if (calendarContent) {
-                        calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
-                    }
-                    
-                    // Hide ALL sections including calendar-related sections
-                    document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
-                        if (el.id !== 'garden-journal' && 
-                            el.id !== 'scrollToTop' && 
-                            !el.classList.contains('bottom-nav')) {
-                            el.style.display = 'none';
-                        }
-                    });
-                    
-                    // Show ONLY journal section
-                    const journalSection = document.getElementById('garden-journal');
-                    if (journalSection) {
-                        journalSection.style.display = 'block';
-                        // Force rendering of journal
-                        journalModule.renderJournal();
-                        
-                        // Ensure we scroll to the top of the journal
-                        window.scrollTo({
-                            top: 0,
-                            behavior: 'smooth'
-                        });
-                    }
-                } else {
-                    // Coming back from journal or any other section
-                    
-                    // Show all regular sections
-                    showAllMainSections();
-                    // Remove journal active class
-                    document.body.classList.remove('journal-active');
-                    
-                    // Hide journal
-                    const journalSection = document.getElementById('garden-journal');
-                    if (journalSection) {
-                        journalSection.style.display = 'none';
-                    }
-                    
-                    // Specific actions for different sections
-                    if (sectionId === 'monthly-calendar') {
-                        // Make sure calendar content is visible
-                        const calendarContent = document.getElementById('calendarContent');
-                        if (calendarContent) {
-                            calendarContent.style.display = 'grid';
-                        }
-                        
-                        // Render the active month
-                        const activeMonth = window.GardeningApp.activeMonth || 'april';
-                        calendarModule.renderCalendar(activeMonth);
-                    }
-                }
-                
-                // Special handling for search section (AI Helper)
-                if (sectionId === 'search-section') {
-                    // Use a small timeout to ensure elements are visible first
-                    setTimeout(() => {
-                        const searchSection = document.getElementById('search-section');
-                        if (searchSection) {
-                            // Directly scroll to position the AI button at the top
-                            window.scrollTo({
-                                top: searchSection.offsetTop - 20,
-                                behavior: 'smooth'
-                            });
-                        }
-                    }, 100);
-                }
-                // All other sections
-                else if (section && sectionId !== 'garden-journal') {
-                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            });
-        });
-        
-        // Optionally, highlight the nav button for the current section on scroll
-        window.addEventListener('scroll', () => {
-            // Skip scroll-based activation when in journal mode
-            const journalSection = document.getElementById('garden-journal');
-            if (journalSection && journalSection.style.display === 'block') {
-                return;
-            }
-            
-            let visibleSections = [];
-            
-            // Check which sections are visible
-            navButtons.forEach(btn => {
-                const sectionId = btn.dataset.section;
-                // Skip journal since it's a special case
-                if (sectionId === 'garden-journal') return;
-                
-                const section = document.getElementById(sectionId);
-                if (section) {
-                    const rect = section.getBoundingClientRect();
-                    // Consider a section visible if a significant portion is in view
-                    if (rect.top < window.innerHeight/2 && rect.bottom > 100) {
-                        visibleSections.push({btn, distance: Math.abs(rect.top)});
-                    }
-                }
-            });
-            
-            // Sort by closest to top
-            visibleSections.sort((a, b) => a.distance - b.distance);
-            
-            // Reset all buttons
-            navButtons.forEach(b => b.classList.remove('active'));
-            
-            // Activate the closest visible section's button
-            if (visibleSections.length > 0) {
-                visibleSections[0].btn.classList.add('active');
-            }
-        });
-    }
+    setupNavContainer('.bottom-nav', '.bottom-nav-btn', true);
 }
 
 /**
  * Helper function to show all main sections
  */
 function showAllMainSections() {
-    // Show all main sections except journal
-    document.querySelectorAll('.main-layout > section:not(#garden-journal)').forEach(el => {
+    // Show all main sections and elements except journal
+    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.bottom-nav):not(#scrollToTop)').forEach(el => {
         if (el.id === 'calendarContent') {
             // Use stored display value if available
             const originalDisplay = el.getAttribute('data-original-display');
             el.style.display = originalDisplay || 'grid';
+        } else if (el.classList.contains('custom-entries-toolbar')) {
+            el.style.display = 'flex';
         } else {
             el.style.display = 'block';
         }
@@ -487,9 +342,4 @@ function showAllMainSections() {
 // Initialize the application when DOM is loaded
 document.addEventListener('DOMContentLoaded', initApp);
 
-// Notify that main.js has loaded
 console.log('Main module loaded');
-
-// --- MOBILE COLLAPSIBLE QUICK NAVIGATION (mobile-usability branch) ---
-// Removed: All quick navigation hamburger and menu logic (no longer needed)
-// --- END MOBILE COLLAPSIBLE QUICK NAVIGATION --- 

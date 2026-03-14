@@ -4,13 +4,16 @@
  */
 
 // Import necessary modules
-import { 
-    getCustomEntries, saveCustomEntries, 
+import { calendarData } from './data.js';
+import {
+    getCustomEntries, saveCustomEntries,
     addCustomPlant, addCustomTask,
     updateCustomPlant, updateCustomTask,
     deleteCustomPlant, deleteCustomTask,
-    exportCustomEntries, importCustomEntries
+    exportCustomEntries, importCustomEntries,
+    getAllPeriods
 } from './storage.js';
+import { renderCalendar } from './calendar.js';
 
 // DOM Elements
 let addCustomPlantBtn;
@@ -86,19 +89,8 @@ function createCustomModals() {
                 </div>
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 10px; font-weight: 500;">Growing Period *</label>
-                    <div style="display: flex; gap: 15px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="plantMonth" value="april" style="margin-right: 5px;">
-                            April
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="plantMonth" value="may" style="margin-right: 5px;">
-                            May
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="plantMonth" value="early_june" style="margin-right: 5px;">
-                            Early June
-                        </label>
+                    <div id="plantMonthCheckboxes" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <!-- Period checkboxes generated dynamically -->
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
@@ -135,19 +127,8 @@ function createCustomModals() {
                 </div>
                 <div style="margin-bottom: 20px;">
                     <label style="display: block; margin-bottom: 10px; font-weight: 500;">When to Perform *</label>
-                    <div style="display: flex; gap: 15px;">
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="taskMonth" value="april" style="margin-right: 5px;">
-                            April
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="taskMonth" value="may" style="margin-right: 5px;">
-                            May
-                        </label>
-                        <label style="display: flex; align-items: center; cursor: pointer;">
-                            <input type="checkbox" name="taskMonth" value="early_june" style="margin-right: 5px;">
-                            Early June
-                        </label>
+                    <div id="taskMonthCheckboxes" style="display: flex; gap: 15px; flex-wrap: wrap;">
+                        <!-- Period checkboxes generated dynamically -->
                     </div>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
@@ -249,10 +230,6 @@ function addCustomEntryButtons() {
         // Hide the originals (but don't remove them to avoid breaking functionality)
         exportBtn.style.display = 'none';
         importBtn.style.display = 'none';
-        
-        // Expose these functions to the window object for the buttons to access
-        window.exportCustomEntries = exportCustomEntries;
-        window.showImportModal = showImportModal;
         
         // Set up new event listeners for the new buttons
         newExportBtn.addEventListener('click', () => {
@@ -386,12 +363,18 @@ function setupEventListeners() {
         }
     });
     
-    // Month button clicks - update active month
-    document.querySelectorAll('.month-btn').forEach(button => {
-        button.addEventListener('click', () => {
-            activeMonth = button.dataset.month;
+    // Listen for activeMonth changes from calendar module
+    // The month buttons are now rendered dynamically, so we use a MutationObserver
+    // and also track activeMonth via the global GardeningApp state
+    const calendarNav = document.getElementById('calendarNav');
+    if (calendarNav) {
+        calendarNav.addEventListener('click', (e) => {
+            const btn = e.target.closest('.month-btn');
+            if (btn && btn.dataset.month) {
+                activeMonth = btn.dataset.month;
+            }
         });
-    });
+    }
     
     // Export custom entries
     if (exportCustomEntriesBtn) {
@@ -413,118 +396,254 @@ function setupEventListeners() {
 
 /**
  * Set up the import modal listeners
+ * (No-op: the import modal is now created dynamically in showImportModal)
  */
 function setupImportModalListeners() {
-    const importModal = document.getElementById('customEntriesImportModal');
-    const fileInput = document.getElementById('customEntriesFileInput');
-    const closeBtn = document.getElementById('customImportModalCloseBtn');
-    const cancelBtn = document.getElementById('customImportOptionsCancelBtn');
-    const importOptions = document.querySelectorAll('#customEntriesImportModal .import-option');
-    const optionsContainer = document.getElementById('importOptionsContainer');
-    
-    // Close button
-    if (closeBtn) {
-        closeBtn.addEventListener('click', () => {
-            importModal.style.display = 'none';
-        });
-    }
-    
-    // Cancel button
-    if (cancelBtn) {
-        cancelBtn.addEventListener('click', () => {
-            importModal.style.display = 'none';
-        });
-    }
-    
-    // Click outside to close
-    importModal.addEventListener('click', (e) => {
-        if (e.target === importModal) {
-            importModal.style.display = 'none';
-        }
-    });
-    
-    // File input change
-    if (fileInput) {
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importData = JSON.parse(event.target.result);
-                        if (importData && (importData.plants || importData.tasks)) {
-                            // Show import options
-                            document.getElementById('importCustomStatsMessage').textContent = `Found ${importData.plants?.length || 0} plants and ${importData.tasks?.length || 0} tasks to import.`;
-                            optionsContainer.style.display = 'block';
-                            
-                            // Set up import options
-                            importOptions[0].onclick = () => {
-                                handleCustomImport(importData, false); // Merge
-                            };
-                            
-                            importOptions[1].onclick = () => {
-                                handleCustomImport(importData, true); // Replace
-                            };
-                        } else {
-                            alert('Invalid custom entries file format.');
-                        }
-                    } catch (error) {
-                        console.error('Error parsing import file:', error);
-                        alert('Error parsing import file. Please make sure it is a valid JSON file.');
-                    }
-                };
-                reader.readAsText(file);
-            }
-        });
-    }
+    // Import modal is created dynamically - no hardcoded listeners needed
 }
 
 /**
- * Show the import modal
+ * Show the import modal (dynamically created)
  */
 function showImportModal() {
-    const importModal = document.getElementById('customEntriesImportModal');
-    const fileInput = document.getElementById('customEntriesFileInput');
-    const optionsContainer = document.getElementById('importOptionsContainer');
-    
-    // Reset the file input
-    if (fileInput) {
-        fileInput.value = '';
+    // Remember previously focused element
+    const previouslyFocused = document.activeElement;
+    const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'weather-modal-overlay modal-overlay-high-z';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('tabindex', '-1');
+
+    // Create modal body
+    const modalBody = document.createElement('div');
+    modalBody.className = 'weather-modal modal-body-compact';
+    modalBody.setAttribute('role', 'dialog');
+    modalBody.setAttribute('aria-modal', 'true');
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'weather-modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close import options');
+
+    // Title
+    const titleEl = document.createElement('div');
+    titleEl.className = 'modal-title';
+    titleEl.textContent = 'Import Custom Entries';
+
+    // Stats message
+    const messageEl = document.createElement('div');
+    messageEl.className = 'modal-message';
+    messageEl.textContent = 'Select a file to import custom plants and tasks.';
+
+    // File input container
+    const fileContainer = document.createElement('div');
+    fileContainer.style.marginBottom = '15px';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = '.json';
+    fileInput.className = 'modal-file-input';
+    fileContainer.appendChild(fileInput);
+
+    // Options container (hidden until file is loaded)
+    const optionsContainer = document.createElement('div');
+    optionsContainer.style.display = 'none';
+
+    // Merge option
+    const mergeOption = document.createElement('div');
+    mergeOption.className = 'import-option';
+
+    const mergeIcon = document.createElement('div');
+    mergeIcon.className = 'modal-option-icon';
+    mergeIcon.textContent = '🔄';
+
+    const mergeContent = document.createElement('div');
+    mergeContent.className = 'modal-option-content';
+
+    const mergeTitle = document.createElement('div');
+    mergeTitle.className = 'modal-option-title';
+    mergeTitle.textContent = 'Merge';
+
+    const mergeDesc = document.createElement('div');
+    mergeDesc.className = 'modal-option-desc';
+    mergeDesc.textContent = 'Add new entries and update existing ones';
+
+    mergeContent.appendChild(mergeTitle);
+    mergeContent.appendChild(mergeDesc);
+    mergeOption.appendChild(mergeIcon);
+    mergeOption.appendChild(mergeContent);
+
+    // Replace option
+    const replaceOption = document.createElement('div');
+    replaceOption.className = 'import-option';
+
+    const replaceIcon = document.createElement('div');
+    replaceIcon.className = 'modal-option-icon';
+    replaceIcon.textContent = '♻️';
+
+    const replaceContent = document.createElement('div');
+    replaceContent.className = 'modal-option-content';
+
+    const replaceTitle = document.createElement('div');
+    replaceTitle.className = 'modal-option-title';
+    replaceTitle.textContent = 'Replace All';
+
+    const replaceDesc = document.createElement('div');
+    replaceDesc.className = 'modal-option-desc';
+    replaceDesc.textContent = 'Delete all existing entries and use imported ones';
+
+    replaceContent.appendChild(replaceTitle);
+    replaceContent.appendChild(replaceDesc);
+    replaceOption.appendChild(replaceIcon);
+    replaceOption.appendChild(replaceContent);
+
+    optionsContainer.appendChild(mergeOption);
+    optionsContainer.appendChild(replaceOption);
+
+    // Cancel button row
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'modal-actions-end';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'button modal-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+
+    actionsEl.appendChild(cancelBtn);
+
+    // Assemble modal
+    modalBody.appendChild(closeBtn);
+    modalBody.appendChild(titleEl);
+    modalBody.appendChild(messageEl);
+    modalBody.appendChild(fileContainer);
+    modalBody.appendChild(optionsContainer);
+    modalBody.appendChild(actionsEl);
+    overlay.appendChild(modalBody);
+    document.body.appendChild(overlay);
+
+    // Close helper
+    function closeModal() {
+        overlay.remove();
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+            previouslyFocused.focus();
+        }
     }
-    
-    // Hide options until file is selected
-    if (optionsContainer) {
-        optionsContainer.style.display = 'none';
-    }
-    
-    // Reset the message
-    document.getElementById('importCustomStatsMessage').textContent = 'Select a file to import custom plants and tasks.';
-    
-    // Show modal
-    importModal.style.display = 'flex';
+
+    // File input change handler
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const importData = JSON.parse(event.target.result);
+                    if (importData && (importData.plants || importData.tasks)) {
+                        messageEl.textContent = `Found ${importData.plants?.length || 0} plants and ${importData.tasks?.length || 0} tasks to import.`;
+                        optionsContainer.style.display = 'block';
+
+                        mergeOption.onclick = () => {
+                            handleCustomImport(importData, false, closeModal);
+                        };
+
+                        replaceOption.onclick = () => {
+                            handleCustomImport(importData, true, closeModal);
+                        };
+                    } else {
+                        alert('Invalid custom entries file format.');
+                    }
+                } catch (error) {
+                    console.error('Error parsing import file:', error);
+                    alert('Error parsing import file. Please make sure it is a valid JSON file.');
+                }
+            };
+            reader.readAsText(file);
+        }
+    });
+
+    // Close handlers
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeModal();
+    });
+
+    // Keyboard: Escape to close, focus trap
+    overlay.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            closeModal();
+            return;
+        }
+        if (e.key === 'Tab') {
+            const focusable = overlay.querySelectorAll(focusableSelectors);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first || document.activeElement === overlay) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        }
+    });
+
+    // Focus the file input
+    setTimeout(() => fileInput.focus(), 50);
 }
 
 /**
  * Handle custom entries import
  * @param {Object} importData - The import data object
  * @param {boolean} replaceExisting - Whether to replace existing entries
+ * @param {Function} closeModal - Function to close the modal
  */
-function handleCustomImport(importData, replaceExisting) {
+function handleCustomImport(importData, replaceExisting, closeModal) {
     // Import the data
     const result = importCustomEntries(importData, replaceExisting);
-    
-    // Hide modal
-    const importModal = document.getElementById('customEntriesImportModal');
-    importModal.style.display = 'none';
-    
+
+    // Close the modal
+    if (typeof closeModal === 'function') closeModal();
+
     // Refresh calendar to show imported entries
-    if (window.renderCalendar) {
-        window.renderCalendar(activeMonth);
-    }
-    
+    renderCalendar(activeMonth);
+
     // Show success message
     const total = (result.plants?.length || 0) + (result.tasks?.length || 0);
     alert(`Successfully imported ${total} custom entries.`);
+}
+
+/**
+ * Populate a checkbox container with all available periods
+ * @param {string} containerId - The ID of the container element
+ * @param {string} inputName - The name attribute for the checkboxes (e.g., 'plantMonth' or 'taskMonth')
+ */
+function populatePeriodCheckboxes(containerId, inputName) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const periods = getAllPeriods();
+
+    periods.forEach(period => {
+        const label = document.createElement('label');
+        label.style.cssText = 'display: flex; align-items: center; cursor: pointer;';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.name = inputName;
+        checkbox.value = period.id;
+        checkbox.style.marginRight = '5px';
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(period.name));
+        container.appendChild(label);
+    });
 }
 
 /**
@@ -542,28 +661,31 @@ export function openPlantModal(plantId = null) {
     
     // Set default values
     document.getElementById('plantEntryId').value = '';
-    
+
+    // Populate period checkboxes dynamically
+    populatePeriodCheckboxes('plantMonthCheckboxes', 'plantMonth');
+
     // Check the current active month by default
     const monthCheckboxes = form.querySelectorAll('input[name="plantMonth"]');
     monthCheckboxes.forEach(checkbox => {
         checkbox.checked = checkbox.value === activeMonth;
     });
-    
+
     if (plantId) {
         // Edit mode
         title.textContent = 'Edit Custom Plant';
         deleteBtn.style.display = 'block';
-        
+
         // Get plant data
         const entries = getCustomEntries();
         const plant = entries.plants.find(p => p.id === plantId);
-        
+
         if (plant) {
             // Populate form
             document.getElementById('plantEntryId').value = plant.id;
             document.getElementById('plantName').value = plant.name || '';
             document.getElementById('plantDescription').value = plant.description || '';
-            
+
             // Set category
             if (plant.category) {
                 const categorySelect = document.getElementById('plantCategory');
@@ -574,7 +696,7 @@ export function openPlantModal(plantId = null) {
                     }
                 }
             }
-            
+
             // Check months
             if (plant.months && Array.isArray(plant.months)) {
                 monthCheckboxes.forEach(checkbox => {
@@ -587,7 +709,7 @@ export function openPlantModal(plantId = null) {
         title.textContent = 'Add Custom Plant';
         deleteBtn.style.display = 'none';
     }
-    
+
     // Show modal
     modal.style.display = 'flex';
 }
@@ -607,28 +729,31 @@ export function openTaskModal(taskId = null) {
     
     // Set default values
     document.getElementById('taskEntryId').value = '';
-    
+
+    // Populate period checkboxes dynamically
+    populatePeriodCheckboxes('taskMonthCheckboxes', 'taskMonth');
+
     // Check the current active month by default
     const monthCheckboxes = form.querySelectorAll('input[name="taskMonth"]');
     monthCheckboxes.forEach(checkbox => {
         checkbox.checked = checkbox.value === activeMonth;
     });
-    
+
     if (taskId) {
         // Edit mode
         title.textContent = 'Edit Custom Task';
         deleteBtn.style.display = 'block';
-        
+
         // Get task data
         const entries = getCustomEntries();
         const task = entries.tasks.find(t => t.id === taskId);
-        
+
         if (task) {
             // Populate form
             document.getElementById('taskEntryId').value = task.id;
             document.getElementById('taskName').value = task.name || '';
             document.getElementById('taskDescription').value = task.description || '';
-            
+
             // Check months
             if (task.months && Array.isArray(task.months)) {
                 monthCheckboxes.forEach(checkbox => {
@@ -641,7 +766,7 @@ export function openTaskModal(taskId = null) {
         title.textContent = 'Add Custom Task';
         deleteBtn.style.display = 'none';
     }
-    
+
     // Show modal
     modal.style.display = 'flex';
 }
@@ -692,9 +817,7 @@ function savePlantEntry() {
     customPlantModal.style.display = 'none';
     
     // Refresh calendar to show new plant
-    if (window.renderCalendar) {
-        window.renderCalendar(activeMonth);
-    }
+    renderCalendar(activeMonth);
 }
 
 /**
@@ -741,9 +864,7 @@ function saveTaskEntry() {
     customTaskModal.style.display = 'none';
     
     // Refresh calendar to show new task
-    if (window.renderCalendar) {
-        window.renderCalendar(activeMonth);
-    }
+    renderCalendar(activeMonth);
 }
 
 /**
@@ -758,14 +879,12 @@ function deletePlantEntry() {
     
     if (confirm('Are you sure you want to delete this custom plant? This action cannot be undone.')) {
         deleteCustomPlant(plantId);
-        
+
         // Close modal
         customPlantModal.style.display = 'none';
-        
+
         // Refresh calendar
-        if (window.renderCalendar) {
-            window.renderCalendar(activeMonth);
-        }
+        renderCalendar(activeMonth);
     }
 }
 
@@ -774,21 +893,19 @@ function deletePlantEntry() {
  */
 function deleteTaskEntry() {
     const taskId = document.getElementById('taskEntryId').value;
-    
+
     if (!taskId) {
         return;
     }
-    
+
     if (confirm('Are you sure you want to delete this custom task? This action cannot be undone.')) {
         deleteCustomTask(taskId);
-        
+
         // Close modal
         customTaskModal.style.display = 'none';
-        
+
         // Refresh calendar
-        if (window.renderCalendar) {
-            window.renderCalendar(activeMonth);
-        }
+        renderCalendar(activeMonth);
     }
 }
 
@@ -798,24 +915,21 @@ function deleteTaskEntry() {
 export function loadCustomEntries() {
     const entries = getCustomEntries();
     
-    // If we have entries, add them to the calendar data
-    window.calendarData = window.calendarData || {};
-    
     // First, clean all custom entries from calendar data
-    Object.keys(window.calendarData).forEach(month => {
+    Object.keys(calendarData).forEach(month => {
         // Clean custom plants from all categories
-        Object.keys(window.calendarData[month] || {}).forEach(category => {
-            if (window.calendarData[month][category] && Array.isArray(window.calendarData[month][category])) {
-                window.calendarData[month][category] = window.calendarData[month][category].filter(
+        Object.keys(calendarData[month] || {}).forEach(category => {
+            if (calendarData[month][category] && Array.isArray(calendarData[month][category])) {
+                calendarData[month][category] = calendarData[month][category].filter(
                     item => !item.custom
                 );
             }
         });
         
         // Reset custom categories to empty arrays
-        if (window.calendarData[month]) {
-            window.calendarData[month]['custom_plants'] = [];
-            window.calendarData[month]['custom_tasks'] = [];
+        if (calendarData[month]) {
+            calendarData[month]['custom_plants'] = [];
+            calendarData[month]['custom_tasks'] = [];
         }
     });
     
@@ -827,16 +941,16 @@ export function loadCustomEntries() {
                     const category = plant.category || 'custom_plants';
                     
                     // Make sure month and category exist
-                    if (!window.calendarData[month]) {
-                        window.calendarData[month] = {};
+                    if (!calendarData[month]) {
+                        calendarData[month] = {};
                     }
                     
-                    if (!window.calendarData[month][category]) {
-                        window.calendarData[month][category] = [];
+                    if (!calendarData[month][category]) {
+                        calendarData[month][category] = [];
                     }
                     
                     // Add to calendar
-                    window.calendarData[month][category].push({
+                    calendarData[month][category].push({
                         en: plant.name,
                         description: plant.description,
                         custom: true,
@@ -856,16 +970,16 @@ export function loadCustomEntries() {
                     const category = 'custom_tasks';
                     
                     // Make sure month and category exist
-                    if (!window.calendarData[month]) {
-                        window.calendarData[month] = {};
+                    if (!calendarData[month]) {
+                        calendarData[month] = {};
                     }
                     
-                    if (!window.calendarData[month][category]) {
-                        window.calendarData[month][category] = [];
+                    if (!calendarData[month][category]) {
+                        calendarData[month][category] = [];
                     }
                     
                     // Add to calendar
-                    window.calendarData[month][category].push({
+                    calendarData[month][category].push({
                         en: task.name,
                         description: task.description,
                         custom: true,

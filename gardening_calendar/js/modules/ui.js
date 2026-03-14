@@ -3,72 +3,278 @@
  * Handles common UI operations like modals, dialogs, and scroll effects
  */
 
+import { getSelectedItems } from './storage.js';
+import { calendarData, categoryNames } from './data.js';
+import { getLastWeatherData } from './weather.js';
+
 // Focus trap utility for accessibility
 const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
 
 /**
- * Shows a custom confirmation dialog
+ * Shows a custom confirmation dialog (dynamically created, removed from DOM on close)
  * @param {string} title - Dialog title
  * @param {string} message - Dialog message
  * @param {Function} onConfirm - Callback function when user confirms
  * @param {Function} onCancel - Callback function when user cancels
  * @param {string} confirmText - Text for confirm button (optional)
  * @param {string} cancelText - Text for cancel button (optional)
+ * @param {Object} options - Additional options
+ * @param {string} options.titleClass - CSS class for the title (default: 'modal-title')
+ * @param {string} options.confirmClass - CSS class for the confirm button (default: 'modal-btn-confirm')
  */
-export function showConfirmDialog(title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel') {
-    const confirmModal = document.getElementById('customConfirmModal');
-    const confirmTitle = document.getElementById('confirmModalTitle');
-    const confirmMessage = document.getElementById('confirmModalMessage');
-    const confirmBtn = document.getElementById('confirmModalOkBtn');
-    const cancelBtn = document.getElementById('confirmModalCancelBtn');
-    
-    // Set content
-    confirmTitle.textContent = title;
-    confirmMessage.textContent = message;
-    confirmBtn.textContent = confirmText;
+export function showConfirmDialog(title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', options = {}) {
+    const titleClass = options.titleClass || 'modal-title';
+    const confirmClass = options.confirmClass || 'modal-btn-confirm';
+
+    // Remember previously focused element
+    const previouslyFocused = document.activeElement;
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'weather-modal-overlay modal-overlay-high-z';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('tabindex', '-1');
+
+    // Create modal body
+    const modalBody = document.createElement('div');
+    modalBody.className = 'weather-modal modal-body-compact';
+    modalBody.setAttribute('role', 'dialog');
+    modalBody.setAttribute('aria-modal', 'true');
+
+    // Title
+    const titleEl = document.createElement('div');
+    titleEl.className = titleClass;
+    titleEl.textContent = title;
+
+    // Message
+    const messageEl = document.createElement('div');
+    messageEl.className = 'modal-message';
+    messageEl.textContent = message;
+
+    // Actions container
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'modal-actions';
+
+    // Cancel button
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'button modal-btn-cancel';
     cancelBtn.textContent = cancelText;
-    
-    // Set up event handlers
+
+    // Confirm button
+    const confirmBtn = document.createElement('button');
+    confirmBtn.className = 'button ' + confirmClass;
+    confirmBtn.textContent = confirmText;
+
+    actionsEl.appendChild(cancelBtn);
+    actionsEl.appendChild(confirmBtn);
+
+    modalBody.appendChild(titleEl);
+    modalBody.appendChild(messageEl);
+    modalBody.appendChild(actionsEl);
+    overlay.appendChild(modalBody);
+    document.body.appendChild(overlay);
+
+    // Close helper: remove from DOM and restore focus
+    function closeModal() {
+        overlay.remove();
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+            previouslyFocused.focus();
+        }
+    }
+
+    // Handlers
     const handleConfirm = () => {
-        confirmModal.style.display = 'none';
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        document.removeEventListener('keydown', handleKeyDown);
+        closeModal();
         if (typeof onConfirm === 'function') onConfirm();
     };
-    
+
     const handleCancel = () => {
-        confirmModal.style.display = 'none';
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-        document.removeEventListener('keydown', handleKeyDown);
+        closeModal();
         if (typeof onCancel === 'function') onCancel();
     };
-    
+
     const handleKeyDown = (e) => {
         if (e.key === 'Escape') {
             handleCancel();
-        } else if (e.key === 'Enter') {
-            handleConfirm();
+        }
+        // Trap focus within the modal
+        if (e.key === 'Tab') {
+            const focusable = overlay.querySelectorAll(focusableSelectors);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first || document.activeElement === overlay) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
         }
     };
-    
+
     confirmBtn.addEventListener('click', handleConfirm);
     cancelBtn.addEventListener('click', handleCancel);
-    document.addEventListener('keydown', handleKeyDown);
-    
-    // Show the modal
-    confirmModal.style.display = 'flex';
-    
-    // Focus the confirm button
-    setTimeout(() => confirmBtn.focus(), 50);
-    
-    // Close when clicking outside
-    confirmModal.addEventListener('click', (e) => {
-        if (e.target === confirmModal) {
+    overlay.addEventListener('keydown', handleKeyDown);
+
+    // Close when clicking outside the modal body
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
             handleCancel();
         }
-    }, { once: true });
+    });
+
+    // Focus the cancel button by default (safer for destructive actions)
+    setTimeout(() => cancelBtn.focus(), 50);
+}
+
+/**
+ * Shows a modal with clickable option cards (used for export/import choices)
+ * @param {string} title - Modal title
+ * @param {string} description - Description text shown below the title
+ * @param {Array<Object>} options - Array of option objects: {icon, title, description, onClick}
+ * @param {Function} [onCancel] - Callback when modal is cancelled
+ */
+export function showOptionsModal(title, description, options, onCancel) {
+    // Remember previously focused element
+    const previouslyFocused = document.activeElement;
+
+    // Create modal overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'weather-modal-overlay modal-overlay-high-z';
+    overlay.style.display = 'flex';
+    overlay.setAttribute('tabindex', '-1');
+
+    // Create modal body
+    const modalBody = document.createElement('div');
+    modalBody.className = 'weather-modal modal-body-compact';
+    modalBody.setAttribute('role', 'dialog');
+    modalBody.setAttribute('aria-modal', 'true');
+
+    // Close button
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'weather-modal-close';
+    closeBtn.innerHTML = '&times;';
+    closeBtn.setAttribute('aria-label', 'Close');
+
+    // Title
+    const titleEl = document.createElement('div');
+    titleEl.className = 'modal-title';
+    titleEl.textContent = title;
+
+    // Description
+    const descEl = document.createElement('div');
+    descEl.className = 'modal-message';
+    descEl.textContent = description;
+
+    modalBody.appendChild(closeBtn);
+    modalBody.appendChild(titleEl);
+    modalBody.appendChild(descEl);
+
+    // Close helper
+    function closeModal() {
+        overlay.remove();
+        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+            previouslyFocused.focus();
+        }
+    }
+
+    function handleCancel() {
+        closeModal();
+        if (typeof onCancel === 'function') onCancel();
+    }
+
+    // Create option cards
+    options.forEach(opt => {
+        const optionCard = document.createElement('div');
+        // Use the same CSS classes as the old hardcoded modals
+        optionCard.className = 'export-option';
+
+        const iconEl = document.createElement('div');
+        iconEl.className = 'modal-option-icon';
+        iconEl.textContent = opt.icon || '';
+
+        const contentEl = document.createElement('div');
+        contentEl.className = 'modal-option-content';
+
+        const optTitle = document.createElement('div');
+        optTitle.className = 'modal-option-title';
+        optTitle.textContent = opt.title || '';
+
+        const optDesc = document.createElement('div');
+        optDesc.className = 'modal-option-desc';
+        optDesc.textContent = opt.description || '';
+
+        contentEl.appendChild(optTitle);
+        contentEl.appendChild(optDesc);
+        optionCard.appendChild(iconEl);
+        optionCard.appendChild(contentEl);
+
+        optionCard.addEventListener('click', () => {
+            closeModal();
+            if (typeof opt.onClick === 'function') opt.onClick();
+        });
+
+        modalBody.appendChild(optionCard);
+    });
+
+    // Cancel button row
+    const actionsEl = document.createElement('div');
+    actionsEl.className = 'modal-actions-end';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'button modal-btn-cancel';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', handleCancel);
+
+    actionsEl.appendChild(cancelBtn);
+    modalBody.appendChild(actionsEl);
+
+    overlay.appendChild(modalBody);
+    document.body.appendChild(overlay);
+
+    // Close button handler
+    closeBtn.addEventListener('click', handleCancel);
+
+    // Click outside to close
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            handleCancel();
+        }
+    });
+
+    // Keyboard: Escape to close, focus trap
+    overlay.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            handleCancel();
+            return;
+        }
+        if (e.key === 'Tab') {
+            const focusable = overlay.querySelectorAll(focusableSelectors);
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (e.shiftKey) {
+                if (document.activeElement === first || document.activeElement === overlay) {
+                    e.preventDefault();
+                    last.focus();
+                }
+            } else {
+                if (document.activeElement === last) {
+                    e.preventDefault();
+                    first.focus();
+                }
+            }
+        }
+    });
+
+    // Focus the cancel button
+    setTimeout(() => cancelBtn.focus(), 50);
+
+    // Return a control object so callers can close it programmatically if needed
+    return { close: closeModal, overlay };
 }
 
 /**
@@ -537,11 +743,9 @@ export function initPromptGenerator() {
         if (includeCalendar.checked) {
             // Get active month
             const activeMonth = document.querySelector('.month-btn.active')?.dataset.month || 'april';
-            // Access the global functions and data
-            const getSelectedItems = window.getSelectedItems || (() => ({}));
-            const calendarData = window.calendarData || {};
-            const currentLang = window.currentLang || 'en';
-            const lastWeatherData = window.lastWeatherData;
+            // Access data through ES6 imports and shared app state
+            const currentLang = window.GardeningApp?.currentLang || 'en';
+            const lastWeatherData = getLastWeatherData();
             
             // Retrieve the user's selected items
             const selections = getSelectedItems();
@@ -604,7 +808,6 @@ export function initPromptGenerator() {
                             // Add the category with its items to the plantItems array
                             if (uniqueItems.length > 0) {
                                 // Get category name from global data if available
-                                const categoryNames = window.categoryNames || {};
                                 plantItems.push(`${categoryNames[category] || category}:\n${uniqueItems.join('\n')}`);
                             }
                         }

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gardening Calendar - Tests</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background: #fafafa; color: #333; }
+        h1 { margin-bottom: 8px; }
+        #summary { font-size: 18px; padding: 12px 16px; margin: 12px 0 20px; border-radius: 6px; font-weight: 600; }
+        #summary.pass { background: #d4edda; color: #155724; }
+        #summary.fail { background: #f8d7da; color: #721c24; }
+        .suite { margin-bottom: 20px; }
+        .suite-header { font-size: 16px; font-weight: 600; padding: 8px 0 4px; border-bottom: 1px solid #ddd; margin-bottom: 6px; }
+        .test { padding: 4px 8px 4px 20px; font-size: 14px; line-height: 1.6; }
+        .test.pass { color: #155724; }
+        .test.pass::before { content: "\2713 "; font-weight: bold; color: #28a745; }
+        .test.fail { color: #721c24; background: #fff0f0; border-radius: 4px; }
+        .test.fail::before { content: "\2717 "; font-weight: bold; color: #dc3545; }
+        .fail-detail { font-size: 12px; color: #856; padding-left: 32px; font-family: monospace; white-space: pre-wrap; }
+        #time { font-size: 13px; color: #888; margin-top: 12px; }
+    </style>
+</head>
+<body>
+    <h1>Gardening Calendar Tests</h1>
+    <div id="summary"></div>
+    <div id="results"></div>
+    <div id="time"></div>
+
+    <script type="module">
+        // ── Minimal test framework ────────────────────────────────────
+        const results = [];
+        let currentSuite = '';
+
+        function describe(name, fn) {
+            currentSuite = name;
+            fn();
+        }
+
+        function it(name, fn) {
+            try {
+                fn();
+                results.push({ suite: currentSuite, name, passed: true });
+            } catch (e) {
+                results.push({ suite: currentSuite, name, passed: false, error: e.message });
+            }
+        }
+
+        function assert(condition, msg) {
+            if (!condition) throw new Error(msg || 'Assertion failed');
+        }
+
+        function assertEqual(actual, expected, msg) {
+            if (actual !== expected) {
+                throw new Error(
+                    (msg ? msg + ': ' : '') +
+                    `expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`
+                );
+            }
+        }
+
+        function assertDeepEqual(actual, expected, msg) {
+            const a = JSON.stringify(actual);
+            const b = JSON.stringify(expected);
+            if (a !== b) {
+                throw new Error(
+                    (msg ? msg + ': ' : '') +
+                    `expected ${b}, got ${a}`
+                );
+            }
+        }
+
+        // ── localStorage reset helper ─────────────────────────────────
+        function resetStorage() {
+            localStorage.clear();
+        }
+
+        // ── Deep-clone helper for calendarData snapshot ───────────────
+        let originalCalendarData;
+
+        function snapshotCalendarData(cd) {
+            return JSON.parse(JSON.stringify(cd));
+        }
+
+        function restoreCalendarData(cd, snapshot) {
+            // Remove keys that were added during tests
+            for (const key of Object.keys(cd)) {
+                if (!(key in snapshot)) {
+                    delete cd[key];
+                }
+            }
+            // Restore original keys
+            for (const [key, value] of Object.entries(snapshot)) {
+                cd[key] = JSON.parse(JSON.stringify(value));
+            }
+        }
+
+        // ── Reset helper that clears storage AND restores calendarData ─
+        function resetAll(calendarData) {
+            resetStorage();
+            restoreCalendarData(calendarData, originalCalendarData);
+        }
+
+        // ── Import modules ────────────────────────────────────────────
+        const {
+            translations,
+            calendarData,
+            categoryIcons,
+            categoryNames,
+            journalEntryTypes,
+            customEntryTypes
+        } = await import('../gardening_calendar/js/modules/data.js');
+
+        const {
+            getSelectedItems,
+            toggleItemSelection,
+            isItemSelected,
+            getTemperatureUnit,
+            saveTemperatureUnit,
+            getPrecipitationUnit,
+            savePrecipitationUnit,
+            getLanguage,
+            saveLanguage,
+            loadPreferences,
+            getCustomEntries,
+            addCustomPlant,
+            addCustomTask,
+            deleteCustomPlant,
+            deleteCustomTask,
+            getCustomPeriods,
+            addCustomPeriod,
+            getAllPeriods,
+            renameCustomPeriod,
+            deleteCustomPeriod,
+            getJournalEntries,
+            saveJournalEntries,
+        } = await import('../gardening_calendar/js/modules/storage.js');
+
+        // Take a snapshot of the pristine calendarData before any tests
+        originalCalendarData = snapshotCalendarData(calendarData);
+
+        const t0 = performance.now();
+
+        // ══════════════════════════════════════════════════════════════
+        // DATA MODULE TESTS
+        // ══════════════════════════════════════════════════════════════
+
+        describe('data.js - calendarData structure', () => {
+            it('has all 3 built-in periods', () => {
+                const keys = Object.keys(calendarData);
+                assert(keys.includes('april'), 'missing april');
+                assert(keys.includes('may'), 'missing may');
+                assert(keys.includes('early_june'), 'missing early_june');
+            });
+
+            it('april has expected categories', () => {
+                const cats = Object.keys(calendarData.april);
+                for (const c of ['direct_sowing', 'seedling_start', 'greenhouse', 'garden_tasks']) {
+                    assert(cats.includes(c), `april missing category: ${c}`);
+                }
+            });
+
+            it('may has expected categories', () => {
+                const cats = Object.keys(calendarData.may);
+                for (const c of ['direct_sowing', 'transplanting', 'greenhouse', 'garden_tasks']) {
+                    assert(cats.includes(c), `may missing category: ${c}`);
+                }
+            });
+
+            it('early_june has expected categories', () => {
+                const cats = Object.keys(calendarData.early_june);
+                for (const c of ['direct_sowing', 'transplanting', 'greenhouse', 'garden_tasks']) {
+                    assert(cats.includes(c), `early_june missing category: ${c}`);
+                }
+            });
+
+            it('all plant items have en and et translations', () => {
+                for (const [month, categories] of Object.entries(originalCalendarData)) {
+                    for (const [cat, items] of Object.entries(categories)) {
+                        for (const item of items) {
+                            if (typeof item === 'object') {
+                                assert(typeof item.en === 'string' && item.en.length > 0,
+                                    `${month}/${cat}: item missing "en": ${JSON.stringify(item)}`);
+                                assert(typeof item.et === 'string' && item.et.length > 0,
+                                    `${month}/${cat}: item missing "et": ${JSON.stringify(item)}`);
+                            }
+                        }
+                    }
+                }
+            });
+        });
+
+        describe('data.js - categoryIcons', () => {
+            it('has entries for all categories', () => {
+                const expected = ['direct_sowing', 'seedling_start', 'transplanting', 'greenhouse', 'garden_tasks', 'custom_plants', 'custom_tasks'];
+                for (const cat of expected) {
+                    assert(cat in categoryIcons, `categoryIcons missing: ${cat}`);
+                }
+            });
+        });
+
+        describe('data.js - categoryNames', () => {
+            it('has entries for all categories', () => {
+                const expected = ['direct_sowing', 'seedling_start', 'transplanting', 'greenhouse', 'garden_tasks', 'custom_plants', 'custom_tasks'];
+                for (const cat of expected) {
+                    assert(cat in categoryNames, `categoryNames missing: ${cat}`);
+                    assert(typeof categoryNames[cat] === 'string' && categoryNames[cat].length > 0,
+                        `categoryNames[${cat}] should be a non-empty string`);
+                }
+            });
+        });
+
+        describe('data.js - translations', () => {
+            it('translations.en has all required keys', () => {
+                const requiredKeys = [
+                    'title', 'april', 'may', 'early_june',
+                    'direct_sowing', 'seedling_start', 'transplanting', 'greenhouse', 'garden_tasks',
+                    'temperature', 'precipitation', 'select_period',
+                    'add_custom_plant', 'add_custom_task',
+                    'ai_assistant', 'generate_prompt', 'copy_clipboard',
+                ];
+                const en = translations.en;
+                for (const key of requiredKeys) {
+                    assert(key in en, `translations.en missing key: ${key}`);
+                }
+            });
+        });
+
+        describe('data.js - journalEntryTypes', () => {
+            it('has all 5 types', () => {
+                const expected = ['planting', 'care', 'harvest', 'observation', 'maintenance'];
+                for (const t of expected) {
+                    assert(t in journalEntryTypes, `journalEntryTypes missing: ${t}`);
+                    assert(journalEntryTypes[t].icon, `${t} missing icon`);
+                    assert(journalEntryTypes[t].name, `${t} missing name`);
+                }
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // STORAGE MODULE TESTS - Selected Items
+        // ══════════════════════════════════════════════════════════════
+
+        describe('storage.js - selected items', () => {
+            it('getSelectedItems() returns empty object when nothing stored', () => {
+                resetAll(calendarData);
+                assertDeepEqual(getSelectedItems(), {});
+            });
+
+            it('toggleItemSelection() adds an item', () => {
+                resetAll(calendarData);
+                const item = { en: 'carrot', et: 'porgand' };
+                toggleItemSelection('april', 'direct_sowing', item, true);
+                const sel = getSelectedItems();
+                assert(sel.april, 'april key should exist');
+                assert(sel.april.direct_sowing, 'direct_sowing key should exist');
+                assertEqual(sel.april.direct_sowing.length, 1);
+                assertEqual(sel.april.direct_sowing[0].en, 'carrot');
+            });
+
+            it('toggleItemSelection() removes an item', () => {
+                resetAll(calendarData);
+                const item = { en: 'carrot', et: 'porgand' };
+                toggleItemSelection('april', 'direct_sowing', item, true);
+                toggleItemSelection('april', 'direct_sowing', item, false);
+                const sel = getSelectedItems();
+                assertDeepEqual(sel, {});
+            });
+
+            it('isItemSelected() returns true for selected items', () => {
+                resetAll(calendarData);
+                const item = { en: 'carrot', et: 'porgand' };
+                toggleItemSelection('april', 'direct_sowing', item, true);
+                assert(isItemSelected('april', 'direct_sowing', item), 'should be selected');
+            });
+
+            it('isItemSelected() returns false for unselected items', () => {
+                resetAll(calendarData);
+                const item = { en: 'carrot', et: 'porgand' };
+                assert(!isItemSelected('april', 'direct_sowing', item), 'should not be selected');
+            });
+
+            it('creates proper nested structure (month > category > items)', () => {
+                resetAll(calendarData);
+                const item1 = { en: 'carrot', et: 'porgand' };
+                const item2 = { en: 'radish', et: 'redis' };
+                toggleItemSelection('april', 'direct_sowing', item1, true);
+                toggleItemSelection('april', 'greenhouse', item2, true);
+                toggleItemSelection('may', 'direct_sowing', item1, true);
+                const sel = getSelectedItems();
+                assertEqual(Object.keys(sel).length, 2, 'should have 2 months');
+                assertEqual(Object.keys(sel.april).length, 2, 'april should have 2 categories');
+                assertEqual(sel.may.direct_sowing.length, 1, 'may/direct_sowing should have 1 item');
+            });
+
+            it('deselecting last item in a category removes the category', () => {
+                resetAll(calendarData);
+                const item = { en: 'carrot', et: 'porgand' };
+                toggleItemSelection('april', 'direct_sowing', item, true);
+                toggleItemSelection('april', 'direct_sowing', item, false);
+                const sel = getSelectedItems();
+                assert(!sel.april, 'april should be removed when empty');
+            });
+
+            it('deselecting last category in a month removes the month', () => {
+                resetAll(calendarData);
+                const item1 = { en: 'carrot', et: 'porgand' };
+                const item2 = { en: 'radish', et: 'redis' };
+                toggleItemSelection('april', 'direct_sowing', item1, true);
+                toggleItemSelection('april', 'greenhouse', item2, true);
+                toggleItemSelection('april', 'direct_sowing', item1, false);
+                const sel = getSelectedItems();
+                assert(sel.april, 'april should still exist');
+                assert(!sel.april.direct_sowing, 'direct_sowing should be removed');
+                toggleItemSelection('april', 'greenhouse', item2, false);
+                const sel2 = getSelectedItems();
+                assert(!sel2.april, 'april should be removed when fully empty');
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // STORAGE MODULE TESTS - Preferences
+        // ══════════════════════════════════════════════════════════════
+
+        describe('storage.js - preferences', () => {
+            it('getTemperatureUnit() defaults to C', () => {
+                resetAll(calendarData);
+                assertEqual(getTemperatureUnit(), 'C');
+            });
+
+            it('saveTemperatureUnit(F) then getTemperatureUnit() returns F', () => {
+                resetAll(calendarData);
+                saveTemperatureUnit('F');
+                assertEqual(getTemperatureUnit(), 'F');
+            });
+
+            it('getPrecipitationUnit() defaults to mm', () => {
+                resetAll(calendarData);
+                assertEqual(getPrecipitationUnit(), 'mm');
+            });
+
+            it('savePrecipitationUnit(in) then getPrecipitationUnit() returns in', () => {
+                resetAll(calendarData);
+                savePrecipitationUnit('in');
+                assertEqual(getPrecipitationUnit(), 'in');
+            });
+
+            it('getLanguage() defaults to en', () => {
+                resetAll(calendarData);
+                assertEqual(getLanguage(), 'en');
+            });
+
+            it('saveLanguage(et) then getLanguage() returns et', () => {
+                resetAll(calendarData);
+                saveLanguage('et');
+                assertEqual(getLanguage(), 'et');
+            });
+
+            it('loadPreferences() returns all preferences', () => {
+                resetAll(calendarData);
+                saveTemperatureUnit('F');
+                savePrecipitationUnit('in');
+                saveLanguage('et');
+                const prefs = loadPreferences();
+                assertEqual(prefs.temperatureUnit, 'F');
+                assertEqual(prefs.precipitationUnit, 'in');
+                assertEqual(prefs.language, 'et');
+                assertEqual(prefs.lastLocation, null);
+                assertEqual(prefs.climateZoneOverride, null);
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // STORAGE MODULE TESTS - Custom Entries
+        // ══════════════════════════════════════════════════════════════
+
+        describe('storage.js - custom entries', () => {
+            it('getCustomEntries() returns { plants: [], tasks: [] } when empty', () => {
+                resetAll(calendarData);
+                assertDeepEqual(getCustomEntries(), { plants: [], tasks: [] });
+            });
+
+            it('addCustomPlant() adds a plant with generated ID', () => {
+                resetAll(calendarData);
+                const result = addCustomPlant({ name: 'Tomato Test', description: 'A test plant', months: ['april'], category: 'custom_plants' });
+                assertEqual(result.plants.length, 1);
+                assert(result.plants[0].id.startsWith('plant_'), 'ID should start with plant_');
+                assertEqual(result.plants[0].name, 'Tomato Test');
+                assert(result.plants[0].created, 'should have created timestamp');
+            });
+
+            it('addCustomTask() adds a task with generated ID', () => {
+                resetAll(calendarData);
+                const result = addCustomTask({ name: 'Water garden', description: 'Water everything', months: ['may'] });
+                assertEqual(result.tasks.length, 1);
+                assert(result.tasks[0].id.startsWith('task_'), 'ID should start with task_');
+                assertEqual(result.tasks[0].name, 'Water garden');
+                assert(result.tasks[0].created, 'should have created timestamp');
+            });
+
+            it('deleteCustomPlant() removes the plant', () => {
+                resetAll(calendarData);
+                const result = addCustomPlant({ name: 'Basil Test', description: '', months: ['april'], category: 'custom_plants' });
+                const id = result.plants[0].id;
+                const deleted = deleteCustomPlant(id);
+                assert(deleted, 'should return true');
+                assertEqual(getCustomEntries().plants.length, 0);
+            });
+
+            it('deleteCustomTask() removes the task', () => {
+                resetAll(calendarData);
+                const result = addCustomTask({ name: 'Weed beds', description: '', months: ['may'] });
+                const id = result.tasks[0].id;
+                const deleted = deleteCustomTask(id);
+                assert(deleted, 'should return true');
+                assertEqual(getCustomEntries().tasks.length, 0);
+            });
+
+            it('deleteCustomPlant() returns false for non-existent ID', () => {
+                resetAll(calendarData);
+                assert(!deleteCustomPlant('plant_nonexistent'), 'should return false');
+            });
+
+            it('deleteCustomTask() returns false for non-existent ID', () => {
+                resetAll(calendarData);
+                assert(!deleteCustomTask('task_nonexistent'), 'should return false');
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // STORAGE MODULE TESTS - Custom Periods
+        // ══════════════════════════════════════════════════════════════
+
+        describe('storage.js - custom periods', () => {
+            it('getCustomPeriods() returns { periods: [] } when empty', () => {
+                resetAll(calendarData);
+                assertDeepEqual(getCustomPeriods(), { periods: [] });
+            });
+
+            it('addCustomPeriod() creates a period with correct structure', () => {
+                resetAll(calendarData);
+                const period = addCustomPeriod('Test Period');
+                assert(period.id.startsWith('period_'), 'ID should start with period_');
+                assertEqual(period.name, 'Test Period');
+                assert(typeof period.order === 'number', 'should have numeric order');
+            });
+
+            it('addCustomPeriod() initializes calendarData for the new period', () => {
+                resetAll(calendarData);
+                const period = addCustomPeriod('Late Summer');
+                assert(calendarData[period.id], 'calendarData should have the new period');
+                assert(Array.isArray(calendarData[period.id].custom_plants), 'should have custom_plants array');
+                assert(Array.isArray(calendarData[period.id].custom_tasks), 'should have custom_tasks array');
+            });
+
+            it('getAllPeriods() returns built-in + custom periods', () => {
+                resetAll(calendarData);
+                addCustomPeriod('My Period');
+                const all = getAllPeriods();
+                assertEqual(all.length, 4, 'should have 3 built-in + 1 custom');
+                assert(all[0].builtin === true, 'first should be built-in');
+                assert(all[3].builtin === false, 'last should be custom');
+            });
+
+            it('built-in periods appear in getAllPeriods()', () => {
+                resetAll(calendarData);
+                const all = getAllPeriods();
+                const ids = all.map(p => p.id);
+                assert(ids.includes('april'), 'should include april');
+                assert(ids.includes('may'), 'should include may');
+                assert(ids.includes('early_june'), 'should include early_june');
+            });
+
+            it('renameCustomPeriod() updates the name', () => {
+                resetAll(calendarData);
+                const period = addCustomPeriod('Old Name');
+                const success = renameCustomPeriod(period.id, 'New Name');
+                assert(success, 'should return true');
+                const data = getCustomPeriods();
+                assertEqual(data.periods[0].name, 'New Name');
+            });
+
+            it('renameCustomPeriod() returns false for non-existent ID', () => {
+                resetAll(calendarData);
+                assert(!renameCustomPeriod('period_fake', 'Name'), 'should return false');
+            });
+
+            it('deleteCustomPeriod() removes the period', () => {
+                resetAll(calendarData);
+                const period = addCustomPeriod('To Delete');
+                const success = deleteCustomPeriod(period.id);
+                assert(success, 'should return true');
+                assertEqual(getCustomPeriods().periods.length, 0);
+            });
+
+            it('deleteCustomPeriod() removes calendarData for the period', () => {
+                resetAll(calendarData);
+                const period = addCustomPeriod('Temp Period');
+                assert(calendarData[period.id], 'should exist before delete');
+                deleteCustomPeriod(period.id);
+                assert(!calendarData[period.id], 'should be removed after delete');
+            });
+
+            it('deleteCustomPeriod() returns false for non-existent ID', () => {
+                resetAll(calendarData);
+                assert(!deleteCustomPeriod('period_fake'), 'should return false');
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // STORAGE MODULE TESTS - Journal Entries
+        // ══════════════════════════════════════════════════════════════
+
+        describe('storage.js - journal entries', () => {
+            it('getJournalEntries() returns empty array when nothing stored', () => {
+                resetAll(calendarData);
+                assertDeepEqual(getJournalEntries(), []);
+            });
+
+            it('saveJournalEntries() then getJournalEntries() round-trips correctly', () => {
+                resetAll(calendarData);
+                const entries = [
+                    { id: 1, type: 'planting', text: 'Planted carrots', date: '2025-04-15' },
+                    { id: 2, type: 'harvest', text: 'First radishes', date: '2025-06-01' }
+                ];
+                saveJournalEntries(entries);
+                const loaded = getJournalEntries();
+                assertEqual(loaded.length, 2);
+                assertEqual(loaded[0].text, 'Planted carrots');
+                assertEqual(loaded[1].type, 'harvest');
+            });
+        });
+
+        // ══════════════════════════════════════════════════════════════
+        // RENDER RESULTS
+        // ══════════════════════════════════════════════════════════════
+
+        // Clean up after all tests
+        resetAll(calendarData);
+
+        const elapsed = (performance.now() - t0).toFixed(1);
+        const passed = results.filter(r => r.passed).length;
+        const failed = results.filter(r => !r.passed).length;
+        const total = results.length;
+
+        // Group by suite
+        const suites = [];
+        let lastSuite = null;
+        for (const r of results) {
+            if (r.suite !== lastSuite) {
+                suites.push({ name: r.suite, tests: [] });
+                lastSuite = r.suite;
+            }
+            suites[suites.length - 1].tests.push(r);
+        }
+
+        // Summary
+        const summaryEl = document.getElementById('summary');
+        summaryEl.textContent = `${passed}/${total} passed, ${failed} failed`;
+        summaryEl.className = failed > 0 ? 'fail' : 'pass';
+
+        // Detailed results
+        const resultsEl = document.getElementById('results');
+        for (const suite of suites) {
+            const div = document.createElement('div');
+            div.className = 'suite';
+            div.innerHTML = `<div class="suite-header">${suite.name}</div>`;
+            for (const t of suite.tests) {
+                const testDiv = document.createElement('div');
+                testDiv.className = `test ${t.passed ? 'pass' : 'fail'}`;
+                testDiv.textContent = t.name;
+                div.appendChild(testDiv);
+                if (!t.passed) {
+                    const detail = document.createElement('div');
+                    detail.className = 'fail-detail';
+                    detail.textContent = t.error;
+                    div.appendChild(detail);
+                }
+            }
+            resultsEl.appendChild(div);
+        }
+
+        document.getElementById('time').textContent = `Completed in ${elapsed} ms`;
+
+        // Console output
+        console.log(`\n=== Test Results: ${passed}/${total} passed, ${failed} failed (${elapsed} ms) ===\n`);
+        for (const r of results) {
+            if (r.passed) {
+                console.log(`  PASS  ${r.suite} > ${r.name}`);
+            } else {
+                console.error(`  FAIL  ${r.suite} > ${r.name}\n        ${r.error}`);
+            }
+        }
+    </script>
+</body>
+</html>
