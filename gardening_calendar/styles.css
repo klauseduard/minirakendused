@@ -71,7 +71,7 @@ h1, h2, h3 {
 /* ============================================================
    Header — Desktop: white bar with text-tab nav
    ============================================================ */
-@media (min-width: 601px) {
+@media (min-width: 769px) {
     header {
         text-align: center;
         margin: -20px -20px 20px -20px;
@@ -1385,7 +1385,7 @@ footer p {
 }
 
 /* Mobile specific journal fixes */
-@media (max-width: 600px) {
+@media (max-width: 768px) {
     .journal-header {
         flex-direction: column !important;
         align-items: stretch !important;
@@ -1431,7 +1431,7 @@ footer p {
 }
 
 /* Desktop-only Quick Navigation Menu */
-@media (min-width: 601px) {
+@media (min-width: 769px) {
     .quick-jump-menu {
         display: flex !important;
         flex-wrap: wrap;
@@ -1477,8 +1477,8 @@ footer p {
     }
 }
 
-/* Hide desktop navigation on mobile */
-@media (max-width: 600px) {
+/* Hide desktop navigation on mobile/tablet */
+@media (max-width: 768px) {
     .quick-jump-menu,
     .quick-jump-btn,
     .quick-jump-title {
@@ -1500,67 +1500,9 @@ footer p {
 }
 
 /* ============================================================
-   Journal FAB styles
+   Bottom Navigation Bar (mobile / tablet)
    ============================================================ */
-.journal-fab-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-    position: fixed;
-    left: 16px;
-    bottom: 144px !important;
-    z-index: 1203;
-    pointer-events: auto;
-}
-
-.journal-fab-action-btn {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--terracotta);
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    padding: 10px 18px;
-    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    min-width: 120px;
-    transition: background-color 0.15s;
-    opacity: 0.97;
-}
-
-.journal-fab-action-btn:active,
-.journal-fab-action-btn:focus {
-    background: #b35830;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    opacity: 1;
-    outline: none;
-}
-
-/* ============================================================
-   Bottom Navigation Bar (mobile only)
-   ============================================================ */
-@media (max-width: 600px) {
-    .journal-fab-actions {
-        left: 16px !important;
-        bottom: 144px !important;
-        right: auto !important;
-        flex-direction: column;
-        gap: 12px;
-        align-items: flex-start;
-        pointer-events: auto;
-    }
-
-    .journal-fab-action-btn {
-        min-width: 140px;
-        font-size: 1.05rem;
-        padding: 12px 20px;
-    }
-
+@media (max-width: 768px) {
     .bottom-nav {
         position: fixed;
         left: 0;
@@ -1658,14 +1600,14 @@ footer p {
     }
 }
 
-@media (min-width: 601px) {
+@media (min-width: 769px) {
     .bottom-nav {
         display: none !important;
     }
 }
 
 /* Adjust main layout padding when header is visible */
-@media (min-width: 601px) {
+@media (min-width: 769px) {
     .main-layout {
         padding-top: 20px;
     }
@@ -1758,6 +1700,33 @@ footer p {
     .search-box {
         padding: 14px 20px !important;
     }
+}
+
+/* AI advice row with selection badge */
+.ai-advice-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.selection-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background: var(--terracotta);
+    color: white;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    white-space: nowrap;
+    animation: badgePop 0.2s ease-out;
+}
+
+@keyframes badgePop {
+    0% { transform: scale(0.8); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* AI hint text */
@@ -2019,29 +1988,27 @@ footer p {
 /* ============================================================
    Mobile Journal Usability
    ============================================================ */
-@media (max-width: 600px) {
-    /* Hide original Export/Import/New Entry buttons and tab row */
+@media (max-width: 768px) {
+    /* Hide Export/Import/New Entry buttons on mobile — FAB handles new entry */
     .journal-header .journal-btn,
-    .journal-header .journal-add-btn,
-    .journal-tabs {
+    .journal-header .journal-add-btn {
         display: none !important;
     }
 
-    /* Show More (⋮) button in journal header */
-    .journal-more-menu-container {
+    /* Keep journal tabs visible as horizontal tab bar on mobile */
+    .journal-tabs {
         display: flex !important;
-        align-items: center;
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        z-index: 1100;
+        flex-direction: row !important;
+        gap: 4px !important;
+        margin-bottom: 12px !important;
     }
 
-    /* Show journal view dropdown, hide tab row */
-    .journal-view-dropdown-container {
-        display: block !important;
-        width: 100%;
-        margin-bottom: 10px;
+    .journal-tab {
+        width: auto !important;
+        flex: 1 1 0;
+        text-align: center !important;
+        padding: 8px 8px !important;
+        font-size: 0.85rem;
     }
 }
 
@@ -2110,22 +2077,86 @@ footer p {
 }
 
 /* ============================================================
-   Journal Active Mode
+   Journal Active Mode — Mobile: fullscreen, Desktop: sidebar
    ============================================================ */
-body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav) {
-    display: none !important;
-}
 
-@media (max-width: 600px) {
+/* Mobile: journal replaces everything (unchanged behavior) */
+@media (max-width: 768px) {
+    body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav) {
+        display: none !important;
+    }
     body.journal-active header {
         display: none !important;
     }
 }
 
-@media (min-width: 601px) {
+/* Desktop: journal as sidebar panel */
+@media (min-width: 769px) {
+    body.journal-active .main-layout {
+        display: grid;
+        grid-template-columns: 1fr 440px;
+        gap: 0;
+    }
+
+    /* All sections except journal flow in the left column */
+    body.journal-active .main-layout > *:not(#garden-journal) {
+        grid-column: 1;
+    }
+
+    /* Journal panel in the right column */
+    body.journal-active #garden-journal {
+        grid-column: 2;
+        grid-row: 1 / -1;
+        position: sticky;
+        top: 20px;
+        max-height: calc(100vh - 40px);
+        overflow-y: auto;
+        border-left: 1px solid var(--border);
+        border-radius: 0 8px 8px 0;
+        margin-bottom: 0;
+        animation: slideInRight 0.25s ease-out;
+    }
+
     body.journal-active header {
         display: block !important;
     }
+
+    /* Close button for sidebar */
+    .journal-sidebar-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: none;
+        border: 1px solid var(--border);
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s;
+        z-index: 10;
+    }
+
+    .journal-sidebar-close:hover {
+        background: var(--highlight);
+        color: var(--text-primary);
+    }
+}
+
+/* Hide sidebar close button on mobile */
+@media (max-width: 768px) {
+    .journal-sidebar-close {
+        display: none !important;
+    }
+}
+
+@keyframes slideInRight {
+    from { transform: translateX(40px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
 /* ============================================================
@@ -2248,28 +2279,6 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     display: inline-flex;
     align-items: center;
     gap: 8px;
-}
-
-/* Journal mobile more menu */
-.journal-more-menu-popup {
-    position: absolute;
-    right: 0;
-    top: 40px;
-    background: var(--surface);
-    border-radius: 8px;
-    border: 1px solid var(--border);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    z-index: 10;
-    min-width: 120px;
-}
-
-.journal-more-menu-wrapper {
-    position: relative;
-}
-
-/* Journal view dropdown */
-.journal-view-dropdown-wrapper {
-    margin-bottom: 10px;
 }
 
 /* ============================================================
@@ -2670,33 +2679,70 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     color: var(--text-secondary);
 }
 
-.journal-more-menu-item {
-    display: block;
-    width: 100%;
-    padding: 10px 16px;
-    border: none;
-    background: none;
-    cursor: pointer;
-    text-align: left;
-    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+/* ============================================================
+   Weather-to-Plants Bridge Callout
+   ============================================================ */
+.weather-callout {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    background: var(--highlight);
+    border: 1px solid var(--sage);
+    border-radius: 8px;
+    margin-bottom: 16px;
     font-size: 0.95rem;
     color: var(--text-primary);
+    position: relative;
+    animation: hintFadeIn 0.3s ease-out;
 }
 
-.journal-more-menu-item:hover {
-    background: var(--highlight);
+.weather-callout-icon {
+    font-size: 1.4em;
+    flex-shrink: 0;
 }
 
-/* Journal view dropdown */
-.journal-view-dropdown {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid var(--border);
-    border-radius: 6px;
-    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
-    font-size: 1rem;
-    background: var(--surface);
+.weather-callout-text {
+    flex: 1;
+}
+
+.weather-callout-dismiss {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    background: none;
+    border: none;
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 2px 6px;
+    line-height: 1;
+    border-radius: 50%;
+}
+
+.weather-callout-dismiss:hover {
+    background: rgba(0, 0, 0, 0.05);
     color: var(--text-primary);
+}
+
+/* ============================================================
+   Onboarding Hints
+   ============================================================ */
+.onboarding-hint {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    font-style: italic;
+    padding: 10px 14px;
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    margin: 8px 0 12px;
+    background: var(--highlight);
+    animation: hintFadeIn 0.3s ease-out;
+}
+
+@keyframes hintFadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 /* Calendar explainer text */

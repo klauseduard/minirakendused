@@ -945,5 +945,20 @@ export function saveJournalEntries(entries) {
     localStorage.setItem(STORAGE_KEYS.JOURNAL_DATA, JSON.stringify(entries));
 }
 
+/**
+ * Count total selected items across all months and categories
+ * @returns {number} Total number of selected items
+ */
+export function getSelectionCount() {
+    const selections = getSelectedItems();
+    let count = 0;
+    for (const month in selections) {
+        for (const category in selections[month]) {
+            count += selections[month][category].length;
+        }
+    }
+    return count;
+}
+
 // Export all constants
 export { STORAGE_KEYS }; 

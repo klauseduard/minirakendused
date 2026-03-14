@@ -6,10 +6,25 @@
 import { calendarData, translations, categoryIcons, categoryNames } from './data.js';
 import { getSelectedItems, isItemSelected, toggleItemSelection,
          getAllPeriods, addCustomPeriod, renameCustomPeriod, deleteCustomPeriod,
-         initializeCustomPeriodData } from './storage.js';
+         initializeCustomPeriodData, getSelectionCount } from './storage.js';
 import { showNotification } from './ui.js';
 import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
 import { initSocialSharing, shareContent } from './social.js';
+
+/**
+ * Update the selection badge with the current count of selected items
+ */
+export function updateSelectionBadge() {
+    const badge = document.getElementById('selectionBadge');
+    if (!badge) return;
+    const count = getSelectionCount();
+    if (count > 0) {
+        badge.textContent = `${count} selected`;
+        badge.classList.remove('hidden-default');
+    } else {
+        badge.classList.add('hidden-default');
+    }
+}
 
 /**
  * Render the calendar for the specified month with optional search filtering
@@ -144,6 +159,7 @@ export function renderCalendar(month, searchTerm = '') {
                 toggleItemSelection(month, category, item, e.target.checked);
                 // Update the "Select All" checkbox status
                 updateSelectAllCheckbox(month, category);
+                updateSelectionBadge();
             });
         });
         
@@ -317,6 +333,7 @@ export function renderCalendar(month, searchTerm = '') {
             
             // Update the "Select All" checkbox status once after all items are processed
             updateSelectAllCheckbox(month, category);
+            updateSelectionBadge();
         });
     });
 }
@@ -573,6 +590,9 @@ export function initCalendar(initialMonth) {
 
     // Render the calendar with the initial month
     renderCalendar(initialMonth);
+
+    // Initialize the selection badge
+    updateSelectionBadge();
 }
 
 /**

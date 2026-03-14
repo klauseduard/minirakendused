@@ -89,6 +89,9 @@
                     </div>
                 </div>
                 <div id="climateZoneInfo"></div>
+                <div class="onboarding-hint hidden-default" id="locationHint">
+                    Set your location for local weather and frost dates
+                </div>
             </section>
 
             <!-- Weather Display -->
@@ -98,13 +101,23 @@
                 </div>
             </section>
 
+            <!-- Weather-to-Plants Bridge Callout -->
+            <div class="weather-callout hidden-default" id="weatherCallout">
+                <button class="weather-callout-dismiss" id="weatherCalloutDismiss" aria-label="Dismiss">&times;</button>
+                <span class="weather-callout-icon" id="weatherCalloutIcon"></span>
+                <span class="weather-callout-text" id="weatherCalloutText"></span>
+            </div>
+
             <!-- Search Bar -->
             <section class="search-bar" id="search-section">
                 <h2 class="search-section-title">Search & AI Garden Assistant</h2>
-                <button id="aiAdviceBtn" class="ai-advice-btn">
-                    <span class="icon-size-md">🤖</span>
-                    <span>Generate AI advice with selected plants</span>
-                </button>
+                <div class="ai-advice-row">
+                    <button id="aiAdviceBtn" class="ai-advice-btn">
+                        <span class="icon-size-md">🤖</span>
+                        <span>Generate AI advice with selected plants</span>
+                    </button>
+                    <span class="selection-badge hidden-default" id="selectionBadge">0 selected</span>
+                </div>
                 <div class="ai-hint-text">Tip: Check plants in the Planting Schedule below to include them in your AI prompt</div>
                 <div class="search-container">
                     <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
@@ -139,9 +152,13 @@
             <section class="calendar-content" id="calendarContent">
                 <!-- Content will be added by JavaScript -->
             </section>
+            <div class="onboarding-hint hidden-default" id="calendarHint">
+                Check the plants you're growing this season to track them
+            </div>
 
             <!-- Garden Journal Section -->
             <section class="garden-journal hidden-default" id="garden-journal">
+                <button class="journal-sidebar-close" id="journalSidebarClose" aria-label="Close journal panel">&times;</button>
                 <div class="journal-header journal-header-bar">
                     <h2 class="journal-title journal-title-text">Garden Journal</h2>
                     <div class="journal-actions-group">
@@ -171,7 +188,7 @@
                     <div id="emptyJournalMessage" class="journal-empty-state">
                         <div class="icon-size-jumbo">📔</div>
                         <h3 class="journal-empty-title">Your Garden Journal is Empty</h3>
-                        <p class="journal-empty-text">Start documenting your gardening journey by adding your first entry!</p>
+                        <p class="journal-empty-text">Record what you plant, observe, and harvest — tap "Add First Entry" to begin.</p>
                         <button id="emptyJournalAddBtn" class="journal-add-btn journal-empty-add-btn">
                             <span>➕</span> Add First Entry
                         </button>
@@ -193,31 +210,6 @@
                 <button id="journalFabBtn" class="journal-fab-btn hidden-default" aria-label="Add New Journal Entry">
                     <span class="icon-size-xxl">➕</span>
                 </button>
-                <!-- Expanded FAB Actions (vertical stack) -->
-                <div id="journalFabActions" class="journal-fab-actions hidden-default">
-                    <button id="fabAddEntryBtn" class="journal-fab-action-btn" aria-label="Add Entry"><span class="icon-size-lg">➕</span> Add Entry</button>
-                    <button id="fabExportBtn" class="journal-fab-action-btn" aria-label="Export Journal"><span class="icon-size-lg">📤</span> Export</button>
-                    <button id="fabImportBtn" class="journal-fab-action-btn" aria-label="Import Journal"><span class="icon-size-lg">📥</span> Import</button>
-                </div>
-                <!-- More Menu for Export/Import (mobile only) -->
-                <div id="journalMoreMenuContainer" class="journal-more-menu-container hidden-default journal-more-menu-wrapper">
-                    <button id="journalMoreBtn" class="journal-more-btn" aria-label="More actions">
-                        <span class="icon-size-xl">⋮</span>
-                    </button>
-                    <div id="journalMoreMenu" class="journal-more-menu hidden-default journal-more-menu-popup">
-                        <button id="journalExportMenuBtn" class="journal-more-menu-item">Export</button>
-                        <button id="journalImportMenuBtn" class="journal-more-menu-item">Import</button>
-                    </div>
-                </div>
-                <!-- Dropdown for Journal Views (mobile only) -->
-                <div id="journalViewDropdownContainer" class="journal-view-dropdown-container hidden-default journal-view-dropdown-wrapper">
-                    <label for="journalViewDropdown" class="visually-hidden">Select Journal View</label>
-                    <select id="journalViewDropdown" class="journal-view-dropdown" aria-label="Select Journal View">
-                        <option value="timeline">Timeline</option>
-                        <option value="gallery">Photo Gallery</option>
-                        <option value="calendar">Calendar</option>
-                    </select>
-                </div>
             </section>
 
             <button class="scroll-to-top hidden-default" id="scrollToTop" aria-label="Scroll to top">

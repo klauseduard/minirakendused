@@ -187,6 +187,9 @@ export function renderWeatherData(data) {
     
     // Add event listeners for sparklines
     addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit);
+
+    // Update weather-to-plants bridge callout
+    updateWeatherCallout();
 }
 
 /**
@@ -719,6 +722,74 @@ export async function geocodeLocation(query) {
     } catch (e) {
         console.error('Error during geocoding:', e);
         displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
+    }
+}
+
+// Frost-sensitive plant keywords (common garden plants)
+const FROST_SENSITIVE_KEYWORDS = [
+    'tomato', 'pepper', 'cucumber', 'squash', 'zucchini', 'melon',
+    'basil', 'bean', 'corn', 'eggplant', 'pumpkin', 'sweet potato',
+    'courgette', 'aubergine', 'chili', 'watermelon', 'okra'
+];
+
+/**
+ * Check weather conditions and show a contextual callout if relevant.
+ * Called after weather data is rendered.
+ */
+export function updateWeatherCallout() {
+    const callout = document.getElementById('weatherCallout');
+    const iconEl = document.getElementById('weatherCalloutIcon');
+    const textEl = document.getElementById('weatherCalloutText');
+    if (!callout || !iconEl || !textEl || !lastWeatherData) return;
+
+    const currentTemp = lastWeatherData.current_weather?.temperature;
+    if (currentTemp === undefined) return;
+
+    // Get selected items to check for frost-sensitive plants
+    const selections = storageUtils.getSelectedItems();
+    const hasSelections = Object.keys(selections).length > 0;
+
+    // Check for frost-sensitive plants in selections
+    let hasFrostSensitive = false;
+    if (hasSelections) {
+        for (const month in selections) {
+            for (const category in selections[month]) {
+                for (const item of selections[month][category]) {
+                    const name = (typeof item === 'object' ? item.en : item) || '';
+                    if (FROST_SENSITIVE_KEYWORDS.some(kw => name.toLowerCase().includes(kw))) {
+                        hasFrostSensitive = true;
+                        break;
+                    }
+                }
+                if (hasFrostSensitive) break;
+            }
+            if (hasFrostSensitive) break;
+        }
+    }
+
+    // Check precipitation probability from daily data
+    const todayPrecip = lastWeatherData.daily?.precipitation_sum?.[0] || 0;
+
+    let icon = '';
+    let message = '';
+
+    if (currentTemp < 5 && hasFrostSensitive) {
+        icon = '🥶';
+        message = 'Frost risk — consider covering tender plants like tomatoes and peppers.';
+    } else if (currentTemp > 30) {
+        icon = '🌡️';
+        message = 'Heat stress possible — water deeply in the morning, avoid midday watering.';
+    } else if (todayPrecip > 5) {
+        icon = '🌧️';
+        message = 'Rain expected — hold off on watering today.';
+    }
+
+    if (message) {
+        iconEl.textContent = icon;
+        textEl.textContent = message;
+        callout.classList.remove('hidden-default');
+    } else {
+        callout.classList.add('hidden-default');
     }
 }
 

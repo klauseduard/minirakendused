@@ -135,6 +135,18 @@ async function initApp() {
     
     // Set up navigation and remaining event listeners
     setupNavigation();
+
+    // Journal sidebar close button
+    const journalSidebarClose = document.getElementById('journalSidebarClose');
+    if (journalSidebarClose) {
+        journalSidebarClose.addEventListener('click', () => {
+            closeJournalPanel();
+            // Remove active state from journal nav buttons
+            document.querySelectorAll('.quick-jump-btn, .bottom-nav-btn').forEach(b => {
+                if (b.dataset.section === 'garden-journal') b.classList.remove('active');
+            });
+        });
+    }
     
     // Check for hash in URL to navigate to specific section on load
     if (window.location.hash) {
@@ -152,7 +164,74 @@ async function initApp() {
         }
     }
     
+    // Initialize onboarding hints
+    initOnboardingHints();
+
+    // Weather callout dismiss button
+    const weatherCalloutDismiss = document.getElementById('weatherCalloutDismiss');
+    if (weatherCalloutDismiss) {
+        weatherCalloutDismiss.addEventListener('click', () => {
+            const callout = document.getElementById('weatherCallout');
+            if (callout) callout.classList.add('hidden-default');
+        });
+    }
+
     console.log('Gardening Calendar App initialization complete');
+}
+
+/**
+ * Show contextual onboarding hints for first-time users.
+ * Hints disappear once the user interacts and don't return.
+ */
+function initOnboardingHints() {
+    if (localStorage.getItem('onboarding-dismissed')) return;
+
+    const locationHint = document.getElementById('locationHint');
+    const calendarHint = document.getElementById('calendarHint');
+
+    // Show location hint if no location is saved
+    const lastLocation = localStorage.getItem('gardening_last_location');
+    if (!lastLocation && locationHint) {
+        locationHint.classList.remove('hidden-default');
+    }
+
+    // Show calendar hint if no items are selected in current period
+    const selections = storageModule.getSelectedItems();
+    const activeMonth = window.GardeningApp.activeMonth || 'april';
+    const hasSelections = selections[activeMonth] && Object.keys(selections[activeMonth]).length > 0;
+    if (!hasSelections && calendarHint) {
+        calendarHint.classList.remove('hidden-default');
+    }
+
+    // Dismiss location hint when user searches or uses geolocation
+    const searchLocationBtn = document.getElementById('searchLocationBtn');
+    const useMyLocationBtn = document.getElementById('useMyLocationBtn');
+    [searchLocationBtn, useMyLocationBtn].forEach(btn => {
+        if (btn) btn.addEventListener('click', () => dismissHint(locationHint), { once: true });
+    });
+
+    // Dismiss calendar hint on first checkbox interaction
+    const calendarContent = document.getElementById('calendarContent');
+    if (calendarContent) {
+        calendarContent.addEventListener('change', (e) => {
+            if (e.target.classList.contains('item-checkbox') || e.target.classList.contains('select-all-checkbox')) {
+                dismissHint(calendarHint);
+                dismissAllHints();
+            }
+        }, { once: true });
+    }
+}
+
+function dismissHint(el) {
+    if (el) {
+        el.style.opacity = '0';
+        el.style.transition = 'opacity 0.3s';
+        setTimeout(() => el.classList.add('hidden-default'), 300);
+    }
+}
+
+function dismissAllHints() {
+    localStorage.setItem('onboarding-dismissed', 'true');
 }
 
 /**
@@ -189,7 +268,7 @@ function setupNavigation() {
     // Hide scroll-to-top button when bottom nav is visible (mobile)
     const scrollToTopBtn = document.getElementById('scrollToTop');
     function updateScrollToTopVisibility() {
-        if (window.innerWidth <= 600) {
+        if (window.innerWidth <= 768) {
             if (scrollToTopBtn) scrollToTopBtn.style.display = 'none';
         } else {
             // Existing logic (show/hide based on scroll)
@@ -202,6 +281,13 @@ function setupNavigation() {
 }
 
 /**
+ * Check if viewport is desktop (sidebar-capable) width
+ */
+function isDesktop() {
+    return window.innerWidth > 768;
+}
+
+/**
  * Navigate to a section - shared logic for both desktop and mobile nav.
  * @param {string} sectionId - The section to navigate to
  * @param {Object} options - Navigation options
@@ -209,33 +295,44 @@ function setupNavigation() {
  */
 function navigateToSection(sectionId, { isMobile = false } = {}) {
     if (sectionId === 'garden-journal') {
-        // Save calendar state before hiding
-        const calendarContent = document.getElementById('calendarContent');
-        if (calendarContent) {
-            calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
-        }
+        if (isDesktop()) {
+            // Desktop: open journal as sidebar alongside existing content
+            document.body.classList.add('journal-active');
 
-        // Hide all sections except journal
-        document.body.classList.add('journal-active');
-        document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
-            if (el.id !== 'garden-journal' && el.id !== 'scrollToTop' && !el.classList.contains('bottom-nav')) {
-                el.style.display = 'none';
+            // Show journal without hiding other sections (CSS grid handles layout)
+            const journalSection = document.getElementById('garden-journal');
+            if (journalSection) {
+                journalSection.style.display = 'block';
+                journalModule.renderJournal();
             }
-        });
 
-        // Show journal
-        const journalSection = document.getElementById('garden-journal');
-        if (journalSection) {
-            journalSection.style.display = 'block';
-            journalModule.renderJournal();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Ensure calendar content stays visible
+            const calendarContent = document.getElementById('calendarContent');
+            if (calendarContent) calendarContent.style.display = 'grid';
+        } else {
+            // Mobile: full-screen journal (existing behavior)
+            const calendarContent = document.getElementById('calendarContent');
+            if (calendarContent) {
+                calendarContent.setAttribute('data-original-display', calendarContent.style.display || 'grid');
+            }
+
+            document.body.classList.add('journal-active');
+            document.querySelectorAll('.main-layout > *, .calendar-content, #calendarContent, .month-navigation, #monthly-calendar').forEach(el => {
+                if (el.id !== 'garden-journal' && el.id !== 'scrollToTop' && !el.classList.contains('bottom-nav')) {
+                    el.style.display = 'none';
+                }
+            });
+
+            const journalSection = document.getElementById('garden-journal');
+            if (journalSection) {
+                journalSection.style.display = 'block';
+                journalModule.renderJournal();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
         }
     } else {
         // Leave journal view, restore main sections
-        const journalSection = document.getElementById('garden-journal');
-        if (journalSection) journalSection.style.display = 'none';
-        showAllMainSections();
-        document.body.classList.remove('journal-active');
+        closeJournalPanel();
 
         // Re-render calendar when navigating to schedule
         if (sectionId === 'monthly-calendar') {
@@ -259,6 +356,16 @@ function navigateToSection(sectionId, { isMobile = false } = {}) {
             }
         }
     }
+}
+
+/**
+ * Close the journal panel (works for both sidebar and fullscreen modes)
+ */
+function closeJournalPanel() {
+    const journalSection = document.getElementById('garden-journal');
+    if (journalSection) journalSection.style.display = 'none';
+    showAllMainSections();
+    document.body.classList.remove('journal-active');
 }
 
 /**
