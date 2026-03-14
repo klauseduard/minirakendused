@@ -1949,6 +1949,110 @@ footer p {
 }
 
 /* ============================================================
+   Photo Carousel (journal timeline & view modal)
+   ============================================================ */
+.photo-carousel {
+    position: relative;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-top: 12px;
+    background: var(--bg-cream);
+}
+
+.carousel-track {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+}
+
+.carousel-slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.carousel-slide.active {
+    opacity: 1;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    border-radius: 8px;
+}
+
+.carousel-prev,
+.carousel-next {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.85);
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    font-size: 1.4rem;
+    line-height: 1;
+    color: var(--text-primary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: background 0.15s, transform 0.15s;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+}
+
+.carousel-prev { left: 8px; }
+.carousel-next { right: 8px; }
+
+.carousel-prev:hover,
+.carousel-next:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-counter {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    font-size: 0.8rem;
+    padding: 2px 10px;
+    border-radius: 12px;
+    z-index: 2;
+    font-family: 'Source Sans 3', sans-serif;
+    font-variant-numeric: tabular-nums;
+}
+
+.carousel-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+    .carousel-track {
+        aspect-ratio: 4 / 3;
+    }
+
+    .carousel-prev,
+    .carousel-next {
+        width: 32px;
+        height: 32px;
+        font-size: 1.2rem;
+    }
+}
+
+/* ============================================================
    Mobile Journal Usability
    ============================================================ */
 

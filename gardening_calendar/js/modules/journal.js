@@ -584,26 +584,11 @@ function renderTimeline() {
             </div>`;
         }
         
-        // Images: either legacy inline or placeholder slots for IndexedDB photos
+        // Photos: hero carousel
         if (entry.images && entry.images.length > 0) {
-            html += `<div style="margin-top: 15px;">
-                <div style="display: flex; flex-wrap: wrap; gap: 10px;">`;
-
-            entry.images.forEach((img, index) => {
-                // Handle both string format and object format for backward compatibility
-                const imgSrc = typeof img === 'string' ? img : (img.data || img.thumbnail);
-                html += `<div class="journal-image" style="width: 100px; height: 100px; cursor: pointer;" data-full-img="${imgSrc}" data-entry-id="${entry.id}" data-img-index="${index}">
-                    <img src="${typeof img === 'string' ? img : (img.thumbnail || img.data)}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">
-                </div>`;
-            });
-
-            html += `</div></div>`;
+            html += buildPhotoCarouselHTML(entry.id, entry.images);
         } else if (entry.imageIds && entry.imageIds.length > 0) {
-            // Placeholder container for async-loaded IndexedDB photos
-            html += `<div style="margin-top: 15px;">
-                <div class="journal-photos-slot" data-entry-id="${entry.id}" style="display: flex; flex-wrap: wrap; gap: 10px;">
-                    <div style="color: #999; font-size: 0.9rem;">Loading ${entry.imageIds.length} photo${entry.imageIds.length > 1 ? 's' : ''}...</div>
-                </div></div>`;
+            html += buildPhotoCarouselHTML(entry.id, [], { isAsync: true, asyncCount: entry.imageIds.length });
         }
         
         // Close entry card
@@ -627,43 +612,8 @@ function renderTimeline() {
         });
     });
     
-    // Add event listeners for image lightbox
-    journalTimeline.querySelectorAll('.journal-image').forEach(img => {
-        img.addEventListener('click', () => {
-            const fullImg = img.dataset.fullImg;
-            showImageLightbox(fullImg);
-        });
-    });
-
-    // Async-load photos from IndexedDB for entries with imageIds
-    journalTimeline.querySelectorAll('.journal-photos-slot').forEach(slot => {
-        const entryId = slot.dataset.entryId;
-        photoStorage.getPhotos(entryId).then(photos => {
-            if (photos.length === 0) {
-                slot.innerHTML = '';
-                return;
-            }
-            slot.innerHTML = '';
-            photos.forEach((photo, index) => {
-                const imgSrc = photo.data || photo.thumbnail;
-                const thumbSrc = photo.thumbnail || photo.data;
-                const div = document.createElement('div');
-                div.className = 'journal-image';
-                div.style.width = '100px';
-                div.style.height = '100px';
-                div.style.cursor = 'pointer';
-                div.dataset.fullImg = imgSrc;
-                div.dataset.entryId = entryId;
-                div.dataset.imgIndex = index;
-                div.innerHTML = `<img src="${thumbSrc}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;" alt="Journal image">`;
-                div.addEventListener('click', () => showImageLightbox(imgSrc, entryId));
-                slot.appendChild(div);
-            });
-        }).catch(e => {
-            console.warn(`Failed to load photos for entry ${entryId}:`, e);
-            slot.innerHTML = '';
-        });
-    });
+    // Wire photo carousels (both pre-loaded and async IndexedDB)
+    wireAllCarousels(journalTimeline);
 }
 
 async function renderGallery() {
@@ -995,6 +945,138 @@ function showImageLightbox(imgSrc, entryId = null) {
 // Delegate to the weather module's exported function
 function weatherCodeToIconTextColor(code) {
     return weatherCodeToIconTextColorFn(code);
+}
+
+/**
+ * Generate HTML for a photo carousel (hero image with left/right navigation).
+ * @param {string} entryId - The journal entry ID
+ * @param {Array} photos - Array of {src, thumbnail} objects (or empty for async loading)
+ * @param {boolean} isAsync - If true, renders a placeholder for async IndexedDB loading
+ * @param {number} asyncCount - Number of photos expected (for placeholder text)
+ * @returns {string} HTML string
+ */
+function buildPhotoCarouselHTML(entryId, photos = [], { isAsync = false, asyncCount = 0 } = {}) {
+    if (isAsync) {
+        return `
+            <div class="photo-carousel" data-entry-id="${entryId}" data-carousel-async="true">
+                <div class="carousel-loading">Loading ${asyncCount} photo${asyncCount > 1 ? 's' : ''}...</div>
+            </div>`;
+    }
+    if (!photos || photos.length === 0) return '';
+
+    const slides = photos.map((p, i) => {
+        const src = typeof p === 'string' ? p : (p.data || p.src || p.thumbnail);
+        const thumb = typeof p === 'string' ? p : (p.thumbnail || p.data || p.src);
+        return `<div class="carousel-slide${i === 0 ? ' active' : ''}" data-index="${i}">
+                    <img src="${src}" alt="Garden photo" data-full-img="${src}">
+                </div>`;
+    }).join('');
+
+    const counter = photos.length > 1
+        ? `<span class="carousel-counter">1 / ${photos.length}</span>` : '';
+    const nav = photos.length > 1
+        ? `<button class="carousel-prev" aria-label="Previous photo">&lsaquo;</button>
+           <button class="carousel-next" aria-label="Next photo">&rsaquo;</button>` : '';
+
+    return `
+        <div class="photo-carousel" data-entry-id="${entryId}" data-total="${photos.length}">
+            <div class="carousel-track">${slides}</div>
+            ${nav}
+            ${counter}
+        </div>`;
+}
+
+/**
+ * Populate an async carousel placeholder with loaded photos.
+ * @param {HTMLElement} carousel - The .photo-carousel element
+ * @param {Array} photos - Photos from IndexedDB
+ */
+function populateAsyncCarousel(carousel, photos) {
+    const entryId = carousel.dataset.entryId;
+    if (!photos || photos.length === 0) {
+        carousel.remove();
+        return;
+    }
+    // Replace placeholder with real carousel
+    const temp = document.createElement('div');
+    temp.innerHTML = buildPhotoCarouselHTML(entryId, photos);
+    const newCarousel = temp.firstElementChild;
+    carousel.replaceWith(newCarousel);
+    wireCarousel(newCarousel);
+}
+
+/**
+ * Wire up navigation and click events on a single carousel element.
+ */
+function wireCarousel(carousel) {
+    const slides = carousel.querySelectorAll('.carousel-slide');
+    const counter = carousel.querySelector('.carousel-counter');
+    const total = slides.length;
+    if (total <= 1) return; // No nav needed for single photo
+
+    let current = 0;
+
+    function showSlide(index) {
+        slides.forEach(s => s.classList.remove('active'));
+        current = (index + total) % total;
+        slides[current].classList.add('active');
+        if (counter) counter.textContent = `${current + 1} / ${total}`;
+    }
+
+    const prevBtn = carousel.querySelector('.carousel-prev');
+    const nextBtn = carousel.querySelector('.carousel-next');
+    if (prevBtn) prevBtn.addEventListener('click', (e) => { e.stopPropagation(); showSlide(current - 1); });
+    if (nextBtn) nextBtn.addEventListener('click', (e) => { e.stopPropagation(); showSlide(current + 1); });
+
+    // Swipe support for touch devices
+    let touchStartX = 0;
+    carousel.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    carousel.addEventListener('touchend', (e) => {
+        const diff = touchStartX - e.changedTouches[0].clientX;
+        if (Math.abs(diff) > 40) {
+            showSlide(diff > 0 ? current + 1 : current - 1);
+        }
+    }, { passive: true });
+
+    // Click on image opens lightbox
+    slides.forEach(slide => {
+        slide.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const img = slide.querySelector('img');
+            if (img) showImageLightbox(img.dataset.fullImg, carousel.dataset.entryId);
+        });
+    });
+}
+
+/**
+ * Wire all carousels in a container and async-load IndexedDB photos.
+ */
+function wireAllCarousels(container) {
+    // Wire already-populated carousels
+    container.querySelectorAll('.photo-carousel:not([data-carousel-async])').forEach(wireCarousel);
+
+    // Async-load IndexedDB carousels
+    container.querySelectorAll('.photo-carousel[data-carousel-async]').forEach(carousel => {
+        const entryId = carousel.dataset.entryId;
+        photoStorage.getPhotos(entryId).then(photos => {
+            populateAsyncCarousel(carousel, photos);
+        }).catch(e => {
+            console.warn(`Failed to load photos for entry ${entryId}:`, e);
+            carousel.remove();
+        });
+    });
+
+    // Click on single-photo carousels to open lightbox
+    container.querySelectorAll('.photo-carousel[data-total="1"]').forEach(carousel => {
+        const img = carousel.querySelector('.carousel-slide img');
+        if (img) {
+            carousel.style.cursor = 'pointer';
+            carousel.addEventListener('click', (e) => {
+                e.stopPropagation();
+                showImageLightbox(img.dataset.fullImg, carousel.dataset.entryId);
+            });
+        }
+    });
 }
 
 // Export functions
@@ -1356,26 +1438,12 @@ function renderTimelineEntry(entry, index) {
         ? entry.notes.substring(0, 120) + '...' 
         : entry.notes;
     
-    // Create photo gallery if there are images (legacy) or placeholder for IndexedDB
+    // Photo carousel
     let photoGallery = '';
-    const photoCount = (entry.images && entry.images.length) || (entry.imageIds && entry.imageIds.length) || 0;
     if (entry.images && entry.images.length > 0) {
-        photoGallery = `
-            <div class="entry-photos">
-                ${entry.images.slice(0, 3).map(photo =>
-                    `<div class="entry-photo">
-                        <img src="${photo}" alt="Garden journal photo">
-                    </div>`
-                ).join('')}
-                ${entry.images.length > 3 ? `<div class="entry-photo entry-photo-more">+${entry.images.length - 3}</div>` : ''}
-            </div>
-        `;
+        photoGallery = buildPhotoCarouselHTML(entry.id, entry.images);
     } else if (entry.imageIds && entry.imageIds.length > 0) {
-        photoGallery = `
-            <div class="entry-photos entry-photos-slot" data-entry-id="${entry.id}">
-                <div style="color: #999; font-size: 0.9rem;">Loading ${entry.imageIds.length} photo${entry.imageIds.length > 1 ? 's' : ''}...</div>
-            </div>
-        `;
+        photoGallery = buildPhotoCarouselHTML(entry.id, [], { isAsync: true, asyncCount: entry.imageIds.length });
     }
     
     // Template for entry
@@ -1469,37 +1537,20 @@ async function openViewModal(entry) {
         day: 'numeric'
     });
 
-    // Create photo gallery
+    // Photo carousel for view modal
     let photoGallery = '';
+    let viewPhotos = [];
     if (entry.images && entry.images.length > 0) {
-        // Legacy inline images
-        photoGallery = `
-            <div class="entry-view-photos">
-                ${entry.images.map(photo =>
-                    `<div class="entry-view-photo">
-                        <img src="${photo}" alt="Garden journal photo">
-                    </div>`
-                ).join('')}
-            </div>
-        `;
+        viewPhotos = entry.images;
     } else if (entry.imageIds && entry.imageIds.length > 0) {
-        // Load from IndexedDB
         try {
-            const photos = await photoStorage.getPhotos(entry.id);
-            if (photos.length > 0) {
-                photoGallery = `
-                    <div class="entry-view-photos">
-                        ${photos.map(photo =>
-                            `<div class="entry-view-photo">
-                                <img src="${photo.data || photo.thumbnail}" alt="Garden journal photo">
-                            </div>`
-                        ).join('')}
-                    </div>
-                `;
-            }
+            viewPhotos = await photoStorage.getPhotos(entry.id);
         } catch (e) {
             console.warn('Failed to load photos for view modal:', e);
         }
+    }
+    if (viewPhotos.length > 0) {
+        photoGallery = buildPhotoCarouselHTML(entry.id + '-view', viewPhotos);
     }
     
     // Fill the modal content
@@ -1547,10 +1598,13 @@ async function openViewModal(entry) {
         </div>
     `;
     
+    // Wire photo carousels in view modal
+    wireAllCarousels(viewContent);
+
     // Initialize share button in the view modal
     const shareContainer = document.getElementById('journalEntryShareContainer');
     shareContainer.innerHTML = ''; // Clear previous content
-    
+
     // Set up event listeners
     const closeButtons = viewModal.querySelectorAll('#journalEntryViewModalCloseBtn, #journalEntryViewCloseBtn');
     closeButtons.forEach(btn => {
@@ -1558,7 +1612,7 @@ async function openViewModal(entry) {
             viewModal.style.display = 'none';
         });
     });
-    
+
     // Show the modal
     viewModal.style.display = 'flex';
     
