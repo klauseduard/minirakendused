@@ -116,25 +116,6 @@
                 <span class="weather-callout-text" id="weatherCalloutText"></span>
             </div>
 
-            <!-- Search Bar -->
-            <section class="search-bar" id="search-section">
-                <h2 class="search-section-title">Search & AI Garden Assistant</h2>
-                <div class="ai-advice-row">
-                    <button id="aiAdviceBtn" class="ai-advice-btn">
-                        <span class="icon-size-md">🤖</span>
-                        <span>Generate AI advice with selected plants</span>
-                    </button>
-                    <span class="selection-badge hidden-default" id="selectionBadge">0 selected</span>
-                </div>
-                <div class="ai-hint-text">Tip: Check plants in the Planting Schedule below to include them in your AI prompt</div>
-                <div class="search-container">
-                    <label for="searchBox" class="visually-hidden">Search for plants or tasks</label>
-                    <input type="text" class="search-box" id="searchBox" 
-                        placeholder="Type to search for specific plants or garden tasks..." 
-                        aria-label="Search for plants or tasks">
-                </div>
-            </section>
-
             <!-- Month Navigation -->
             <section class="month-navigation" id="monthly-calendar">
                 <div class="month-nav-header">
@@ -154,6 +135,25 @@
                     <!-- Period buttons will be generated dynamically -->
                 </div>
                 <button id="addPeriodBtn" class="add-period-btn" title="Add custom growing period">+ Add Period</button>
+            </section>
+
+            <!-- Filter & AI Garden Assistant -->
+            <section class="search-bar" id="search-section">
+                <h2 class="search-section-title">Filter & AI Garden Assistant</h2>
+                <div class="ai-advice-row">
+                    <button id="aiAdviceBtn" class="ai-advice-btn">
+                        <span class="icon-size-md">🤖</span>
+                        <span>Generate AI advice with selected plants</span>
+                    </button>
+                    <span class="selection-badge hidden-default" id="selectionBadge">0 selected</span>
+                </div>
+                <div class="ai-hint-text">Tip: Check plants in the Planting Schedule below to include them in your AI prompt</div>
+                <div class="search-container">
+                    <label for="searchBox" class="visually-hidden">Filter plants or tasks</label>
+                    <input type="text" class="search-box" id="searchBox"
+                        placeholder="Type to filter plants or garden tasks..."
+                        aria-label="Filter plants or tasks">
+                </div>
             </section>
 
             <!-- Calendar Content -->

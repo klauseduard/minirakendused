@@ -2801,7 +2801,7 @@ body.journal-active #garden-journal {
 /* ============================================================
    Weather-to-Plants Bridge Callout
    ============================================================ */
-.weather-callout {
+.weather-callout:not(.hidden-default) {
     display: flex;
     align-items: center;
     gap: 10px;
