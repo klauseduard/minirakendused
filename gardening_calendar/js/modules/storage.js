@@ -16,6 +16,7 @@ const STORAGE_KEYS = {
     JOURNAL_DATA: 'gardening_journal_entries',
     CUSTOM_ENTRIES: 'gardening_custom_entries',
     CUSTOM_PERIODS: 'gardening_custom_periods',
+    WIND_UNIT: 'gardening_wind_unit',
 };
 
 // Built-in periods definition
@@ -56,6 +57,10 @@ export function initStorage() {
     
     document.addEventListener('precipitationUnitChange', (e) => {
         savePrecipitationUnit(e.detail.unit);
+    });
+
+    document.addEventListener('windUnitChange', (e) => {
+        saveWindUnit(e.detail.unit);
     });
     
     return preferences;
@@ -231,6 +236,25 @@ export function getPrecipitationUnit() {
 }
 
 /**
+ * Save wind unit preference
+ * @param {string} unit - Wind unit ('ms', 'kmh', or 'mph')
+ */
+export function saveWindUnit(unit) {
+    if (unit === 'ms' || unit === 'kmh' || unit === 'mph') {
+        localStorage.setItem(STORAGE_KEYS.WIND_UNIT, unit);
+    }
+}
+
+/**
+ * Get wind unit preference
+ * @returns {string} Wind unit ('ms', 'kmh', or 'mph', defaults to 'ms')
+ */
+export function getWindUnit() {
+    const unit = localStorage.getItem(STORAGE_KEYS.WIND_UNIT);
+    return (unit === 'ms' || unit === 'kmh' || unit === 'mph') ? unit : 'ms';
+}
+
+/**
  * Save language preference
  * @param {string} lang - Language code
  */
@@ -254,6 +278,7 @@ export function loadPreferences() {
     return {
         temperatureUnit: getTemperatureUnit(),
         precipitationUnit: getPrecipitationUnit(),
+        windUnit: getWindUnit(),
         language: getLanguage(),
         lastLocation: getLastLocation(),
         climateZoneOverride: getClimateZoneOverride()

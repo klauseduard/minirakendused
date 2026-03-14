@@ -122,10 +122,11 @@ export function renderWeatherData(data) {
     // Get unit preferences from storage module
     const tempUnit = storageUtils.getTemperatureUnit();
     const precipUnit = storageUtils.getPrecipitationUnit();
+    const windUnit = storageUtils.getWindUnit();
     
     // Display current weather
     const currentIconTextColor = weatherCodeToIconTextColor(data.current_weather.weathercode);
-    let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol(tempUnit)}, Wind: ${data.current_weather.windspeed} km/h</div>`;
+    let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol(tempUnit)}, Wind: ${convertWind(data.current_weather.windspeed, windUnit)} ${getWindUnitSymbol(windUnit)}</div>`;
     
     // Prepare hourly data grouped by day
     const hourlyByDay = groupHourlyByDay(data.hourly, data.daily.time);
@@ -134,7 +135,7 @@ export function renderWeatherData(data) {
     
     // Display forecast table
     html += `<div style="margin-top:10px;"><strong>16-day forecast:</strong></div>`;
-    html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
+    html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Wind</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
     
     for (let i = 0; i < data.daily.time.length; i++) {
         const { nightMin, nightMax, dayMin, dayMax } = calcNightDayMinMax(hourlyByDay[i]);
@@ -177,6 +178,7 @@ export function renderWeatherData(data) {
             <td>${getTempHtml(dayMin)}</td>
             <td>${getTempHtml(dayMax)}</td>
             <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol(precipUnit)}</td>
+            <td>${(() => { const dayWinds = hourlyWindByDay[i] || []; const maxWind = dayWinds.length ? Math.max(...dayWinds) : 0; return `${convertWind(maxWind, windUnit)} ${getWindUnitSymbol(windUnit)}<br><span style="font-size:0.82em;color:#888;">${getBeaufortLabel(maxWind)}</span>`; })()}</td>
             <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
             <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
         </tr>`;
@@ -186,7 +188,7 @@ export function renderWeatherData(data) {
     weatherSection.innerHTML = html;
     
     // Add event listeners for sparklines
-    addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit);
+    addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit, windUnit);
 
     // Update weather-to-plants bridge callout
     updateWeatherCallout();
@@ -365,7 +367,7 @@ export function renderSparkline(temps, dayIndex, tempUnit) {
  * @param {string} tempUnit - Temperature unit
  * @param {string} precipUnit - Precipitation unit
  */
-export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit) {
+export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit, windUnit) {
     const sparklines = document.querySelectorAll('.temp-sparkline');
     
     for (const sparkline of sparklines) {
@@ -402,7 +404,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
                 <div style="margin-bottom:5px;font-weight:bold;">${date} ${hourDisplay}</div>
                 <div>Temperature: ${temp}${getTempUnitSymbol(tempUnit)}</div>
                 <div>Precipitation: ${precip} ${getPrecipUnitSymbol(precipUnit)}</div>
-                <div>Wind: ${wind} km/h</div>
+                <div>Wind: ${convertWind(wind, windUnit)} ${getWindUnitSymbol(windUnit)} (${getBeaufortLabel(wind)})</div>
             `;
             
             tooltip.style.left = (e.pageX + 15) + 'px';
@@ -417,7 +419,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         
         // Add click handler to open detailed hourly view
         sparkline.addEventListener('click', () => {
-            showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, tempUnit, precipUnit);
+            showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, tempUnit, precipUnit, windUnit);
         });
     }
 }
@@ -432,7 +434,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
  * @param {string} tempUnit - Temperature unit
  * @param {string} precipUnit - Precipitation unit
  */
-export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds, tempUnit, precipUnit) {
+export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds, tempUnit, precipUnit, windUnit) {
     if (!temps || temps.length === 0) return;
     
     // Use the UI module's showModal function if available
@@ -478,7 +480,7 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
             content += `<td>${hourDisplay}</td>`;
             content += `<td><span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol(tempUnit)}</span></td>`;
             content += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
-            content += `<td>${wind} km/h</td>`;
+            content += `<td>${wind !== '-' ? convertWind(wind, windUnit) + ' ' + getWindUnitSymbol(windUnit) : '-'}</td>`;
             content += `</tr>`;
         }
         
@@ -533,7 +535,7 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
             tableHtml += `<td>${hourDisplay}</td>`;
             tableHtml += `<td>${temp}${getTempUnitSymbol(tempUnit)}</td>`;
             tableHtml += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
-            tableHtml += `<td>${wind} km/h</td>`;
+            tableHtml += `<td>${wind !== '-' ? convertWind(wind, windUnit) + ' ' + getWindUnitSymbol(windUnit) : '-'}</td>`;
             tableHtml += `</tr>`;
         }
         
@@ -610,6 +612,50 @@ export function convertPrecip(value, unit) {
  */
 export function getPrecipUnitSymbol(unit) {
     return unit === 'in' ? 'in' : 'mm';
+}
+
+/**
+ * Convert wind speed from km/h to selected unit
+ * @param {number} kmh - Wind speed in km/h
+ * @param {string} unit - Target unit ('ms', 'kmh', or 'mph')
+ * @returns {string} Converted wind speed
+ */
+export function convertWind(kmh, unit) {
+    if (unit === 'ms') return (kmh / 3.6).toFixed(1);
+    if (unit === 'mph') return (kmh / 1.609).toFixed(1);
+    return kmh.toFixed(1);
+}
+
+/**
+ * Get wind unit symbol
+ * @param {string} unit - Wind unit
+ * @returns {string} Unit symbol
+ */
+export function getWindUnitSymbol(unit) {
+    if (unit === 'ms') return 'm/s';
+    if (unit === 'mph') return 'mph';
+    return 'km/h';
+}
+
+/**
+ * Get Beaufort scale label from wind speed in km/h
+ * @param {number} kmh - Wind speed in km/h
+ * @returns {string} Beaufort descriptor
+ */
+export function getBeaufortLabel(kmh) {
+    if (kmh < 1) return 'Calm';
+    if (kmh < 6) return 'Light air';
+    if (kmh < 12) return 'Light breeze';
+    if (kmh < 20) return 'Gentle breeze';
+    if (kmh < 29) return 'Moderate';
+    if (kmh < 39) return 'Fresh';
+    if (kmh < 50) return 'Strong';
+    if (kmh < 62) return 'Near gale';
+    if (kmh < 75) return 'Gale';
+    if (kmh < 89) return 'Strong gale';
+    if (kmh < 103) return 'Storm';
+    if (kmh < 118) return 'Violent storm';
+    return 'Hurricane';
 }
 
 /**
@@ -803,6 +849,7 @@ export function initWeather() {
     const searchLocationBtn = document.getElementById('searchLocationBtn');
     const tempUnitSelect = document.getElementById('tempUnitSelect');
     const precipUnitSelect = document.getElementById('precipUnitSelect');
+    const windUnitSelect = document.getElementById('windUnitSelect');
     
     if (!locationInput || !useMyLocationBtn || !searchLocationBtn) {
         console.error('Weather UI elements not found');
@@ -898,6 +945,20 @@ export function initWeather() {
                 gtag('event', 'change_preference', {
                     'preference_type': 'precipitation_unit',
                     'value': precipUnitSelect.value
+                });
+            }
+            if (lastWeatherData) renderWeatherData(lastWeatherData);
+        });
+    }
+
+    if (windUnitSelect) {
+        windUnitSelect.value = storageUtils.getWindUnit();
+        windUnitSelect.addEventListener('change', () => {
+            storageUtils.saveWindUnit(windUnitSelect.value);
+            if (typeof gtag === 'function') {
+                gtag('event', 'change_preference', {
+                    'preference_type': 'wind_unit',
+                    'value': windUnitSelect.value
                 });
             }
             if (lastWeatherData) renderWeatherData(lastWeatherData);
