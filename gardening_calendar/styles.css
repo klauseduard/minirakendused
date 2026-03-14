@@ -1,25 +1,65 @@
+/* ============================================================
+   Botanical Almanac Design System
+   ============================================================ */
+
 :root {
-    --primary-color: #4a8e3a;
-    --secondary-color: #8bc34a;
-    --accent-color: #3e7d32;
-    --light-bg: #f1f8e9;
-    --dark-bg: #e8f5e9;
-    --white: #ffffff;
-    --black: #212121;
-    --shadow: rgba(0, 0, 0, 0.1);
+    /* New palette */
+    --bg-cream: #FAF6F1;
+    --surface: #FFFFFF;
+    --text-primary: #2D2A26;
+    --text-secondary: #6B6560;
+    --forest: #2D5F2D;
+    --terracotta: #C4653A;
+    --sage: #8FA78B;
+    --border: #E5DED6;
+    --highlight: #E8F0E4;
+
+    /* Legacy aliases so JS inline styles auto-inherit */
+    --primary-color: #2D5F2D;
+    --secondary-color: #C4653A;
+    --accent-color: #2D5F2D;
+    --light-bg: #FAF6F1;
+    --dark-bg: #E8F0E4;
+    --white: #FFFFFF;
+    --black: #2D2A26;
+    --shadow: rgba(0, 0, 0, 0.06);
 }
 
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
-    background-color: var(--light-bg);
-    color: var(--black);
+    font-family: 'Source Sans 3', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-cream);
+    color: var(--text-primary);
     line-height: 1.6;
+    font-size: 0.95rem;
+    position: relative;
+}
+
+/* Paper-grain noise texture overlay */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 256px 256px;
+}
+
+h1, h2, h3 {
+    font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+    font-weight: 600;
+    color: var(--text-primary);
 }
 
 .container {
@@ -28,45 +68,45 @@ body {
     padding: 20px;
 }
 
-/* Header styles - visible on desktop, hidden on mobile */
+/* ============================================================
+   Header — Desktop: white bar with text-tab nav
+   ============================================================ */
 @media (min-width: 601px) {
-  header {
-    text-align: center;
-    margin: -20px -20px 20px -20px;  /* Negative margin to span full width */
-    padding: 15px 20px;
-    background-color: var(--primary-color);
-    color: var(--white);
-    position: sticky;
-    top: 0;
-    z-index: 1000;
-    box-shadow: 0 2px 8px var(--shadow);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    display: block !important;
-  }
-  
-  /* Add transition for smooth shadow change on scroll */
-  header.scrolled {
-    box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
-  }
-  
-  h1 {
-    font-size: 2rem;
-    margin-bottom: 15px;
-    transition: all 0.3s ease;
-  }
-  
-  /* Compact header on scroll */
-  header.scrolled h1 {
-    font-size: 1.5rem;
-    margin-bottom: 10px;
-  }
+    header {
+        text-align: center;
+        margin: -20px -20px 20px -20px;
+        padding: 18px 20px 0 20px;
+        background-color: var(--surface);
+        color: var(--text-primary);
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        border-bottom: 1px solid var(--border);
+        display: block !important;
+        transition: padding 0.3s ease;
+    }
+
+    header.scrolled {
+        padding: 12px 20px 0 20px;
+    }
+
+    h1 {
+        font-size: 1.8rem;
+        margin-bottom: 14px;
+        transition: all 0.3s ease;
+        color: var(--text-primary);
+    }
+
+    header.scrolled h1 {
+        font-size: 1.4rem;
+        margin-bottom: 10px;
+    }
 }
 
 .description {
     font-size: 1rem;
     font-weight: 400;
-    color: #224c2a;
+    color: var(--text-secondary);
     margin: 0 auto;
     max-width: 700px;
 }
@@ -78,12 +118,15 @@ body {
     z-index: 1;
 }
 
+/* ============================================================
+   Content Sections — thin border, no shadow
+   ============================================================ */
 .top-controls {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .location-row {
@@ -98,9 +141,9 @@ body {
     gap: 25px;
     margin-bottom: 20px;
     flex-wrap: wrap;
-    background: var(--light-bg);
+    background: var(--bg-cream);
     padding: 15px;
-    border-radius: 8px;
+    border-radius: 6px;
 }
 
 .unit-group {
@@ -111,51 +154,53 @@ body {
 
 .unit-group label {
     font-weight: 500;
-    color: var(--primary-color);
+    color: var(--text-secondary);
 }
 
 .unit-group select {
     padding: 8px 12px;
-    border: 2px solid var(--secondary-color);
-    border-radius: 20px;
-    background-color: var(--white);
-    color: var(--black);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background-color: var(--surface);
+    color: var(--text-primary);
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 0.95rem;
     outline: none;
     cursor: pointer;
-    transition: border-color 0.3s, box-shadow 0.3s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .unit-group select:hover {
-    border-color: var(--accent-color);
+    border-color: var(--sage);
 }
 
 .unit-group select:focus {
-    border-color: var(--accent-color);
-    box-shadow: 0 0 0 2px rgba(62, 125, 50, 0.2);
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
 }
 
 .weather-display {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .search-bar {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .search-section-title {
-    font-size: 1.2rem;
-    color: var(--primary-color);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    color: var(--text-primary);
     margin-bottom: 15px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
 .search-container {
@@ -166,81 +211,131 @@ body {
 .search-box {
     width: 100%;
     padding: 12px 20px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 1rem;
-    border: 2px solid var(--secondary-color);
-    border-radius: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     outline: none;
-    transition: border-color 0.3s ease;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: var(--surface);
 }
 
 .search-box:focus {
-    border-color: var(--primary-color);
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
 }
 
 .month-navigation {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 20px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
 }
 
 .month-nav-title {
-    font-size: 1.2rem;
-    color: var(--primary-color);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    color: var(--text-primary);
     margin-bottom: 15px;
-    font-weight: 500;
+    font-weight: 600;
 }
 
+/* ============================================================
+   Period Buttons — segmented control on desktop
+   ============================================================ */
 .calendar-nav {
     display: flex;
-    gap: 10px;
+    gap: 0;
     flex-wrap: wrap;
+    margin-bottom: 20px;
 }
 
-.month-btn, .location-action-btn {
-    padding: 12px 25px;
-    background-color: var(--secondary-color);
-    color: var(--white);
-    border: none;
-    border-radius: 30px;
-    font-size: 1.1rem;
-    font-weight: bold;
+.month-btn {
+    padding: 10px 22px;
+    background-color: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 0;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 2px 5px var(--shadow);
-    min-width: 120px;
+    transition: background-color 0.15s, color 0.15s;
+    min-width: 110px;
     text-align: center;
+    box-shadow: none;
+    margin-left: -1px;
 }
 
-.month-btn:hover, .location-action-btn:hover {
-    background-color: var(--accent-color);
-    transform: translateY(-2px);
+.month-btn:first-child {
+    border-radius: 6px 0 0 6px;
+    margin-left: 0;
+}
+
+.month-btn:last-child {
+    border-radius: 0 6px 6px 0;
+}
+
+/* When only one button */
+.month-btn:first-child:last-child {
+    border-radius: 6px;
+}
+
+.month-btn:hover {
+    background-color: var(--highlight);
+    transform: none;
 }
 
 .month-btn.active {
-    background-color: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px var(--shadow);
+    background-color: var(--terracotta);
+    color: var(--surface);
+    border-color: var(--terracotta);
+    transform: none;
+    box-shadow: none;
+    z-index: 1;
+    position: relative;
+}
+
+.location-action-btn {
+    padding: 10px 22px;
+    background-color: var(--terracotta);
+    color: var(--surface);
+    border: none;
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    min-width: 120px;
+    text-align: center;
+    box-shadow: none;
+}
+
+.location-action-btn:hover {
+    background-color: #b35830;
+    transform: none;
 }
 
 /* Custom period buttons */
 .add-period-btn {
     padding: 8px 16px;
     background: transparent;
-    border: 2px dashed var(--secondary-color);
-    border-radius: 30px;
-    color: var(--secondary-color);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
     margin-top: 8px;
 }
 
 .add-period-btn:hover {
-    background: var(--light-bg);
-    border-color: var(--primary-color);
-    color: var(--primary-color);
+    background: var(--highlight);
+    border-color: var(--sage);
+    color: var(--forest);
 }
 
 .period-btn-wrapper {
@@ -258,7 +353,7 @@ body {
     font-size: 1.1rem;
     opacity: 0.6;
     transition: opacity 0.2s;
-    color: var(--white);
+    color: inherit;
 }
 
 .period-actions-btn:hover {
@@ -269,9 +364,10 @@ body {
     position: absolute;
     top: 100%;
     right: 0;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: var(--surface);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     z-index: 10;
     min-width: 100px;
     display: none;
@@ -285,28 +381,29 @@ body {
     background: none;
     cursor: pointer;
     text-align: left;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 0.9rem;
 }
 
 .period-actions-menu button:hover {
-    background: var(--light-bg);
+    background: var(--highlight);
 }
 
 .scroll-indicator {
     text-align: center;
     padding: 15px;
-    color: var(--primary-color);
+    color: var(--forest);
     cursor: pointer;
-    transition: all 0.3s ease;
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
-    margin-bottom: 25px;
+    transition: background-color 0.15s;
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    margin-bottom: 20px;
 }
 
 .scroll-indicator:hover {
-    transform: translateY(2px);
-    box-shadow: 0 4px 12px var(--shadow);
+    background-color: var(--highlight);
+    transform: none;
 }
 
 .scroll-indicator-content {
@@ -319,34 +416,34 @@ body {
 .scroll-indicator-text {
     font-size: 1.1rem;
     font-weight: 500;
-    color: var(--primary-color);
+    color: var(--forest);
 }
 
 .scroll-arrow {
     font-size: 1.5rem;
     animation: bounce 2s infinite;
-    color: var(--secondary-color);
+    color: var(--terracotta);
 }
 
 .scroll-to-top {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    background: var(--secondary-color);
+    background: var(--terracotta);
     color: white;
     width: 40px;
     height: 40px;
-    border-radius: 50%;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 5px var(--shadow);
     opacity: 0;
     transition: opacity 0.3s, transform 0.3s;
-    transform: translateY(20px);
+    transform: translateY(8px);
     z-index: 100;
     border: none;
+    font-size: 1.2rem;
 }
 
 .scroll-to-top.visible {
@@ -355,7 +452,7 @@ body {
 }
 
 .scroll-to-top:hover {
-    background: var(--accent-color);
+    background: #b35830;
 }
 
 @keyframes bounce {
@@ -372,11 +469,11 @@ body {
 
 @media (max-width: 768px) {
     .container {
-        padding: 0;  /* Remove padding on mobile */
+        padding: 0;
     }
 
     header {
-        margin: 0;  /* Remove negative margins on mobile */
+        margin: 0;
         padding: 10px;
     }
 
@@ -385,7 +482,7 @@ body {
     }
 
     h1 {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         margin-bottom: 12px;
     }
 
@@ -398,7 +495,7 @@ body {
         padding: 8px;
         gap: 6px;
     }
-    
+
     .quick-jump-btn {
         padding: 6px 12px;
         font-size: 0.9rem;
@@ -411,28 +508,33 @@ body {
     }
 }
 
+/* ============================================================
+   Plant Grid & Category Cards
+   ============================================================ */
 .calendar-content {
     display: grid !important;
     grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)) !important;
-    gap: 25px !important;
+    gap: 20px !important;
     margin-top: 20px !important;
 }
 
 .category-card {
-    background-color: var(--white);
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-    transition: all 0.3s ease;
+    background-color: var(--surface);
+    border-radius: 8px;
+    padding: 24px;
+    border: 1px solid var(--border);
+    transition: border-color 0.15s;
     height: 100%;
     display: flex;
     flex-direction: column;
     max-width: 100%;
+    box-shadow: none;
 }
 
 .category-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.15);
+    border-color: var(--sage);
+    transform: none;
+    box-shadow: none;
 }
 
 .category-header {
@@ -442,21 +544,21 @@ body {
 }
 
 .category-icon {
-    width: 45px;
-    height: 45px;
-    margin-right: 15px;
-    background-color: var(--secondary-color);
-    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    margin-right: 12px;
+    background-color: transparent;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--white);
-    font-size: 1.3rem;
+    font-size: 1.5rem;
 }
 
 .category-title {
-    font-size: 1.3rem;
-    color: var(--primary-color);
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.15rem;
+    color: var(--text-primary);
     font-weight: 600;
 }
 
@@ -466,7 +568,7 @@ body {
 
 .plant-item {
     padding: 8px 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
 }
@@ -475,14 +577,14 @@ body {
     border-bottom: none;
 }
 
+/* Remove emoji prefix on plant items */
 .plant-item::before {
-    content: "🌱";
-    margin-right: 10px;
+    content: none;
 }
 
 .task-item {
     padding: 8px 0;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
 }
@@ -491,9 +593,9 @@ body {
     border-bottom: none;
 }
 
+/* Remove emoji prefix on task items */
 .task-item::before {
-    content: "✓";
-    margin-right: 10px;
+    content: none;
 }
 
 .item-label {
@@ -503,16 +605,18 @@ body {
     align-items: center;
     gap: 8px;
     cursor: pointer;
+    transition: background-color 0.1s;
+    border-radius: 4px;
 }
 
 .item-label:hover {
-    background: var(--light-bg);
+    background: var(--highlight);
 }
 
 .item-checkbox {
     width: 16px;
     height: 16px;
-    accent-color: var(--primary-color);
+    accent-color: var(--terracotta);
     margin: 0;
 }
 
@@ -531,7 +635,7 @@ body {
     text-align: center;
     padding: 20px;
     font-size: 1.2rem;
-    color: #757575;
+    color: var(--text-secondary);
     grid-column: 1 / -1;
 }
 
@@ -541,7 +645,7 @@ body {
     padding: 10px;
     background-color: #fff3e0;
     margin-bottom: 20px;
-    border-radius: 5px;
+    border-radius: 6px;
 }
 
 @media (max-width: 1024px) {
@@ -567,20 +671,24 @@ body {
     }
 }
 
+/* Subtler fade-in animation (8px instead of 20px) */
 @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
+    from { opacity: 0; transform: translateY(8px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
 .fade-in {
-    animation: fadeIn 0.5s ease forwards;
+    animation: fadeIn 0.4s ease forwards;
 }
 
+/* ============================================================
+   Footer
+   ============================================================ */
 footer {
     margin-top: 30px;
     padding: 20px 0;
     text-align: center;
-    border-top: 1px solid #eee;
+    border-top: 1px solid var(--border);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -603,16 +711,19 @@ footer .social-share-container {
 
 footer p {
     margin: 0;
-    color: #666;
-    font-size: 0.9rem;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
 }
 
+/* ============================================================
+   Weather Section
+   ============================================================ */
 .weather-section {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 2px 8px var(--shadow);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 20px;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
@@ -630,14 +741,13 @@ footer p {
 
 .weather-forecast-table {
     width: 100%;
-    font-size: 0.97em;
+    font-size: 0.95em;
     margin-top: 10px;
     border-collapse: separate;
-    border-spacing: 0 6px;
-    background: #f8faf5;
+    border-spacing: 0 4px;
+    background: var(--bg-cream);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(74,142,58,0.07);
 }
 
 .weather-forecast-table th, .weather-forecast-table td {
@@ -646,15 +756,15 @@ footer p {
 }
 
 .weather-forecast-table th {
-    background: #e8f5e9;
-    color: #3e7d32;
+    background: var(--highlight);
+    color: var(--forest);
     font-weight: 600;
-    border-bottom: 2px solid #c8e6c9;
+    border-bottom: 1px solid var(--border);
 }
 
 .weather-forecast-table td {
-    background: #fff;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
 }
 
 .weather-forecast-table tr:last-child td {
@@ -674,19 +784,26 @@ footer p {
 
 .location-input {
     padding: 10px 16px;
-    border: 2px solid var(--secondary-color);
-    border-radius: 30px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 1rem;
     outline: none;
     width: 100%;
     box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.location-input:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
 }
 
 .location-input-group {
     position: relative;
     display: flex;
     align-items: center;
-    flex: 1;  /* Take most of the space */
+    flex: 1;
     min-width: 200px;
 }
 
@@ -718,7 +835,7 @@ footer p {
     background: none;
     border: none;
     cursor: pointer;
-    color: #999;
+    color: var(--text-secondary);
     font-size: 1.2rem;
     display: flex;
     align-items: center;
@@ -731,114 +848,132 @@ footer p {
 
 .location-clear-btn:hover {
     background-color: rgba(0,0,0,0.05);
-    color: #666;
+    color: var(--text-primary);
 }
 
 .location-btn {
     padding: 10px 18px;
-    background-color: var(--secondary-color);
-    color: var(--white);
+    background-color: var(--terracotta);
+    color: var(--surface);
     border: none;
-    border-radius: 30px;
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 1rem;
-    font-weight: bold;
+    font-weight: 500;
     cursor: pointer;
-    transition: background 0.3s;
+    transition: background-color 0.15s;
 }
 
 .location-btn:hover {
-    background-color: var(--accent-color);
+    background-color: #b35830;
 }
 
 .weather-placeholder {
-    color: #333;
+    color: var(--text-primary);
     font-size: 1.1rem;
 }
 
-/* Modal for detailed weather */
+/* ============================================================
+   Modals — backdrop blur, 16px radius, serif titles
+   ============================================================ */
 .weather-modal-overlay {
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0,0,0,0.25);
+    background: rgba(45, 42, 38, 0.3);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
     z-index: 1000;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 .weather-modal {
-    background: var(--light-bg);
-    border-radius: 14px;
-    box-shadow: 0 4px 24px var(--shadow);
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     padding: 28px 32px 24px 32px;
     min-width: 340px;
     max-width: 95vw;
     max-height: 90vh;
     overflow-y: auto;
     position: relative;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
 }
+
 .weather-modal-close {
     position: absolute;
-    top: 10px;
+    top: 12px;
     right: 16px;
     font-size: 1.4em;
-    color: #7cb342;
+    color: var(--text-secondary);
     background: none;
     border: none;
     cursor: pointer;
-    transition: color 0.2s;
+    transition: color 0.15s;
 }
+
 .weather-modal-close:hover {
-    color: #388e3c;
+    color: var(--terracotta);
 }
+
 .weather-modal-title {
-    font-size: 1.18em;
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.2em;
     margin-bottom: 18px;
-    color: var(--primary-color);
+    color: var(--text-primary);
     font-weight: 600;
-    letter-spacing: 0.01em;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
 }
+
 .weather-modal-chart {
     margin-bottom: 18px;
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 1px 4px var(--shadow);
+    background: var(--bg-cream);
+    border-radius: 8px;
     padding: 12px 8px 8px 8px;
     display: flex;
     align-items: center;
     justify-content: center;
 }
+
 .weather-modal-hourly-table {
     width: 100%;
     border-collapse: separate;
     border-spacing: 0 4px;
-    font-size: 0.98em;
-    background: #f8faf5;
+    font-size: 0.95em;
+    background: var(--bg-cream);
     border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 1px 4px rgba(74,142,58,0.07);
     margin-top: 8px;
 }
+
 .weather-modal-hourly-table th, .weather-modal-hourly-table td {
     padding: 6px 12px;
     text-align: center;
 }
+
 .weather-modal-hourly-table th {
-    background: #e8f5e9;
-    color: #3e7d32;
+    background: var(--highlight);
+    color: var(--forest);
     font-weight: 600;
 }
+
 .weather-modal-hourly-table td {
-    background: #fff;
-    border-bottom: 1px solid #e0e0e0;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
 }
+
 .weather-modal-hourly-table tr:last-child td {
     border-bottom: none;
 }
+
 .weather-forecast-table tr:nth-child(even) td,
 .weather-modal-hourly-table tr:nth-child(even) td {
-    background: #f1f8e9;
+    background: var(--bg-cream);
 }
+
 /* Visually hidden class for accessibility */
 .visually-hidden {
     position: absolute !important;
@@ -852,7 +987,9 @@ footer p {
     border: 0 !important;
 }
 
-/* AI Assistants Grid Styles */
+/* ============================================================
+   AI Assistants Grid
+   ============================================================ */
 .ai-assistants-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -867,22 +1004,23 @@ footer p {
     justify-content: center;
     gap: 10px;
     padding: 15px 10px;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 12px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.15s, background-color 0.15s;
     text-align: center;
 }
 
 .ai-assistant-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
-    border-color: var(--secondary-color);
+    border-color: var(--sage);
+    background-color: var(--highlight);
+    transform: none;
+    box-shadow: none;
 }
 
 .ai-assistant-btn:active {
-    transform: translateY(0);
+    transform: none;
 }
 
 .ai-logo {
@@ -893,7 +1031,7 @@ footer p {
 
 .ai-assistant-btn span {
     font-weight: 500;
-    color: #333;
+    color: var(--text-primary);
 }
 
 @media (max-width: 600px) {
@@ -902,86 +1040,83 @@ footer p {
     }
 }
 
+/* Focus states — terracotta outline */
 .month-btn:focus, .location-btn:focus, .weather-modal-close:focus {
-    outline: 3px solid #1976d2 !important;
+    outline: 2px solid var(--terracotta) !important;
     outline-offset: 2px;
 }
-.item-label {
-    width: 100%;
-    padding: 4px 0;
-}
-.item-label:hover {
-    background: var(--light-bg);
-}
-.item-checkbox {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--primary-color);
-}
-.item-text {
-    flex: 1;
-}
+
+/* Duplicate item-label/checkbox/text selectors removed — already defined above */
+
+/* ============================================================
+   Desktop Quick Jump Navigation — text-tab style
+   ============================================================ */
 .quick-jump-menu {
     display: flex;
     flex-wrap: wrap;
-    gap: 10px;
+    gap: 0;
     justify-content: center;
-    padding: 15px;
+    padding: 0;
     max-width: 800px;
     margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    background: transparent;
+    border-radius: 0;
 }
 
 .quick-jump-title {
     width: 100%;
     text-align: center;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 5px;
-    font-weight: 500;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    font-weight: 400;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
 }
 
 .quick-jump-btn {
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    color: white;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    border-radius: 0;
+    color: var(--text-secondary);
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: color 0.15s, border-color 0.15s;
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 1;
-    min-width: 0;
+    flex: 0 0 auto;
     justify-content: center;
 }
 
 .nav-icon {
-    font-size: 1.2em;
+    font-size: 1.1em;
     display: inline-block;
 }
 
 .quick-jump-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
-    transform: translateY(-1px);
+    color: var(--terracotta);
+    border-bottom-color: var(--terracotta);
+    background: transparent;
+    transform: none;
 }
 
 .quick-jump-btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+    outline: 2px solid var(--terracotta);
+    outline-offset: 2px;
+    box-shadow: none;
 }
 
 .quick-jump-btn.active {
-    background: white;
-    color: var(--primary-color);
-    border-color: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-2px);
+    background: transparent;
+    color: var(--terracotta);
+    border-bottom-color: var(--terracotta);
+    box-shadow: none;
+    transform: none;
     font-weight: 600;
 }
 
@@ -995,7 +1130,7 @@ footer p {
     }
 
     h1 {
-        font-size: 1.6rem;
+        font-size: 1.5rem;
         margin-bottom: 12px;
     }
 
@@ -1003,11 +1138,12 @@ footer p {
         padding: 8px;
         gap: 6px;
     }
-    
+
     .quick-jump-btn {
         padding: 6px 8px;
         font-size: 0.85rem;
         flex: 0 0 calc(50% - 3px);
+        border-bottom: 2px solid transparent;
     }
 
     .nav-icon {
@@ -1029,53 +1165,56 @@ footer p {
         grid-template-columns: 1fr;
         gap: 12px;
     }
-    
+
     .location-row {
         flex-direction: column;
         gap: 10px;
         align-items: stretch;
     }
-    
+
     .search-location-btn,
     .geo-location-btn {
         width: 100%;
         min-width: 0;
     }
-    
+
     .units-row {
         padding: 12px;
         gap: 15px;
         justify-content: space-between;
     }
-    
+
     .unit-group {
         flex-basis: calc(50% - 10px);
         flex-direction: column;
         align-items: flex-start;
         gap: 8px;
     }
-    
+
     .unit-group select {
         width: 100%;
     }
-    
+
     .search-bar {
         flex-direction: column;
     }
-    
+
     .search-container {
         width: 100%;
     }
-    
+
     .ai-advice-btn {
         width: 100%;
     }
-    
+
     .mobile-warning {
         display: block;
     }
 }
 
+/* ============================================================
+   Select All Container
+   ============================================================ */
 .category-header {
     display: flex;
     align-items: center;
@@ -1087,7 +1226,7 @@ footer p {
     align-items: center;
     margin-bottom: 12px;
     padding: 6px 10px;
-    background-color: var(--light-bg);
+    background-color: var(--highlight);
     border-radius: 6px;
 }
 
@@ -1097,27 +1236,29 @@ footer p {
     gap: 8px;
     cursor: pointer;
     font-weight: 500;
-    color: var(--primary-color);
+    color: var(--forest);
 }
 
 .select-all-checkbox {
     width: 16px;
     height: 16px;
-    accent-color: var(--primary-color);
+    accent-color: var(--terracotta);
 }
 
-/* Garden Journal Improved Styles */
+/* ============================================================
+   Garden Journal
+   ============================================================ */
 .garden-journal {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
     padding: 25px;
-    margin-bottom: 25px;
+    margin-bottom: 20px;
     min-height: 80vh;
     position: relative;
+    box-shadow: none;
 }
 
-/* Journal header with proper spacing and alignment */
 .journal-header {
     display: flex;
     justify-content: space-between;
@@ -1126,80 +1267,85 @@ footer p {
 }
 
 .journal-title {
-    color: var(--primary-color);
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--text-primary);
     font-size: 1.5rem;
     font-weight: 600;
 }
 
-/* Improved button styles for desktop */
 .journal-btn {
     padding: 10px 16px;
-    background: var(--primary-color);
+    background: var(--forest);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.15s;
+    box-shadow: none;
 }
 
 .journal-btn:hover {
-    background: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    background: #245024;
+    transform: none;
+    box-shadow: none;
 }
 
 .journal-add-btn {
     padding: 10px 16px;
-    background: var(--secondary-color);
+    background: var(--terracotta);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    transition: background-color 0.15s;
+    box-shadow: none;
 }
 
 .journal-add-btn:hover {
-    background: var(--accent-color);
-    transform: translateY(-2px);
-    box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    background: #b35830;
+    transform: none;
+    box-shadow: none;
 }
 
-/* Journal tabs with improved styling */
+/* Journal tabs — outlined chips, active fills terracotta */
 .journal-tabs {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 20px;
 }
 
 .journal-tab {
     padding: 8px 16px;
-    background: var(--white);
-    border: 2px solid var(--secondary-color);
-    border-radius: 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.15s;
+    color: var(--text-secondary);
 }
 
 .journal-tab:hover {
-    background: #f8faf5;
-    transform: translateY(-1px);
+    background: var(--highlight);
+    transform: none;
 }
 
 .journal-tab.active {
-    background: var(--secondary-color);
+    background: var(--terracotta);
     color: white;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    border-color: var(--terracotta);
+    box-shadow: none;
 }
 
 /* Desktop specific journal improvements */
@@ -1207,30 +1353,30 @@ footer p {
     .garden-journal {
         padding: 30px;
     }
-    
+
     .journal-header {
         margin-bottom: 30px;
     }
-    
+
     .journal-title {
-        font-size: 1.7rem;
+        font-size: 1.6rem;
     }
-    
+
     .journal-actions {
         display: flex;
         gap: 12px;
     }
-    
+
     .journal-btn, .journal-add-btn {
         padding: 12px 20px;
-        font-size: 1.05rem;
+        font-size: 1rem;
         min-width: 120px;
     }
-    
+
     .journal-tabs {
         margin-bottom: 25px;
     }
-    
+
     .journal-tab {
         padding: 10px 20px;
         min-width: 120px;
@@ -1246,26 +1392,26 @@ footer p {
         gap: 10px !important;
         margin-bottom: 10px !important;
     }
-    
+
     .journal-title {
         font-size: 1.1rem !important;
         margin-bottom: 6px !important;
         text-align: center !important;
     }
-    
+
     .journal-btn, .journal-add-btn {
         width: 100% !important;
         margin-bottom: 6px !important;
         justify-content: center !important;
         display: flex !important;
     }
-    
+
     .journal-tabs {
         flex-direction: column !important;
         gap: 6px !important;
         margin-bottom: 10px !important;
     }
-    
+
     .journal-tab {
         width: 100% !important;
         text-align: center !important;
@@ -1275,479 +1421,491 @@ footer p {
 /* Remove quick navigation hamburger and menu styles (no longer used) */
 .quick-nav-toggle-btn,
 .quick-nav-menu-container {
-  display: none !important;
-  height: 0 !important;
-  width: 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: none !important;
-  background: none !important;
+    display: none !important;
+    height: 0 !important;
+    width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: none !important;
 }
 
-/* Desktop-only Quick Navigation Menu - restored for desktop */
+/* Desktop-only Quick Navigation Menu */
 @media (min-width: 601px) {
-  .quick-jump-menu {
-    display: flex !important;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    padding: 15px;
-    max-width: 800px;
-    margin: 0 auto;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    height: auto !important;
-    width: auto !important;
-  }
+    .quick-jump-menu {
+        display: flex !important;
+        flex-wrap: wrap;
+        gap: 0;
+        justify-content: center;
+        padding: 0;
+        max-width: 800px;
+        margin: 0 auto;
+        background: transparent;
+        border-radius: 0;
+        height: auto !important;
+        width: auto !important;
+    }
 
-  .quick-jump-title {
-    width: 100%;
-    text-align: center;
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.9);
-    margin-bottom: 5px !important;
-    font-weight: 500;
-    display: block !important;
-  }
+    .quick-jump-title {
+        width: 100%;
+        text-align: center;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-bottom: 8px !important;
+        font-weight: 400;
+        display: block !important;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
 
-  .quick-jump-btn {
-    padding: 8px 12px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    border-radius: 20px;
-    color: white;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 500;
-    display: flex !important;
-    align-items: center;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-    justify-content: center;
-  }
+    .quick-jump-btn {
+        padding: 8px 16px;
+        background: transparent;
+        border: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: color 0.15s, border-color 0.15s;
+        font-weight: 500;
+        display: flex !important;
+        align-items: center;
+        gap: 6px;
+        flex: 0 0 auto;
+        justify-content: center;
+    }
 }
 
 /* Hide desktop navigation on mobile */
 @media (max-width: 600px) {
-  .quick-jump-menu,
-  .quick-jump-btn,
-  .quick-jump-title {
-    display: none !important;
-  }
-  
-  header {
-    display: none !important;
-  }
-  
-  /* Make content start at the top of the viewport on mobile */
-  .main-layout {
-    padding-top: 0 !important;
-    margin-top: 0 !important;
-  }
-  
-  .container {
-    padding-top: 5px !important;
-  }
+    .quick-jump-menu,
+    .quick-jump-btn,
+    .quick-jump-title {
+        display: none !important;
+    }
+
+    header {
+        display: none !important;
+    }
+
+    .main-layout {
+        padding-top: 0 !important;
+        margin-top: 0 !important;
+    }
+
+    .container {
+        padding-top: 5px !important;
+    }
 }
 
-/* Journal FAB styles */
+/* ============================================================
+   Journal FAB styles
+   ============================================================ */
 .journal-fab-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  align-items: flex-start;
-  position: fixed;
-  left: 16px;
-  bottom: 144px !important; /* 60px nav + 56px FAB + 16px gap + 12px extra */
-  z-index: 1203;
-  pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+    position: fixed;
+    left: 16px;
+    bottom: 144px !important;
+    z-index: 1203;
+    pointer-events: auto;
 }
 
 .journal-fab-action-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: var(--secondary-color);
-  color: #fff;
-  border: none;
-  border-radius: 24px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
-  padding: 10px 18px;
-  font-size: 1.05rem;
-  font-weight: 500;
-  cursor: pointer;
-  min-width: 120px;
-  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
-  opacity: 0.97;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--terracotta);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    padding: 10px 18px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    min-width: 120px;
+    transition: background-color 0.15s;
+    opacity: 0.97;
 }
 
 .journal-fab-action-btn:active,
 .journal-fab-action-btn:focus {
-  background: var(--accent-color);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.22);
-  opacity: 1;
-  outline: none;
+    background: #b35830;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+    opacity: 1;
+    outline: none;
 }
 
-/* Bottom Navigation Bar (mobile only) */
+/* ============================================================
+   Bottom Navigation Bar (mobile only)
+   ============================================================ */
 @media (max-width: 600px) {
-  .journal-fab-actions {
-    left: 16px !important;
-    bottom: 144px !important;
-    right: auto !important;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-start;
-    pointer-events: auto;
-  }
-  
-  .journal-fab-action-btn {
-    min-width: 140px;
-    font-size: 1.08rem;
-    padding: 12px 20px;
-  }
-  
-  .bottom-nav {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 60px;
-    background: var(--white);
-    box-shadow: 0 -2px 8px var(--shadow);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 1205;
-    border-top: 1px solid #e0e0e0;
-  }
-  
-  .bottom-nav-btn {
-    flex: 1 1 0;
-    background: none;
-    border: none;
-    outline: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    font-size: 1rem;
-    color: var(--primary-color);
-    padding: 6px 0 0 0;
-    cursor: pointer;
-    min-width: 44px;
-    min-height: 44px;
-    transition: background 0.15s, color 0.15s;
-    border-radius: 0;
-  }
-  
-  .bottom-nav-btn:active,
-  .bottom-nav-btn.active {
-    color: var(--secondary-color);
-    background: #f1f8e9;
-  }
-  
-  .bottom-nav-label {
-    font-size: 0.8em;
-    margin-top: 2px;
-    display: block;
-  }
-  
-  /* Move FAB and FAB actions above bottom nav */
-  .journal-fab-btn {
-    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
-    left: 20px !important;
-    right: auto !important;
-  }
-  
-  .scroll-to-top {
-    bottom: 80px !important;
-    right: 20px !important;
-  }
+    .journal-fab-actions {
+        left: 16px !important;
+        bottom: 144px !important;
+        right: auto !important;
+        flex-direction: column;
+        gap: 12px;
+        align-items: flex-start;
+        pointer-events: auto;
+    }
+
+    .journal-fab-action-btn {
+        min-width: 140px;
+        font-size: 1.05rem;
+        padding: 12px 20px;
+    }
+
+    .bottom-nav {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 60px;
+        background: var(--surface);
+        border-top: 1px solid var(--border);
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        z-index: 1205;
+        box-shadow: none;
+    }
+
+    .bottom-nav-btn {
+        flex: 1 1 0;
+        background: none;
+        border: none;
+        outline: none;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        color: var(--text-secondary);
+        padding: 6px 0 0 0;
+        cursor: pointer;
+        min-width: 44px;
+        min-height: 44px;
+        transition: color 0.15s;
+        border-radius: 0;
+        border-top: 2px solid transparent;
+    }
+
+    .bottom-nav-btn:active,
+    .bottom-nav-btn.active {
+        color: var(--terracotta);
+        border-top-color: var(--terracotta);
+        background: transparent;
+    }
+
+    .bottom-nav-label {
+        font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+        font-size: 0.75em;
+        margin-top: 2px;
+        display: block;
+    }
+
+    .journal-fab-btn {
+        position: fixed !important;
+        left: 16px !important;
+        right: auto !important;
+        bottom: 80px !important;
+        z-index: 1202 !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: 14px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        background: var(--terracotta);
+        color: #fff;
+        font-size: 2rem;
+        opacity: 0.95;
+        transition: opacity 0.2s;
+        border: none;
+    }
+
+    .scroll-to-top {
+        bottom: 80px !important;
+        right: 20px !important;
+    }
+
+    /* Period buttons: individual chips on mobile */
+    .calendar-nav {
+        gap: 8px;
+    }
+
+    .month-btn {
+        border-radius: 6px;
+        margin-left: 0;
+        min-width: 80px;
+        padding: 8px 16px;
+        font-size: 0.95rem;
+    }
+
+    .month-btn:first-child {
+        border-radius: 6px;
+    }
+
+    .month-btn:last-child {
+        border-radius: 6px;
+    }
 }
 
 @media (min-width: 601px) {
-  .bottom-nav {
-    display: none !important;
-  }
-} 
+    .bottom-nav {
+        display: none !important;
+    }
+}
 
 /* Adjust main layout padding when header is visible */
 @media (min-width: 601px) {
-  .main-layout {
-    padding-top: 20px;
-  }
-  
-  .container {
-    padding-top: 20px;
-  }
-} 
+    .main-layout {
+        padding-top: 20px;
+    }
 
-/* Search and AI Section Styles */
-.search-section-title {
-  font-size: 1.2rem;
-  color: var(--primary-color);
-  margin-bottom: 15px;
-  font-weight: 500;
+    .container {
+        padding-top: 20px;
+    }
 }
 
+/* ============================================================
+   Search & AI Section
+   ============================================================ */
 .ai-advice-btn {
-  padding: 12px 16px;
-  background: var(--secondary-color);
-  color: white;
-  border: none;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s, transform 0.2s;
-  margin-bottom: 15px;
+    padding: 12px 16px;
+    background: var(--terracotta);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+    margin-bottom: 15px;
 }
 
 .ai-advice-btn:hover {
-  background-color: var(--accent-color);
-  transform: translateY(-2px);
+    background-color: #b35830;
+    transform: none;
 }
 
 .ai-advice-btn:active {
-  transform: translateY(0);
+    transform: none;
 }
 
 .search-container {
-  width: 100%;
-  margin-bottom: 15px;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
 /* Desktop layout - horizontal arrangement */
 @media (min-width: 768px) {
-  .search-bar {
-    position: relative;
-  }
-  
-  .search-section-title {
-    width: 60%;
-    float: left;
-    margin-bottom: 20px;
-  }
-  
-  .ai-advice-btn {
-    position: absolute;
-    right: 20px;
-    top: 20px;
-    margin-bottom: 0;
-    min-width: 220px;
-    justify-content: center;
-    font-size: 1.05rem;
-    padding: 14px 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  }
-  
-  .search-container {
-    clear: both;
-  }
+    .search-bar {
+        position: relative;
+    }
 
-  .ai-hint-text {
-    margin-left: 5px;
-    width: 60%;
-  }
+    .search-section-title {
+        width: 60%;
+        float: left;
+        margin-bottom: 20px;
+    }
+
+    .ai-advice-btn {
+        position: absolute;
+        right: 20px;
+        top: 20px;
+        margin-bottom: 0;
+        min-width: 220px;
+        justify-content: center;
+        font-size: 1rem;
+        padding: 14px 20px;
+    }
+
+    .search-container {
+        clear: both;
+    }
+
+    .ai-hint-text {
+        margin-left: 5px;
+        width: 60%;
+    }
 }
 
-/* Mobile layout - fully stacked, full width */
+/* Mobile layout */
 @media (max-width: 600px) {
-  .ai-advice-btn {
-    width: 100%;
-    justify-content: center;
-    padding: 14px 16px;
-    margin-bottom: 12px;
-  }
-  
-  .search-section-title {
-    text-align: center;
-    margin-bottom: 12px;
-  }
-  
-  .search-box {
-    padding: 14px 20px !important;
-  }
-} 
+    .ai-advice-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 14px 16px;
+        margin-bottom: 12px;
+    }
+
+    .search-section-title {
+        text-align: center;
+        margin-bottom: 12px;
+    }
+
+    .search-box {
+        padding: 14px 20px !important;
+    }
+}
 
 /* AI hint text */
 .ai-hint-text {
-  color: #666;
-  font-size: 0.9rem;
-  margin: -8px 0 12px 0;
-  padding-left: 4px;
-  font-style: italic;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin: -8px 0 12px 0;
+    padding-left: 4px;
+    font-style: italic;
 }
 
 @media (max-width: 600px) {
-  .ai-hint-text {
-    text-align: center;
-    margin-bottom: 16px;
-    padding: 0 10px;
-  }
-} 
+    .ai-hint-text {
+        text-align: center;
+        margin-bottom: 16px;
+        padding: 0 10px;
+    }
+}
 
-/* Planting Schedule Styles */
+/* ============================================================
+   Planting Schedule Styles
+   ============================================================ */
 .month-nav-header {
-  display: flex; 
-  justify-content: space-between; 
-  align-items: center; 
-  margin-bottom: 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
 }
 
 .data-management-buttons {
-  display: flex; 
-  gap: 10px;
+    display: flex;
+    gap: 10px;
 }
 
 .data-manage-btn {
-  padding: 8px 12px; 
-  background: var(--accent-color); 
-  color: white; 
-  border: none; 
-  border-radius: 20px; 
-  display: flex; 
-  align-items: center; 
-  gap: 5px; 
-  font-weight: 500; 
-  cursor: pointer;
-  transition: background-color 0.2s, transform 0.1s;
+    padding: 8px 12px;
+    background: var(--forest);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
 }
 
 .data-manage-btn:hover {
-  background-color: var(--primary-color);
-  transform: translateY(-2px);
+    background-color: #245024;
+    transform: none;
 }
 
 /* Month buttons improved styling */
 .calendar-nav {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-
-.month-btn, .location-action-btn {
-  padding: 14px 28px;
-  background-color: var(--secondary-color);
-  color: var(--white);
-  border: none;
-  border-radius: 30px;
-  font-size: 1.1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 5px var(--shadow);
-  min-width: 150px;
-  text-align: center;
-}
-
-.month-btn:hover, .location-action-btn:hover {
-  background-color: var(--accent-color);
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-}
-
-.month-btn.active {
-  background-color: var(--accent-color);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px var(--shadow);
+    display: flex;
+    gap: 0;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
 }
 
 /* Desktop improvements for planting schedule */
 @media (min-width: 768px) {
-  .month-navigation {
-    padding: 25px;
-  }
-  
-  .month-nav-title {
-    font-size: 1.3rem;
-    margin-bottom: 18px;
-  }
-  
-  .calendar-explainer {
-    font-size: 1rem;
-    margin-bottom: 18px;
-    max-width: 80%;
-  }
-  
-  .month-btn {
-    flex: 1;
-    max-width: 220px;
-  }
+    .month-navigation {
+        padding: 25px;
+    }
+
+    .month-nav-title {
+        font-size: 1.4rem;
+        margin-bottom: 18px;
+    }
+
+    .calendar-explainer {
+        font-size: 1rem;
+        margin-bottom: 18px;
+        max-width: 80%;
+        color: var(--text-secondary);
+    }
+
+    .month-btn {
+        flex: 1;
+        max-width: 220px;
+    }
 }
 
 /* Mobile-specific adjustments */
 @media (max-width: 600px) {
-  .month-nav-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-  
-  .data-management-buttons {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-  
-  .data-manage-btn {
-    flex: 1 1 40%;
-    justify-content: center;
-    padding: 10px 8px;
-    font-size: 0.9rem;
-  }
-  
-  .calendar-explainer {
-    margin-bottom: 12px;
-    font-size: 0.95rem;
-  }
-  
-  .month-btn {
-    padding: 10px 16px;
-    font-size: 1rem;
-    min-width: 100px;
-  }
-} 
+    .month-nav-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .data-management-buttons {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+
+    .data-manage-btn {
+        flex: 1 1 40%;
+        justify-content: center;
+        padding: 10px 8px;
+        font-size: 0.9rem;
+    }
+
+    .calendar-explainer {
+        margin-bottom: 12px;
+        font-size: 0.95rem;
+        color: var(--text-secondary);
+    }
+}
 
 /* Desktop grid improvements */
 @media (min-width: 1024px) {
-  .calendar-content {
-    grid-template-columns: repeat(3, 1fr) !important;
-  }
+    .calendar-content {
+        grid-template-columns: repeat(3, 1fr) !important;
+    }
 }
 
 @media (min-width: 768px) and (max-width: 1023px) {
-  .calendar-content {
-    grid-template-columns: repeat(2, 1fr) !important;
-  }
+    .calendar-content {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
 }
 
 @media (max-width: 767px) {
-  .calendar-content {
-    grid-template-columns: 1fr !important;
-    gap: 15px !important;
-  }
-  
-  .category-card {
-    padding: 15px;
-  }
-} 
+    .calendar-content {
+        grid-template-columns: 1fr !important;
+        gap: 15px !important;
+    }
 
-/* Restore essential functionality styling */
+    .category-card {
+        padding: 16px;
+    }
+}
 
-/* Custom Modal Styles */
+/* ============================================================
+   Custom Modal Styles (confirm dialogs)
+   ============================================================ */
 .custom-confirm-modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0,0,0,0.5);
+    background: rgba(45, 42, 38, 0.3);
+    backdrop-filter: blur(3px);
     z-index: 1000;
     display: flex;
     align-items: center;
@@ -1755,18 +1913,20 @@ footer p {
 }
 
 .custom-confirm-modal {
-    background: var(--white);
-    border-radius: 10px;
-    box-shadow: 0 4px 24px var(--shadow);
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
     padding: 25px;
     max-width: 450px;
     width: 100%;
 }
 
 .confirm-modal-title {
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-primary);
     margin-bottom: 15px;
 }
 
@@ -1782,21 +1942,24 @@ footer p {
 }
 
 .confirm-modal-cancel-btn {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--bg-cream);
+    color: var(--text-primary);
     padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
 }
 
 .confirm-modal-ok-btn {
-    background: var(--primary-color);
+    background: var(--terracotta);
     color: white;
     padding: 8px 16px;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
 }
 
 /* Export and Import Modal Styles */
@@ -1804,21 +1967,22 @@ footer p {
     display: flex;
     align-items: center;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 8px;
     margin-bottom: 12px;
     cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
 }
 
 .export-option:hover, .import-option:hover {
-    background: var(--light-bg);
-    border-color: var(--secondary-color);
+    background: var(--highlight);
+    border-color: var(--sage);
 }
 
 .export-option-selected, .import-option-selected {
-    background: var(--light-bg);
-    border-color: var(--secondary-color);
-    box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.3);
+    background: var(--highlight);
+    border-color: var(--sage);
+    box-shadow: 0 0 0 2px rgba(143, 167, 139, 0.2);
 }
 
 /* Delete Modal Styles */
@@ -1852,53 +2016,33 @@ footer p {
     overflow-y: auto;
 }
 
-/* --- MOBILE JOURNAL USABILITY IMPROVEMENTS (mobile-usability branch) --- */
-
+/* ============================================================
+   Mobile Journal Usability
+   ============================================================ */
 @media (max-width: 600px) {
-  /* Hide original Export/Import/New Entry buttons and tab row */
-  .journal-header .journal-btn,
-  .journal-header .journal-add-btn,
-  .journal-tabs {
-    display: none !important;
-  }
-  /* Show FAB for New Entry */
-  .journal-fab-btn {
-    position: fixed !important;
-    left: 16px !important;
-    right: auto !important;
-    bottom: 80px !important; /* 60px nav + 16px gap + 4px extra */
-    z-index: 1202 !important;
-    display: flex !important;
-    align-items: center;
-    justify-content: center;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.18);
-    background: var(--secondary-color);
-    color: #fff;
-    font-size: 2rem;
-    opacity: 0.92;
-    transition: opacity 0.2s, box-shadow 0.2s;
-    border: none;
-  }
-  
-  /* Show More (⋮) button in journal header */
-  .journal-more-menu-container {
-    display: flex !important;
-    align-items: center;
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    z-index: 1100;
-  }
-  
-  /* Show journal view dropdown, hide tab row */
-  .journal-view-dropdown-container {
-    display: block !important;
-    width: 100%;
-    margin-bottom: 10px;
-  }
+    /* Hide original Export/Import/New Entry buttons and tab row */
+    .journal-header .journal-btn,
+    .journal-header .journal-add-btn,
+    .journal-tabs {
+        display: none !important;
+    }
+
+    /* Show More (⋮) button in journal header */
+    .journal-more-menu-container {
+        display: flex !important;
+        align-items: center;
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 1100;
+    }
+
+    /* Show journal view dropdown, hide tab row */
+    .journal-view-dropdown-container {
+        display: block !important;
+        width: 100%;
+        margin-bottom: 10px;
+    }
 }
 
 /* Journal Entry Modal Photo Preview Styles */
@@ -1910,7 +2054,7 @@ footer p {
     overflow: hidden;
     margin: 5px;
     display: inline-block;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .photo-preview img {
@@ -1923,7 +2067,6 @@ footer p {
 
 /* Weather forecast styles for mobile */
 @media (max-width: 600px) {
-    /* Weather forecast table: card/list view for each day */
     .weather-forecast-table {
         display: block;
         width: 100%;
@@ -1939,10 +2082,10 @@ footer p {
     }
     .weather-forecast-table tr {
         display: block;
-        background: #f8faf5;
+        background: var(--bg-cream);
         margin-bottom: 12px;
-        border-radius: 10px;
-        box-shadow: 0 1px 4px rgba(74,142,58,0.07);
+        border-radius: 8px;
+        border: 1px solid var(--border);
         padding: 10px 8px;
         width: 100%;
     }
@@ -1959,24 +2102,26 @@ footer p {
     .weather-forecast-table td::before {
         content: attr(data-label);
         font-weight: 500;
-        color: #4a8e3a;
+        color: var(--forest);
         flex: 1 0 50%;
         text-align: left;
-        font-size: 0.98rem;
+        font-size: 0.95rem;
     }
-} 
+}
 
-/* --- Journal Active Mode --- */
+/* ============================================================
+   Journal Active Mode
+   ============================================================ */
 body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):not(.bottom-nav) {
     display: none !important;
 }
-/* Only hide header in journal mode on mobile */
+
 @media (max-width: 600px) {
     body.journal-active header {
         display: none !important;
     }
 }
-/* Keep header visible in journal mode on desktop */
+
 @media (min-width: 601px) {
     body.journal-active header {
         display: block !important;
@@ -1984,10 +2129,8 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 }
 
 /* ============================================================
-   Refactored inline styles - moved from HTML style attributes
+   Icon sizing classes
    ============================================================ */
-
-/* --- Icon sizing classes --- */
 .icon-size-sm {
     font-size: 1.1em;
 }
@@ -2013,12 +2156,14 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     margin-bottom: 20px;
 }
 
-/* --- Hidden by default (JS-toggled sections) --- */
+/* Hidden by default (JS-toggled sections) */
 .hidden-default {
     display: none;
 }
 
-/* --- Journal section styles --- */
+/* ============================================================
+   Journal section styles (refactored from inline)
+   ============================================================ */
 .journal-header-bar {
     display: flex;
     justify-content: space-between;
@@ -2027,7 +2172,8 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 }
 
 .journal-title-text {
-    color: var(--primary-color);
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--text-primary);
     font-size: 1.4rem;
 }
 
@@ -2038,61 +2184,65 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 
 .journal-btn-inline {
     padding: 8px 12px;
-    background: var(--primary-color);
+    background: var(--forest);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 5px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.15s;
 }
 
 .journal-add-btn-inline {
     padding: 8px 12px;
-    background: var(--secondary-color);
+    background: var(--terracotta);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     gap: 5px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.15s;
 }
 
 .journal-content-box {
-    background: var(--white);
-    border-radius: 10px;
+    background: var(--surface);
+    border-radius: 8px;
     padding: 20px;
-    box-shadow: 0 2px 8px var(--shadow);
+    border: 1px solid var(--border);
 }
 
-/* --- Journal empty state --- */
+/* Journal empty state */
 .journal-empty-state {
     text-align: center;
     padding: 40px 20px;
 }
 
 .journal-empty-title {
+    font-family: 'Playfair Display', Georgia, serif;
     margin-bottom: 15px;
-    color: var(--primary-color);
+    color: var(--text-primary);
 }
 
 .journal-empty-text {
     margin-bottom: 20px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .journal-empty-add-btn {
     padding: 10px 20px;
-    background: var(--secondary-color);
+    background: var(--terracotta);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     font-weight: 500;
     cursor: pointer;
     display: inline-flex;
@@ -2100,14 +2250,15 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     gap: 8px;
 }
 
-/* --- Journal mobile more menu --- */
+/* Journal mobile more menu */
 .journal-more-menu-popup {
     position: absolute;
     right: 0;
     top: 40px;
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    background: var(--surface);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     z-index: 10;
     min-width: 120px;
 }
@@ -2116,12 +2267,14 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     position: relative;
 }
 
-/* --- Journal view dropdown --- */
+/* Journal view dropdown */
 .journal-view-dropdown-wrapper {
     margin-bottom: 10px;
 }
 
-/* --- Modal shared styles --- */
+/* ============================================================
+   Modal shared styles
+   ============================================================ */
 .modal-overlay-high-z {
     z-index: 1000;
 }
@@ -2142,22 +2295,29 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 }
 
 .modal-title {
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.2rem;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-primary);
     margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
 }
 
 .modal-title-danger {
+    font-family: 'Playfair Display', Georgia, serif;
     font-size: 1.2rem;
     font-weight: 600;
     color: #d32f2f;
     margin-bottom: 15px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
 }
 
 .modal-message {
     margin-bottom: 25px;
     line-height: 1.5;
+    color: var(--text-primary);
 }
 
 .modal-actions {
@@ -2179,21 +2339,24 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 }
 
 .modal-btn-cancel {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--bg-cream);
+    color: var(--text-primary);
     padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
 }
 
 .modal-btn-confirm {
-    background: var(--primary-color);
+    background: var(--terracotta);
     color: white;
     padding: 8px 16px;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
 }
 
 .modal-btn-danger {
@@ -2201,41 +2364,47 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     color: white;
     padding: 8px 16px;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
 }
 
 .modal-btn-accent {
-    background: var(--accent-color);
+    background: var(--forest);
 }
 
 .modal-btn-close {
     padding: 8px 16px;
-    background: #e0e0e0;
-    color: #333;
-    border: none;
-    border-radius: 20px;
+    background: var(--bg-cream);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
 }
 
 .modal-btn-cancel-mr {
-    background: #e0e0e0;
-    color: #333;
+    background: var(--bg-cream);
+    color: var(--text-primary);
     padding: 8px 16px;
-    border: none;
-    border-radius: 20px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     cursor: pointer;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
     margin-right: 12px;
 }
 
-/* --- Prompt generator modal styles --- */
+/* ============================================================
+   Prompt generator modal styles
+   ============================================================ */
 .modal-section {
     margin: 20px 0;
 }
 
 .modal-description {
     margin-bottom: 15px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .modal-field-group {
@@ -2251,22 +2420,31 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 .modal-textarea {
     width: 100%;
     padding: 10px;
-    border: 1px solid var(--secondary-color);
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
     margin-bottom: 10px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+.modal-textarea:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
+    outline: none;
 }
 
 .modal-info-box {
     margin-bottom: 15px;
     padding: 12px;
-    background: #fff3e0;
+    background: var(--highlight);
     border-radius: 8px;
+    border: 1px solid var(--border);
 }
 
 .modal-info-title {
     margin-bottom: 10px;
-    color: #e65100;
+    color: var(--forest);
     font-size: 1rem;
+    font-weight: 600;
 }
 
 .modal-checkbox-group {
@@ -2279,9 +2457,13 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     display: block;
 }
 
+.modal-checkbox-label input[type="checkbox"] {
+    accent-color: var(--terracotta);
+}
+
 .modal-checkbox-hint {
     margin-left: 5px;
-    color: #666;
+    color: var(--text-secondary);
     font-size: 0.9em;
 }
 
@@ -2292,16 +2474,18 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 }
 
 .modal-generated-output {
-    background: #f8faf5;
-    border-radius: 8px;
+    background: var(--bg-cream);
+    border-radius: 6px;
+    border: 1px solid var(--border);
     padding: 15px;
     white-space: pre-wrap;
     font-family: monospace;
     max-height: 400px;
     overflow-y: auto;
+    font-size: 0.9rem;
 }
 
-/* --- AI Assistants section in prompt modal --- */
+/* AI Assistants section in prompt modal */
 .modal-ai-section {
     margin-top: 20px;
 }
@@ -2309,7 +2493,8 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 .modal-ai-section-title {
     margin-bottom: 15px;
     font-size: 1.1rem;
-    color: var(--primary-color);
+    color: var(--text-primary);
+    font-weight: 600;
 }
 
 .ai-icon-chatgpt {
@@ -2336,7 +2521,7 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     border-radius: 8px;
 }
 
-/* --- Import/Export option card styles --- */
+/* Import/Export option card styles */
 .modal-option-icon {
     margin-right: 15px;
     font-size: 1.5rem;
@@ -2352,14 +2537,16 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 
 .modal-option-desc {
     font-size: 0.9rem;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .modal-file-input {
     margin-bottom: 20px;
 }
 
-/* --- Journal entry form styles --- */
+/* ============================================================
+   Journal entry form styles
+   ============================================================ */
 .form-row-flex {
     display: flex;
     gap: 15px;
@@ -2379,21 +2566,35 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 .form-input {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+.form-input:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
+    outline: none;
 }
 
 .form-textarea {
     width: 100%;
     padding: 8px;
-    border: 1px solid #ddd;
-    border-radius: 8px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+.form-textarea:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
+    outline: none;
 }
 
 .form-harvest-container {
     margin-bottom: 15px;
     padding: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     border-radius: 8px;
 }
 
@@ -2427,14 +2628,16 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
 
 .form-photo-select-btn {
     padding: 8px 12px;
-    background: var(--accent-color);
+    background: var(--forest);
     color: white;
     border: none;
-    border-radius: 20px;
+    border-radius: 6px;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 5px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 500;
 }
 
 .form-photo-preview-container {
@@ -2452,9 +2655,52 @@ body.journal-active .main-layout > *:not(#garden-journal):not(.scroll-to-top):no
     margin-top: 20px;
 }
 
-/* --- Bottom navigation icon styles --- */
+/* Bottom navigation icon styles */
 .nav-icon-emoji {
     font-size: 1.5em;
 }
 
-/* --- Scroll to top (hidden default handled by hidden-default) --- */
+/* Journal more button */
+.journal-more-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-secondary);
+}
+
+.journal-more-menu-item {
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    text-align: left;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+}
+
+.journal-more-menu-item:hover {
+    background: var(--highlight);
+}
+
+/* Journal view dropdown */
+.journal-view-dropdown {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--text-primary);
+}
+
+/* Calendar explainer text */
+.calendar-explainer {
+    color: var(--text-secondary);
+    margin-bottom: 15px;
+}

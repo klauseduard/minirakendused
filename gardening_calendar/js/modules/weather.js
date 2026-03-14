@@ -375,7 +375,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         // Create tooltip element
         const tooltip = document.createElement('div');
         tooltip.className = 'weather-tooltip';
-        tooltip.style.cssText = 'display:none;position:absolute;background:white;border:1px solid #ccc;border-radius:4px;padding:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1);z-index:1000;';
+        tooltip.style.cssText = 'display:none;position:absolute;background:#FFFFFF;border:1px solid #E5DED6;border-radius:6px;padding:8px 12px;box-shadow:0 4px 12px rgba(0,0,0,0.08);z-index:1000;font-family:Source Sans 3,Segoe UI,sans-serif;font-size:0.9rem;color:#2D2A26;';
         document.body.appendChild(tooltip);
         
         // Show tooltip on hover

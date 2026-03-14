@@ -447,17 +447,17 @@ export function showNotification(message, type = 'info', duration = 3000) {
     notification.style.bottom = '20px';
     notification.style.right = '20px';
     notification.style.padding = '12px 20px';
-    notification.style.borderRadius = '4px';
+    notification.style.borderRadius = '6px';
     notification.style.zIndex = '2000';
     notification.style.opacity = '0';
     notification.style.transition = 'opacity 0.3s ease-in-out';
     
     // Style based on type
     const colors = {
-        success: { bg: '#dff5e0', text: '#2e7d32' },
-        error: { bg: '#ffdede', text: '#c62828' },
+        success: { bg: '#E8F0E4', text: '#2D5F2D' },
+        error: { bg: '#fddede', text: '#c62828' },
         info: { bg: '#e3f2fd', text: '#0277bd' },
-        warning: { bg: '#fff8e1', text: '#ef6c00' }
+        warning: { bg: '#fff8e1', text: '#b8860b' }
     };
     
     const style = colors[type] || colors.info;
