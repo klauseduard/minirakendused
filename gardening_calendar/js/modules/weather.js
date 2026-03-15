@@ -782,62 +782,165 @@ export function displayLocationInfo(name, lat, lon, admin1, admin2, country) {
 export async function geocodeLocation(query) {
     const weatherPlaceholder = document.getElementById('weatherPlaceholder');
     if (!weatherPlaceholder) return;
-    
+
+    // Dismiss any existing dropdown
+    dismissLocationDropdown();
+
     lastWeatherAction = 'geocode';
+
+    // Coordinate detection — skip geocoding if user pasted coordinates
+    const coordMatch = query.trim().match(/^(-?\d+\.?\d*)[,\s]+(-?\d+\.?\d*)$/);
+    if (coordMatch) {
+        const lat = parseFloat(coordMatch[1]);
+        const lon = parseFloat(coordMatch[2]);
+        if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            const latStr = lat.toFixed(5);
+            const lonStr = lon.toFixed(5);
+
+            localStorage.removeItem('gardening_last_location');
+            localStorage.setItem('gardening_last_location', JSON.stringify({
+                type: 'coords',
+                lat: latStr,
+                lon: lonStr,
+                locationName: 'Custom coordinates'
+            }));
+
+            weatherPlaceholder.innerHTML =
+                `<div class="weather-location-info"><strong>Location:</strong> Custom coordinates<br><br>` +
+                `<span style="font-size:0.97em;color:#666;">Latitude: ${latStr}, Longitude: ${lonStr}</span></div>` +
+                `<div id="weatherDataSection">Loading weather data...</div>`;
+
+            fetchWeatherData(latStr, lonStr);
+            showClimateZone(latStr, lonStr);
+            return;
+        }
+    }
+
     weatherPlaceholder.textContent = 'Looking up location...';
-    
+
     // Clear any previous location cache first to prevent override
     localStorage.removeItem('gardening_last_location');
-    
+
     try {
         console.log(`Geocoding location: ${query}`);
-        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}`;
+        const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=8`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Geocoding service error');
-        
+
         const data = await response.json();
         if (!data.results || data.results.length === 0) {
             displayLocationError('Location not found. Please try a different name or postal code.', 'geocode');
             return;
         }
-        
-        const result = data.results[0];
-        console.log(`Geocoding result: ${result.name} at ${result.latitude}, ${result.longitude}`);
-        
-        // Create a location string
-        let locationParts = [];
-        if (result.name) locationParts.push(result.name);
-        if (result.admin2) locationParts.push(result.admin2);
-        if (result.admin1) locationParts.push(result.admin1);
-        if (result.country) locationParts.push(result.country);
-        const locationString = locationParts.join(', ');
-        
-        // Save coordinates and location name in the cache
-        localStorage.setItem('gardening_last_location', JSON.stringify({ 
-            type: 'coords', 
-            lat: result.latitude, 
-            lon: result.longitude,
-            locationName: locationString // Store the location name
-        }));
-        
-        // Directly call functions instead of using displayLocationInfo to prevent location override
-        if (weatherPlaceholder) {
-            weatherPlaceholder.innerHTML =
-                `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br><br>` +
-                `<span style="font-size:0.97em;color:#666;">Latitude: ${result.latitude}, Longitude: ${result.longitude}</span></div>` +
-                `<div id="weatherDataSection">Loading weather data...</div>`;
+
+        if (data.results.length === 1) {
+            selectGeocodingResult(data.results[0]);
+        } else {
+            showLocationDropdown(data.results);
         }
-        
-        // Fetch weather directly
-        fetchWeatherData(result.latitude, result.longitude);
-        
-        // Directly update climate zone if the function exists
-        console.log(`Calling showClimateZone with ${result.latitude}, ${result.longitude}`);
-        showClimateZone(result.latitude, result.longitude);
     } catch (e) {
         console.error('Error during geocoding:', e);
         displayLocationError('Could not resolve location. Please check your input and try again.', 'geocode');
     }
+}
+
+/**
+ * Build a display string from a geocoding result
+ * @param {Object} result - Open-Meteo geocoding result
+ * @returns {string} Formatted location string
+ */
+function buildLocationString(result) {
+    const parts = [];
+    if (result.name) parts.push(result.name);
+    if (result.admin2) parts.push(result.admin2);
+    if (result.admin1) parts.push(result.admin1);
+    if (result.country) parts.push(result.country);
+    return parts.join(', ');
+}
+
+/**
+ * Apply a selected geocoding result — update UI, cache, and fetch weather
+ * @param {Object} result - Open-Meteo geocoding result
+ */
+function selectGeocodingResult(result) {
+    const weatherPlaceholder = document.getElementById('weatherPlaceholder');
+    const locationString = buildLocationString(result);
+
+    console.log(`Geocoding result: ${result.name} at ${result.latitude}, ${result.longitude}`);
+
+    localStorage.setItem('gardening_last_location', JSON.stringify({
+        type: 'coords',
+        lat: result.latitude,
+        lon: result.longitude,
+        locationName: locationString
+    }));
+
+    if (weatherPlaceholder) {
+        weatherPlaceholder.innerHTML =
+            `<div class="weather-location-info"><strong>Location:</strong> ${locationString}<br><br>` +
+            `<span style="font-size:0.97em;color:#666;">Latitude: ${result.latitude}, Longitude: ${result.longitude}</span></div>` +
+            `<div id="weatherDataSection">Loading weather data...</div>`;
+    }
+
+    fetchWeatherData(result.latitude, result.longitude);
+    console.log(`Calling showClimateZone with ${result.latitude}, ${result.longitude}`);
+    showClimateZone(result.latitude, result.longitude);
+}
+
+/**
+ * Show a dropdown of geocoding results for the user to choose from
+ * @param {Array} results - Array of Open-Meteo geocoding results
+ */
+function showLocationDropdown(results) {
+    dismissLocationDropdown();
+
+    const container = document.querySelector('.location-input-group');
+    if (!container) return;
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'location-results-dropdown';
+
+    results.forEach(result => {
+        const item = document.createElement('div');
+        item.className = 'location-result-item';
+        item.textContent = buildLocationString(result);
+        item.addEventListener('click', () => {
+            dismissLocationDropdown();
+            selectGeocodingResult(result);
+        });
+        dropdown.appendChild(item);
+    });
+
+    container.appendChild(dropdown);
+
+    // Dismiss on outside click
+    setTimeout(() => {
+        document.addEventListener('click', handleDropdownOutsideClick);
+        document.addEventListener('keydown', handleDropdownEscape);
+    }, 0);
+}
+
+function handleDropdownOutsideClick(e) {
+    const dropdown = document.querySelector('.location-results-dropdown');
+    if (dropdown && !dropdown.contains(e.target) && e.target.id !== 'locationInput') {
+        dismissLocationDropdown();
+    }
+}
+
+function handleDropdownEscape(e) {
+    if (e.key === 'Escape') {
+        dismissLocationDropdown();
+    }
+}
+
+/**
+ * Remove the location results dropdown and clean up listeners
+ */
+function dismissLocationDropdown() {
+    const existing = document.querySelector('.location-results-dropdown');
+    if (existing) existing.remove();
+    document.removeEventListener('click', handleDropdownOutsideClick);
+    document.removeEventListener('keydown', handleDropdownEscape);
 }
 
 // Frost-sensitive plant keywords (common garden plants)
