@@ -2312,6 +2312,38 @@ footer p {
     transition: transform 0.2s ease-in-out;
 }
 
+.photo-remove-btn {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 1;
+}
+
+.photo-preview:hover .photo-remove-btn {
+    opacity: 1;
+}
+
+/* Always visible on touch devices */
+@media (hover: none) {
+    .photo-remove-btn {
+        opacity: 0.8;
+    }
+}
+
 /* Weather forecast styles for mobile */
 @media (max-width: 600px) {
     .weather-forecast-table {
