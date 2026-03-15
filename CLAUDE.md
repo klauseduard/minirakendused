@@ -85,3 +85,10 @@ Single file: `gardening_calendar/styles.css` (~2900 lines). "Botanical Almanac" 
 - Weather temperatures stored in Celsius internally, converted for display via `convertTemp()`
 - Soil temperature color thresholds always evaluate in Celsius (`getSoilTemperatureColor`)
 - `i18n` infrastructure exists (`translations` object, `currentLang`) but only English UI is active
+
+## Workflow
+
+- Commit directly to `main` — no PRs for now
+- Use `closes #N` in commit messages to auto-close GitHub issues
+- After implementing an issue, add the `needs-review` label to flag it for code review and manual testing (even if already closed by commit)
+- Remove the label once reviewed; filter with `label:needs-review is:closed` to find the backlog
