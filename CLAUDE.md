@@ -90,5 +90,6 @@ Single file: `gardening_calendar/styles.css` (~2900 lines). "Botanical Almanac" 
 
 - Commit directly to `main` — no PRs for now
 - Use `closes #N` in commit messages to auto-close GitHub issues
-- After implementing an issue, add the `needs-review` label to flag it for code review and manual testing (even if already closed by commit)
+- After implementing an issue, add the `needs-review` label to flag it for code review (even if already closed by commit)
+- Manual testing is handled during development (Playwright) and by user discovery — the label is for code review only
 - Remove the label once reviewed; filter with `label:needs-review is:closed` to find the backlog

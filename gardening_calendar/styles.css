@@ -1065,7 +1065,7 @@ footer p {
     background: rgba(45, 42, 38, 0.3);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
-    z-index: 1000;
+    z-index: 1300;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2021,7 +2021,7 @@ footer p {
     bottom: 0;
     background: rgba(45, 42, 38, 0.3);
     backdrop-filter: blur(3px);
-    z-index: 1000;
+    z-index: 1300;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2369,26 +2369,57 @@ footer p {
         margin-bottom: 12px;
         border-radius: 8px;
         border: 1px solid var(--border);
-        padding: 10px 8px;
+        padding: 10px 12px;
         width: 100%;
+        box-sizing: border-box;
+        cursor: pointer;
     }
     .weather-forecast-table td {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 6px 0;
+        padding: 5px 0;
         border: none;
-        font-size: 1.05rem;
+        font-size: 0.95rem;
         background: none;
         width: 100%;
+        box-sizing: border-box;
+    }
+    /* Date cell: display as card header */
+    .weather-forecast-table td[data-label="Date"] {
+        font-weight: 600;
+        font-size: 1rem;
+        color: var(--forest);
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 8px;
+        margin-bottom: 4px;
+    }
+    .weather-forecast-table td[data-label="Date"]::before {
+        display: none;
+    }
+    /* Weather cell: center the icon+text */
+    .weather-forecast-table td[data-label="Weather"] {
+        justify-content: center;
+        text-align: center;
+        padding: 8px 0 4px;
+        border-top: 1px solid var(--border);
+        margin-top: 4px;
+    }
+    .weather-forecast-table td[data-label="Weather"]::before {
+        display: none;
     }
     .weather-forecast-table td::before {
         content: attr(data-label);
         font-weight: 500;
         color: var(--forest);
-        flex: 1 0 50%;
+        flex: 0 0 auto;
+        min-width: 80px;
         text-align: left;
-        font-size: 0.95rem;
+        font-size: 0.88rem;
+    }
+    /* Hide sparkline on mobile — tap row for hourly detail */
+    .weather-forecast-table .sparkline-cell {
+        display: none;
     }
 }
 
@@ -2619,7 +2650,7 @@ body.journal-active #garden-journal {
    Modal shared styles
    ============================================================ */
 .modal-overlay-high-z {
-    z-index: 1000;
+    z-index: 1300;
 }
 
 .modal-body-compact {

@@ -192,14 +192,14 @@ export function renderWeatherData(data) {
         }
         
         html += `<tr>
-            <td>${data.daily.time[i]}</td>
-            <td>${getTempHtml(nightMin)}</td>
-            <td>${getTempHtml(nightMax)}</td>
-            <td>${getTempHtml(dayMin)}</td>
-            <td>${getTempHtml(dayMax)}</td>
-            <td>${(() => { const p = data.daily.precipitation_sum[i]; return p != null && !isNaN(p) ? `${convertPrecip(p, precipUnit)} ${getPrecipUnitSymbol(precipUnit)}` : '<span style="color:#aaa;">—</span>'; })()}</td>
-            <td>${(() => { const dayWinds = hourlyWindByDay[i] || []; const maxWind = dayWinds.length ? Math.max(...dayWinds) : 0; return `${convertWind(maxWind, windUnit)} ${getWindUnitSymbol(windUnit)}<br><span style="font-size:0.82em;color:#888;">${getBeaufortLabel(maxWind)}</span>`; })()}</td>
-            <td>${(() => {
+            <td data-label="Date">${data.daily.time[i]}</td>
+            <td data-label="Night Min">${getTempHtml(nightMin)}</td>
+            <td data-label="Night Max">${getTempHtml(nightMax)}</td>
+            <td data-label="Day Min">${getTempHtml(dayMin)}</td>
+            <td data-label="Day Max">${getTempHtml(dayMax)}</td>
+            <td data-label="Precip.">${(() => { const p = data.daily.precipitation_sum[i]; return p != null && !isNaN(p) ? `${convertPrecip(p, precipUnit)} ${getPrecipUnitSymbol(precipUnit)}` : '<span style="color:#aaa;">—</span>'; })()}</td>
+            <td data-label="Wind">${(() => { const dayWinds = hourlyWindByDay[i] || []; const maxWind = dayWinds.length ? Math.max(...dayWinds) : 0; return `${convertWind(maxWind, windUnit)} ${getWindUnitSymbol(windUnit)}<br><span style="font-size:0.82em;color:#888;">${getBeaufortLabel(maxWind)}</span>`; })()}</td>
+            <td data-label="Soil 6cm">${(() => {
                 const daySoils = hourlySoilByDay[i] || [];
                 const validSoils = daySoils.filter(v => v != null && !isNaN(v));
                 if (!validSoils.length) return '<span style="color:#aaa;">—</span>';
@@ -212,8 +212,8 @@ export function renderWeatherData(data) {
                 const borderColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`;
                 return `<span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${convertTemp(noonSoil, tempUnit)}${getTempUnitSymbol(tempUnit)}</span><br><span style="font-size:0.82em;color:#888;">${convertTemp(soilMin, tempUnit)}–${convertTemp(soilMax, tempUnit)}${getTempUnitSymbol(tempUnit)}</span>`;
             })()}</td>
-            <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
-            <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
+            <td data-label="Weather"><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
+            <td class="sparkline-cell">${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
         </tr>`;
     }
     
@@ -474,6 +474,23 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         sparkline.addEventListener('click', () => {
             showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, soils, tempUnit, precipUnit, windUnit);
         });
+
+        // On mobile (sparkline cell hidden), make the entire row clickable
+        const sparklineCell = sparkline.closest('.sparkline-cell');
+        const row = sparkline.closest('tr');
+        if (row && sparklineCell) {
+            row.style.cursor = 'pointer';
+            row.addEventListener('click', (e) => {
+                // Only trigger if the sparkline cell is hidden (mobile card view)
+                if (getComputedStyle(sparklineCell).display === 'none') {
+                    // Defer modal opening so the click event finishes before
+                    // the modal's closeOnOutsideClick listener is attached
+                    setTimeout(() => {
+                        showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, soils, tempUnit, precipUnit, windUnit);
+                    }, 0);
+                }
+            });
+        }
     }
 }
 
