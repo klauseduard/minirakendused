@@ -512,6 +512,7 @@ function handlePeriodClick(periodId) {
 
     window.GardeningApp.activeMonth = periodId;
     renderCalendar(periodId);
+    document.dispatchEvent(new CustomEvent('periodChanged', { detail: { periodId } }));
 }
 
 /**

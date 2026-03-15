@@ -103,6 +103,37 @@ h1, h2, h3 {
     }
 }
 
+/* Header illustration — desktop only, below sticky header */
+.header-illustration {
+    display: none;
+}
+
+@media (min-width: 769px) {
+    .header-illustration {
+        display: block;
+        height: 120px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        margin: -20px -20px 20px -20px;
+        opacity: 0.85;
+    }
+
+    /* Seasonal variants — paths relative to this stylesheet */
+    .header-illustration.season-spring {
+        background-image: url('assets/illustrations/header-spring.png');
+    }
+    .header-illustration.season-summer {
+        background-image: url('assets/illustrations/header-summer.png');
+    }
+    .header-illustration.season-harvest {
+        background-image: url('assets/illustrations/header-harvest.png');
+    }
+    .header-illustration.season-default {
+        background-image: url('assets/illustrations/header-terracotta.png');
+    }
+}
+
 .description {
     font-size: 1rem;
     font-weight: 400;

@@ -46,6 +46,25 @@ window.GardeningApp = {
 // Only window.GardeningApp remains as the intentional shared state container.
 
 /**
+ * Map a period ID to a seasonal illustration set
+ */
+const PERIOD_SEASON_MAP = {
+    'april': 'spring',
+    'may': 'summer',
+    'early_june': 'summer',
+};
+
+function getSeasonForPeriod(periodId) {
+    return PERIOD_SEASON_MAP[periodId] || 'default';
+}
+
+function updateHeaderIllustration(periodId) {
+    const el = document.getElementById('headerIllustration');
+    if (!el) return;
+    el.className = 'header-illustration season-' + getSeasonForPeriod(periodId);
+}
+
+/**
  * Initialize all modules in the correct order
  */
 async function initApp() {
@@ -133,6 +152,12 @@ async function initApp() {
     document.dispatchEvent(new CustomEvent('socialModuleLoaded'));
     console.log('Social sharing module initialized');
     
+    // Set up header illustration with seasonal swapping
+    updateHeaderIllustration(window.GardeningApp.activeMonth);
+    document.addEventListener('periodChanged', (e) => {
+        updateHeaderIllustration(e.detail.periodId);
+    });
+
     // Set up navigation and remaining event listeners
     setupNavigation();
 
