@@ -126,7 +126,7 @@ async function initApp() {
     // Step 10: Initialize social sharing module - only for footer
     socialModule.initSocialSharing({
         selector: '#footerShareContainer',
-        defaultTitle: 'Spring Gardening and Planting Calendar',
+        defaultTitle: 'Garden Planner',
         defaultDescription: 'A helpful tool for planning your gardening activities!'
     });
     

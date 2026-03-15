@@ -32,7 +32,7 @@ export function initSocialSharing(options = {}) {
     const {
         selector = '.social-share-container',
         platforms = ['facebook', 'twitter', 'email'],
-        defaultTitle = 'Check out this Spring Gardening and Planting Calendar!',
+        defaultTitle = 'Check out this Garden Planner!',
         defaultDescription = 'A handy tool for planning your gardening activities with weather forecast integration.',
         addShareCallback = null
     } = options;

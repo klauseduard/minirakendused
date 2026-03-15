@@ -197,14 +197,15 @@ export function renderWeatherData(data) {
             <td>${getTempHtml(nightMax)}</td>
             <td>${getTempHtml(dayMin)}</td>
             <td>${getTempHtml(dayMax)}</td>
-            <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol(precipUnit)}</td>
+            <td>${(() => { const p = data.daily.precipitation_sum[i]; return p != null && !isNaN(p) ? `${convertPrecip(p, precipUnit)} ${getPrecipUnitSymbol(precipUnit)}` : '<span style="color:#aaa;">—</span>'; })()}</td>
             <td>${(() => { const dayWinds = hourlyWindByDay[i] || []; const maxWind = dayWinds.length ? Math.max(...dayWinds) : 0; return `${convertWind(maxWind, windUnit)} ${getWindUnitSymbol(windUnit)}<br><span style="font-size:0.82em;color:#888;">${getBeaufortLabel(maxWind)}</span>`; })()}</td>
             <td>${(() => {
                 const daySoils = hourlySoilByDay[i] || [];
-                if (!daySoils.length) return '-';
-                const noonSoil = daySoils[12] != null ? daySoils[12] : daySoils[Math.floor(daySoils.length / 2)];
-                const soilMin = Math.min(...daySoils.filter(v => v != null));
-                const soilMax = Math.max(...daySoils.filter(v => v != null));
+                const validSoils = daySoils.filter(v => v != null && !isNaN(v));
+                if (!validSoils.length) return '<span style="color:#aaa;">—</span>';
+                const noonSoil = daySoils[12] != null ? daySoils[12] : validSoils[Math.floor(validSoils.length / 2)];
+                const soilMin = Math.min(...validSoils);
+                const soilMax = Math.max(...validSoils);
                 const soilColor = getSoilTemperatureColor(noonSoil);
                 const rgb = soilColor.replace('#', '').match(/.{2}/g).map(h => parseInt(h, 16));
                 const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
@@ -666,6 +667,7 @@ export function getTempUnitSymbol(unit) {
  * @returns {number} Converted precipitation value
  */
 export function convertPrecip(value, unit) {
+    if (value == null || isNaN(value)) return '—';
     if (unit === 'in') {
         return (value / 25.4).toFixed(2);
     }

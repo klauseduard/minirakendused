@@ -5,7 +5,7 @@
 export const translations = {
     'en': {
         // Header
-        'title': 'Spring Gardening and Planting Calendar',
+        'title': 'Garden Planner',
         'quick_nav': 'Quick Navigation:',
         'location_setup': 'Location Setup',
         'weather_info': 'Weather Info',
@@ -81,7 +81,7 @@ export const translations = {
         'like_tool': 'Like this tool? Support its development!',
         
         // Footer
-        'copyright': 'Spring Gardening and Planting Calendar © 2025',
+        'copyright': 'Garden Planner © 2025',
         'support': 'Support on Ko-fi'
     }
 };
