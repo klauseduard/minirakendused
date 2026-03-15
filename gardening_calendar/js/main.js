@@ -59,9 +59,16 @@ function getSeasonForPeriod(periodId) {
 }
 
 function updateHeaderIllustration(periodId) {
+    const season = getSeasonForPeriod(periodId);
     const el = document.getElementById('headerIllustration');
-    if (!el) return;
-    el.className = 'header-illustration season-' + getSeasonForPeriod(periodId);
+    if (el) el.className = 'header-illustration season-' + season;
+
+    // Propagate season to container for CSS-driven decorative elements
+    const container = document.querySelector('.container');
+    if (container) {
+        container.className = container.className.replace(/\bseason-\S+/g, '');
+        container.classList.add('season-' + season);
+    }
 }
 
 /**

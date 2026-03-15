@@ -134,6 +134,125 @@ h1, h2, h3 {
     }
 }
 
+/* Section dividers — botanical strip between major sections (desktop only) */
+@media (min-width: 769px) {
+    .weather-display::after,
+    .month-navigation::after {
+        content: '';
+        display: block;
+        height: 30px;
+        margin: 20px auto -10px;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+        opacity: 0.5;
+        max-width: 300px;
+    }
+
+    .container.season-spring .weather-display::after,
+    .container.season-spring .month-navigation::after {
+        background-image: url('assets/illustrations/divider-spring.png');
+    }
+    .container.season-summer .weather-display::after,
+    .container.season-summer .month-navigation::after {
+        background-image: url('assets/illustrations/divider-summer.png');
+    }
+    .container.season-harvest .weather-display::after,
+    .container.season-harvest .month-navigation::after {
+        background-image: url('assets/illustrations/divider-harvest.png');
+    }
+    .container.season-default .weather-display::after,
+    .container.season-default .month-navigation::after {
+        background-image: url('assets/illustrations/divider-terracotta.png');
+    }
+}
+
+/* Corner vignettes — decorative corners on the page container (desktop only) */
+@media (min-width: 769px) {
+    .container {
+        position: relative;
+    }
+
+    .container::before,
+    .container::after {
+        content: '';
+        position: absolute;
+        width: 160px;
+        height: 140px;
+        opacity: 0.18;
+        pointer-events: none;
+        z-index: 0;
+        background-size: contain;
+        background-repeat: no-repeat;
+    }
+
+    .container::before {
+        top: 90px;
+        left: -30px;
+        background-position: top left;
+    }
+
+    .container::after {
+        bottom: 40px;
+        right: -30px;
+        background-position: bottom right;
+        transform: scaleX(-1);
+    }
+
+    .container.season-spring::before,
+    .container.season-spring::after {
+        background-image: url('assets/illustrations/corner-spring.png');
+    }
+    .container.season-summer::before,
+    .container.season-summer::after {
+        background-image: url('assets/illustrations/corner-summer.png');
+    }
+    .container.season-harvest::before,
+    .container.season-harvest::after {
+        background-image: url('assets/illustrations/corner-harvest.png');
+    }
+    .container.season-default::before,
+    .container.season-default::after {
+        background-image: url('assets/illustrations/corner-terracotta.png');
+    }
+}
+
+/* Journal empty state — spot illustration replaces emoji (desktop only) */
+@media (min-width: 769px) {
+    .journal-empty-state {
+        position: relative;
+    }
+
+    .journal-empty-state > .icon-size-jumbo {
+        display: none;
+    }
+
+    .journal-empty-state::before {
+        content: '';
+        display: block;
+        width: 180px;
+        height: 150px;
+        margin: 0 auto 10px;
+        opacity: 0.6;
+        background-size: contain;
+        background-repeat: no-repeat;
+        background-position: center;
+    }
+
+    .container.season-spring .journal-empty-state::before {
+        background-image: url('assets/illustrations/spot-spring.png');
+    }
+    .container.season-summer .journal-empty-state::before {
+        background-image: url('assets/illustrations/spot-summer.png');
+    }
+    .container.season-harvest .journal-empty-state::before {
+        background-image: url('assets/illustrations/spot-harvest.png');
+    }
+    .container.season-default .journal-empty-state::before {
+        background-image: url('assets/illustrations/spot-terracotta.png');
+    }
+}
+
 .description {
     font-size: 1rem;
     font-weight: 400;
