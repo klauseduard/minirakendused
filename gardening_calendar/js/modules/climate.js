@@ -7,6 +7,7 @@
 let koppenGrid = null;
 let userClimateZone = null;
 let userClimateZoneOverride = null;
+let userLat = null;
 
 /**
  * Initialize the climate zone module.
@@ -99,7 +100,8 @@ export function showClimateZone(lat, lon) {
         // Ensure lat and lon are numeric values
         const latNum = typeof lat === 'string' ? parseFloat(lat) : lat;
         const lonNum = typeof lon === 'string' ? parseFloat(lon) : lon;
-        
+        userLat = latNum;
+
         if (isNaN(latNum) || isNaN(lonNum)) {
             console.error(`Invalid coordinates: lat=${lat}, lon=${lon}`);
             climateZoneInfo.innerHTML = '';
@@ -172,6 +174,36 @@ export function renderClimateZoneUI(lookupKey = '', foundZone = '') {
         html += `<strong>Climate zone:</strong> <span id="climateZoneCode" style="background: var(--light-bg); padding: 2px 8px; border-radius: 4px; font-family: monospace;">${userClimateZone}</span>`;
         html += `<a href="https://en.wikipedia.org/wiki/K%C3%B6ppen_climate_classification" target="_blank" style="color: var(--primary-color); text-decoration: none; font-size: 0.95em;">(What is this?)</a>`;
         html += `</div>`;
+
+        // Frost date estimation
+        if (userLat != null) {
+            const frost = estimateLastFrostDate(userLat, userClimateZone);
+            html += `<div class="frost-date-info">`;
+            if (frost.lastSpring) {
+                const now = new Date();
+                const springDiff = Math.round((frost.lastSpring - now) / (1000 * 60 * 60 * 24 * 7));
+                const autumnDiff = Math.round((frost.firstAutumn - now) / (1000 * 60 * 60 * 24 * 7));
+                const springLabel = frost.lastSpring.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                const autumnLabel = frost.firstAutumn.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+                if (springDiff <= 0) {
+                    html += `<div class="frost-date-row">❄️ Last frost: <strong>~${springLabel}</strong> <span class="frost-date-meta" style="color:var(--forest);">(Frost risk has passed)</span></div>`;
+                } else {
+                    html += `<div class="frost-date-row">❄️ Estimated last frost: <strong>~${springLabel}</strong> <span class="frost-date-meta" style="color:var(--terracotta);">(~${springDiff} weeks away)</span></div>`;
+                }
+
+                if (autumnDiff > 0) {
+                    html += `<div class="frost-date-row">🍂 First autumn frost: <strong>~${autumnLabel}</strong> <span class="frost-date-meta">(~${autumnDiff} weeks away)</span></div>`;
+                } else {
+                    html += `<div class="frost-date-row">🍂 First autumn frost: <strong>~${autumnLabel}</strong> <span class="frost-date-meta">(has passed)</span></div>`;
+                }
+            } else {
+                html += `<div class="frost-date-row">☀️ ${frost.label}</div>`;
+            }
+            html += `<div class="frost-date-disclaimer">Based on latitude; actual dates vary by elevation, microclimate, and year.</div>`;
+            html += `</div>`;
+        }
+
         html += `<div style="display: flex; align-items: center; gap: 10px;">`;
         html += `<label for="climateZoneOverride" style="font-size: 0.95em;">Override zone:</label>`;
         html += `<input id="climateZoneOverride" type="text" style="padding: 4px 8px; border: 1px solid var(--secondary-color); border-radius: 4px; width: 60px;" value="${userClimateZoneOverride || ''}" placeholder="e.g. Dfb">`;
@@ -267,4 +299,61 @@ export function clearClimateZoneOverride() {
         } catch (e) {}
     }
     renderClimateZoneUI();
-} 
+}
+
+/**
+ * Estimate last spring frost and first autumn frost dates based on latitude and climate zone.
+ * @param {number} lat - Latitude (positive = North, negative = South)
+ * @param {string} [climateZone] - Köppen climate zone code (e.g. 'Dfb', 'Cfa')
+ * @returns {{ lastSpring: Date|null, firstAutumn: Date|null, label: string, confidence: string }}
+ */
+export function estimateLastFrostDate(lat, climateZone) {
+    const absLat = Math.abs(lat);
+    const year = new Date().getFullYear();
+
+    // Latitude-based lookup (Northern Hemisphere spring/autumn frost month-day)
+    const bands = [
+        { maxLat: 25, spring: null,       autumn: null },        // Frost-free
+        { maxLat: 30, spring: [2, 15],    autumn: [11, 30] },
+        { maxLat: 35, spring: [3, 1],     autumn: [11, 15] },
+        { maxLat: 40, spring: [3, 15],    autumn: [10, 31] },
+        { maxLat: 45, spring: [4, 1],     autumn: [10, 15] },
+        { maxLat: 50, spring: [4, 15],    autumn: [9, 30] },
+        { maxLat: 55, spring: [5, 1],     autumn: [9, 15] },
+        { maxLat: 60, spring: [5, 10],    autumn: [9, 5] },
+        { maxLat: 65, spring: [5, 20],    autumn: [8, 31] },
+        { maxLat: 90, spring: [6, 5],     autumn: [8, 15] }
+    ];
+
+    const band = bands.find(b => absLat <= b.maxLat);
+    if (!band || !band.spring) {
+        return { lastSpring: null, firstAutumn: null, label: 'Frost-free zone', confidence: 'approximate' };
+    }
+
+    // Climate zone refinement (days to shift spring frost)
+    let shiftDays = 0;
+    if (climateZone) {
+        const firstLetter = climateZone.charAt(0).toUpperCase();
+        if (firstLetter === 'A') {
+            return { lastSpring: null, firstAutumn: null, label: 'Frost-free (tropical)', confidence: 'approximate' };
+        }
+        if (firstLetter === 'C') shiftDays = -7;  // Oceanic/temperate → earlier last frost
+        if (firstLetter === 'D') shiftDays = 7;   // Continental → later last frost
+    }
+
+    let springDate = new Date(year, band.spring[0] - 1, band.spring[1] + shiftDays);
+    let autumnDate = new Date(year, band.autumn[0] - 1, band.autumn[1] - shiftDays);
+
+    // Southern Hemisphere: invert (swap spring/autumn and shift by ~6 months)
+    if (lat < 0) {
+        springDate = new Date(year, band.autumn[0] - 1 - 6, band.autumn[1] - shiftDays);
+        autumnDate = new Date(year, band.spring[0] - 1 + 6, band.spring[1] + shiftDays);
+    }
+
+    return {
+        lastSpring: springDate,
+        firstAutumn: autumnDate,
+        label: `~${springDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`,
+        confidence: 'approximate'
+    };
+}

@@ -5,7 +5,7 @@
 
 import * as uiUtils from './ui.js';
 import * as storageUtils from './storage.js';
-import { showClimateZone } from './climate.js';
+import { showClimateZone, estimateLastFrostDate, getCurrentClimateZone } from './climate.js';
 
 // Weather icon and color mappings
 const weatherCodeMap = {
@@ -90,7 +90,7 @@ export async function fetchWeatherData(lat, lon, isRetry = false) {
     if (!weatherSection) return;
     weatherSection.textContent = 'Loading weather data...';
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&hourly=temperature_2m,precipitation,windspeed_10m&forecast_days=16&timezone=auto`;
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,temperature_2m_min,precipitation_sum,weathercode&hourly=temperature_2m,precipitation,windspeed_10m,soil_temperature_6cm&forecast_days=16&timezone=auto`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Weather service error');
         const data = await response.json();
@@ -126,16 +126,36 @@ export function renderWeatherData(data) {
     
     // Display current weather
     const currentIconTextColor = weatherCodeToIconTextColor(data.current_weather.weathercode);
-    let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol(tempUnit)}, Wind: ${convertWind(data.current_weather.windspeed, windUnit)} ${getWindUnitSymbol(windUnit)}</div>`;
-    
+
+    // Extract current soil temperature by matching current hour
+    let currentSoilTempHtml = '';
+    if (data.hourly?.soil_temperature_6cm) {
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const localHourStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}`;
+        const hourIndex = data.hourly.time.findIndex(t => t.startsWith(localHourStr));
+        const soilTempC = hourIndex >= 0 ? data.hourly.soil_temperature_6cm[hourIndex] : data.hourly.soil_temperature_6cm[0];
+        if (soilTempC != null) {
+            const soilColor = getSoilTemperatureColor(soilTempC);
+            const soilDisplay = convertTemp(soilTempC, tempUnit);
+            currentSoilTempHtml = ` | Soil (6cm): <span style="color:${soilColor};font-weight:600;">${soilDisplay}${getTempUnitSymbol(tempUnit)}</span>`;
+        }
+    }
+
+    let html = `<div class="weather-current"><strong>Current weather:</strong> <span style="display:inline-block;background:${currentIconTextColor.bg};border-radius:50%;padding:6px 10px;font-size:1.4em;color:${currentIconTextColor.color};margin-right:6px;">${currentIconTextColor.icon}</span> ${currentIconTextColor.text}, ${convertTemp(data.current_weather.temperature, tempUnit)}${getTempUnitSymbol(tempUnit)}, Wind: ${convertWind(data.current_weather.windspeed, windUnit)} ${getWindUnitSymbol(windUnit)}${currentSoilTempHtml}</div>`;
+    html += `<div class="soil-temp-legend">🌱 Soil: &lt;5°C too cold | 5°C peas/lettuce | 10°C cool-season | 15°C+ warm-season</div>`;
+
     // Prepare hourly data grouped by day
     const hourlyByDay = groupHourlyByDay(data.hourly, data.daily.time);
     const hourlyPrecipByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.precipitation }, data.daily.time);
     const hourlyWindByDay = groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.windspeed_10m }, data.daily.time);
-    
+    const hourlySoilByDay = data.hourly?.soil_temperature_6cm
+        ? groupHourlyByDay({ time: data.hourly.time, temperature_2m: data.hourly.soil_temperature_6cm }, data.daily.time)
+        : [];
+
     // Display forecast table
     html += `<div style="margin-top:10px;"><strong>16-day forecast:</strong></div>`;
-    html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Wind</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
+    html += `<table class="weather-forecast-table"><caption class='visually-hidden'>16-day weather forecast for selected location</caption><thead><tr><th scope='col'>Date</th><th scope='col'>Night Min</th><th scope='col'>Night Max</th><th scope='col'>Day Min</th><th scope='col'>Day Max</th><th scope='col'>Precip.</th><th scope='col'>Wind</th><th scope='col'>Soil 6cm</th><th scope='col'>Weather</th><th scope='col'>Temp Trend</th></tr></thead><tbody>`;
     
     for (let i = 0; i < data.daily.time.length; i++) {
         const { nightMin, nightMax, dayMin, dayMax } = calcNightDayMinMax(hourlyByDay[i]);
@@ -179,6 +199,18 @@ export function renderWeatherData(data) {
             <td>${getTempHtml(dayMax)}</td>
             <td>${convertPrecip(data.daily.precipitation_sum[i], precipUnit)} ${getPrecipUnitSymbol(precipUnit)}</td>
             <td>${(() => { const dayWinds = hourlyWindByDay[i] || []; const maxWind = dayWinds.length ? Math.max(...dayWinds) : 0; return `${convertWind(maxWind, windUnit)} ${getWindUnitSymbol(windUnit)}<br><span style="font-size:0.82em;color:#888;">${getBeaufortLabel(maxWind)}</span>`; })()}</td>
+            <td>${(() => {
+                const daySoils = hourlySoilByDay[i] || [];
+                if (!daySoils.length) return '-';
+                const noonSoil = daySoils[12] != null ? daySoils[12] : daySoils[Math.floor(daySoils.length / 2)];
+                const soilMin = Math.min(...daySoils.filter(v => v != null));
+                const soilMax = Math.max(...daySoils.filter(v => v != null));
+                const soilColor = getSoilTemperatureColor(noonSoil);
+                const rgb = soilColor.replace('#', '').match(/.{2}/g).map(h => parseInt(h, 16));
+                const bgColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.25)`;
+                const borderColor = `rgba(${rgb[0]}, ${rgb[1]}, ${rgb[2]}, 0.5)`;
+                return `<span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${convertTemp(noonSoil, tempUnit)}${getTempUnitSymbol(tempUnit)}</span><br><span style="font-size:0.82em;color:#888;">${convertTemp(soilMin, tempUnit)}–${convertTemp(soilMax, tempUnit)}${getTempUnitSymbol(tempUnit)}</span>`;
+            })()}</td>
             <td><span style='display:inline-block;background:${weatherIconTextColor.bg};border-radius:50%;padding:7px 12px;font-size:1.5em;color:${weatherIconTextColor.color};margin-bottom:2px;'>${weatherIconTextColor.icon}</span><br><span style='color:${weatherIconTextColor.color};font-size:0.93em;'>${weatherIconTextColor.text}</span></td>
             <td>${renderSparkline(hourlyByDay[i], i, tempUnit)}</td>
         </tr>`;
@@ -188,7 +220,7 @@ export function renderWeatherData(data) {
     weatherSection.innerHTML = html;
     
     // Add event listeners for sparklines
-    addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit, windUnit);
+    addSparklineListeners(hourlyByDay, data.daily.time, hourlyPrecipByDay, hourlyWindByDay, hourlySoilByDay, tempUnit, precipUnit, windUnit);
 
     // Update weather-to-plants bridge callout
     updateWeatherCallout();
@@ -304,6 +336,20 @@ export function getTemperatureColor(temp, tempUnit) {
 }
 
 /**
+ * Get soil temperature color based on germination thresholds (always works in Celsius internally)
+ * @param {number} tempC - Soil temperature in Celsius
+ * @returns {string} Color hex code
+ */
+export function getSoilTemperatureColor(tempC) {
+    if (tempC < 0) return '#1565c0';   // Frozen — deep blue
+    if (tempC < 5) return '#42a5f5';   // Too cold for most — light blue
+    if (tempC < 10) return '#64b5f6';  // Peas/lettuce/spinach OK — pale blue
+    if (tempC < 15) return '#81c784';  // Cool-season crops — light green
+    if (tempC < 20) return '#4caf50';  // Warm-season OK — green
+    return '#7cb342';                  // Ideal — yellow-green
+}
+
+/**
  * Render a mini SVG sparkline for a day's temperatures
  * @param {Array} temps - Array of hourly temperatures
  * @param {number} dayIndex - Index of the day
@@ -367,7 +413,7 @@ export function renderSparkline(temps, dayIndex, tempUnit) {
  * @param {string} tempUnit - Temperature unit
  * @param {string} precipUnit - Precipitation unit
  */
-export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, tempUnit, precipUnit, windUnit) {
+export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay, hourlyWindByDay, hourlySoilByDay, tempUnit, precipUnit, windUnit) {
     const sparklines = document.querySelectorAll('.temp-sparkline');
     
     for (const sparkline of sparklines) {
@@ -375,6 +421,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         const temps = hourlyByDay[dayIndex];
         const precips = hourlyPrecipByDay?.[dayIndex] || [];
         const winds = hourlyWindByDay?.[dayIndex] || [];
+        const soils = hourlySoilByDay?.[dayIndex] || [];
         if (!temps || temps.length === 0) continue;
         
         // Create tooltip element
@@ -400,11 +447,16 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
             const precip = precips[hourIndex] ? convertPrecip(precips[hourIndex], precipUnit) : 0;
             const wind = winds[hourIndex] || 0;
             
+            const soilTempC = soils[hourIndex];
+            const soilLine = soilTempC != null
+                ? `<div>Soil (6cm): <span style="color:${getSoilTemperatureColor(soilTempC)};font-weight:600;">${convertTemp(soilTempC, tempUnit)}${getTempUnitSymbol(tempUnit)}</span></div>`
+                : '';
             tooltip.innerHTML = `
                 <div style="margin-bottom:5px;font-weight:bold;">${date} ${hourDisplay}</div>
                 <div>Temperature: ${temp}${getTempUnitSymbol(tempUnit)}</div>
                 <div>Precipitation: ${precip} ${getPrecipUnitSymbol(precipUnit)}</div>
                 <div>Wind: ${convertWind(wind, windUnit)} ${getWindUnitSymbol(windUnit)} (${getBeaufortLabel(wind)})</div>
+                ${soilLine}
             `;
             
             tooltip.style.left = (e.pageX + 15) + 'px';
@@ -419,7 +471,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
         
         // Add click handler to open detailed hourly view
         sparkline.addEventListener('click', () => {
-            showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, tempUnit, precipUnit, windUnit);
+            showHourlyWeatherDetail(dayIndex, dailyDates[dayIndex], temps, precips, winds, soils, tempUnit, precipUnit, windUnit);
         });
     }
 }
@@ -434,7 +486,7 @@ export function addSparklineListeners(hourlyByDay, dailyDates, hourlyPrecipByDay
  * @param {string} tempUnit - Temperature unit
  * @param {string} precipUnit - Precipitation unit
  */
-export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds, tempUnit, precipUnit, windUnit) {
+export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds, soilTemps, tempUnit, precipUnit, windUnit) {
     if (!temps || temps.length === 0) return;
     
     // Use the UI module's showModal function if available
@@ -445,20 +497,21 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
         let content = `<div style="max-height:70vh;overflow-y:auto;padding:0 5px;">`;
         content += `<table class="weather-modal-hourly-table" style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">`;
         content += `<caption class="visually-hidden">Hourly weather details for ${dateStr}</caption>`;
-        content += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th></tr></thead><tbody>`;
-        
+        content += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th><th>Soil</th></tr></thead><tbody>`;
+
         // Add rows for each hour
         for (let i = 0; i < 24; i++) {
             // Format hour display (0 => 12 AM, 12 => 12 PM, 23 => 11 PM)
-            const hourDisplay = i === 0 ? '12 AM' : 
-                              i < 12 ? `${i} AM` : 
-                              i === 12 ? '12 PM' : 
+            const hourDisplay = i === 0 ? '12 AM' :
+                              i < 12 ? `${i} AM` :
+                              i === 12 ? '12 PM' :
                               `${i - 12} PM`;
-            
+
             const temp = temps[i] !== undefined ? convertTemp(temps[i], tempUnit) : '-';
             const precip = precips[i] !== undefined ? convertPrecip(precips[i], precipUnit) : '-';
             const wind = winds[i] !== undefined ? winds[i] : '-';
-            
+            const soilC = soilTemps?.[i];
+
             // Get temperature color for styling
             const tempColor = getTemperatureColor(temp, tempUnit);
             const hexToRgb = (hex) => {
@@ -471,16 +524,25 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
                     b: parseInt(result[3], 16)
                 } : {r: 0, g: 0, b: 0};
             };
-            
+
             const rgb = hexToRgb(tempColor);
             const bgColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25)`;
             const borderColor = `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.5)`;
-            
+
+            // Soil temp cell
+            let soilHtml = '-';
+            if (soilC != null) {
+                const sc = getSoilTemperatureColor(soilC);
+                const sRgb = sc.replace('#', '').match(/.{2}/g).map(h => parseInt(h, 16));
+                soilHtml = `<span style="display:inline-block;background-color:rgba(${sRgb[0]},${sRgb[1]},${sRgb[2]},0.25);color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid rgba(${sRgb[0]},${sRgb[1]},${sRgb[2]},0.5);">${convertTemp(soilC, tempUnit)}${getTempUnitSymbol(tempUnit)}</span>`;
+            }
+
             content += `<tr>`;
             content += `<td>${hourDisplay}</td>`;
             content += `<td><span style="display:inline-block;background-color:${bgColor};color:#333;padding:2px 6px;border-radius:4px;font-weight:500;border:1px solid ${borderColor};">${temp}${getTempUnitSymbol(tempUnit)}</span></td>`;
             content += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
             content += `<td>${wind !== '-' ? convertWind(wind, windUnit) + ' ' + getWindUnitSymbol(windUnit) : '-'}</td>`;
+            content += `<td>${soilHtml}</td>`;
             content += `</tr>`;
         }
         
@@ -519,23 +581,28 @@ export function showHourlyWeatherDetail(dayIndex, dateStr, temps, precips, winds
         // Build table similar to above
         let tableHtml = `<table class="weather-modal-hourly-table" style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden;">`;
         tableHtml += `<caption class="visually-hidden">Hourly weather details for ${dateStr}</caption>`;
-        tableHtml += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th></tr></thead><tbody>`;
-        
+        tableHtml += `<thead><tr><th>Hour</th><th>Temp</th><th>Precip</th><th>Wind</th><th>Soil</th></tr></thead><tbody>`;
+
         for (let i = 0; i < 24; i++) {
-            const hourDisplay = i === 0 ? '12 AM' : 
-                              i < 12 ? `${i} AM` : 
-                              i === 12 ? '12 PM' : 
+            const hourDisplay = i === 0 ? '12 AM' :
+                              i < 12 ? `${i} AM` :
+                              i === 12 ? '12 PM' :
                               `${i - 12} PM`;
-            
+
             const temp = temps[i] !== undefined ? convertTemp(temps[i], tempUnit) : '-';
             const precip = precips[i] !== undefined ? convertPrecip(precips[i], precipUnit) : '-';
             const wind = winds[i] !== undefined ? winds[i] : '-';
-            
+            const soilC = soilTemps?.[i];
+            const soilCell = soilC != null
+                ? `<span style="color:${getSoilTemperatureColor(soilC)};font-weight:500;">${convertTemp(soilC, tempUnit)}${getTempUnitSymbol(tempUnit)}</span>`
+                : '-';
+
             tableHtml += `<tr>`;
             tableHtml += `<td>${hourDisplay}</td>`;
             tableHtml += `<td>${temp}${getTempUnitSymbol(tempUnit)}</td>`;
             tableHtml += `<td>${precip} ${getPrecipUnitSymbol(precipUnit)}</td>`;
             tableHtml += `<td>${wind !== '-' ? convertWind(wind, windUnit) + ' ' + getWindUnitSymbol(windUnit) : '-'}</td>`;
+            tableHtml += `<td>${soilCell}</td>`;
             tableHtml += `</tr>`;
         }
         
@@ -821,7 +888,21 @@ export function updateWeatherCallout() {
 
     if (currentTemp < 5 && hasFrostSensitive) {
         icon = '🥶';
-        message = 'Frost risk — consider covering tender plants like tomatoes and peppers.';
+        // Enhance with estimated frost date if available
+        let frostExtra = '';
+        if (lastWeatherLat != null) {
+            const frost = estimateLastFrostDate(parseFloat(lastWeatherLat), getCurrentClimateZone());
+            if (frost.lastSpring) {
+                const weeksAway = Math.round((frost.lastSpring - new Date()) / (1000 * 60 * 60 * 24 * 7));
+                const dateLabel = frost.lastSpring.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                if (weeksAway > 0) {
+                    frostExtra = ` Estimated last frost ~${dateLabel} (~${weeksAway} weeks).`;
+                } else {
+                    frostExtra = ` Last frost (~${dateLabel}) has likely passed, but late frosts happen.`;
+                }
+            }
+        }
+        message = `Frost risk — consider covering tender plants like tomatoes and peppers.${frostExtra}`;
     } else if (currentTemp > 30) {
         icon = '🌡️';
         message = 'Heat stress possible — water deeply in the morning, avoid midday watering.';
