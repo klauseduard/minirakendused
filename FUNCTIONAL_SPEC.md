@@ -8,7 +8,7 @@ Extracted from the existing codebase as a product requirements baseline.
 
 A single-page web application for planning garden activities. Runs as static HTML/JS/CSS on GitHub Pages with no backend, no build system, and no framework dependencies. All user data is stored in the browser's localStorage.
 
-**Live URL:** https://klauseduard.github.io/minirakendused/gardening_calendar.html
+**Live URL:** https://klauseduard.github.io/garden-planner/gardening_calendar.html
 
 ---
 

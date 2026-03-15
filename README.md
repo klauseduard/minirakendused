@@ -1,35 +1,50 @@
-# minirakendused
+# Garden Planner
 
-* mõned kogemata tekkinud pisirakendused maailmaga jagamiseks
+A client-side gardening calendar with local weather forecasts, planting schedules, and a garden journal. No backend, no accounts — runs entirely in the browser.
 
-## Saadaolevad rakendused
+**[Open the app](https://klauseduard.github.io/garden-planner/gardening_calendar.html)**
 
-- **[Kevadine aiatööde ja külvamise kalender](https://klauseduard.github.io/minirakendused/gardening_calendar.html)** — Planeeri aiatöid ja külve kuude kaupa, koos kohaliku ilmaprognoosiga ja interaktiivsete võimalustega. Võimalused:
-  - Ilmaprognoosi kuvamine sinu asukoha järgi
-  - Köppen'i kliimatsooni tuvastamine
-  - Taimede ja aiatööde märkimine tehtud/planeeritud
-  - AI nõuannete küsimise abimees (prompti generaator)
-  - Temperatuuri ja sademete ühikute kohandamine
-  - Otsing taimede ja tööde leidmiseks
-- **[Külvikalender](https://klauseduard.github.io/minirakendused/külvikalender.html)** — Eesti keeles külvi- ja istutuskalender.
+## Features
 
-(Muud HTML-failid või rakendused lisanduvad siia arenduse käigus.)
+### Weather & Location
+- 16-day weather forecast via [Open-Meteo](https://open-meteo.com/) (no API key needed)
+- Current conditions with temperature, wind speed, and Beaufort scale labels
+- Interactive hourly temperature sparklines with click-to-expand detail
+- Configurable units: temperature (°C/°F), precipitation (mm/in), wind (m/s, km/h, mph)
+- Köppen climate zone detection with manual override
+- Contextual alerts (frost risk, heat stress, rain)
 
----
+### Planting Schedule
+- Curated plant and task lists for spring growing periods (April, May, Early June)
+- Categories: direct sowing, seedlings, transplanting, greenhouse, garden tasks
+- Checkbox tracking for selected plants and tasks
+- Custom periods, plants, and tasks — create your own and reorder freely
+- Filter to quickly find specific plants or tasks
+- Import/export custom data as JSON
 
-# Mini Applications
+### Garden Journal
+- Log entries by type: planting, garden care, harvest, observation, maintenance
+- Photo attachments stored locally (IndexedDB)
+- Harvest metrics (weight, quantity)
+- Weather auto-captured with each entry
+- Three view modes: timeline, photo gallery, calendar
+- Full import/export (with or without photos)
 
-* Place to share some small applications I happened to make with the world
+### AI Garden Assistant
+- Generates a detailed prompt with your location, weather, climate zone, and selected plants
+- One-click copy or direct links to ChatGPT, Claude, Gemini, Copilot
 
-## Available Applications
+## Tech Stack
 
-- **[Spring Gardening and Planting Calendar](https://klauseduard.github.io/minirakendused/gardening_calendar.html)** — Plan your garden tasks and sowing by month, with local weather forecasts and interactive features. Features include:
-  - Weather forecast based on your location
-  - Köppen climate zone detection
-  - Checkable plants and garden tasks
-  - AI advice prompt generator
-  - Customizable temperature and precipitation units
-  - Search functionality for plants and tasks
-- **[Külvikalender](https://klauseduard.github.io/minirakendused/külvikalender.html)** — Estonian-language sowing and planting calendar.
+- Vanilla HTML/CSS/JavaScript (ES6 modules)
+- No build step, no dependencies, no framework
+- localStorage + IndexedDB for persistence
+- Hosted on GitHub Pages
 
-(Other HTML files or apps can be added here as they are developed.)
+## Also included
+
+- **[Külvikalender](https://klauseduard.github.io/garden-planner/külvikalender.html)** — a compact Estonian-language sowing calendar (standalone)
+
+## License
+
+[MIT](LICENSE)
