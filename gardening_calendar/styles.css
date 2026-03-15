@@ -668,6 +668,10 @@ h1, h2, h3 {
     margin-top: 20px !important;
 }
 
+.calendar-content.hidden-by-tab {
+    display: none !important;
+}
+
 .category-card {
     background-color: var(--surface);
     border-radius: 8px;
@@ -3113,4 +3117,303 @@ body.journal-active #garden-journal {
 .calendar-explainer {
     color: var(--text-secondary);
     margin-bottom: 15px;
+}
+
+/* ============================================================
+   Schedule Tabs (Planting Calendar / TODO)
+   ============================================================ */
+.schedule-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.schedule-tab {
+    padding: 8px 20px;
+    border: 1.5px solid var(--border);
+    border-radius: 20px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.schedule-tab:hover {
+    border-color: var(--sage);
+    color: var(--forest);
+}
+
+.schedule-tab.active {
+    background: var(--forest);
+    border-color: var(--forest);
+    color: #fff;
+}
+
+@media (max-width: 768px) {
+    .schedule-tabs {
+        gap: 0;
+    }
+    .schedule-tab {
+        flex: 1;
+        text-align: center;
+        border-radius: 0;
+    }
+    .schedule-tab:first-child {
+        border-radius: 8px 0 0 8px;
+    }
+    .schedule-tab:last-child {
+        border-radius: 0 8px 8px 0;
+    }
+}
+
+/* ============================================================
+   TODO List Styles
+   ============================================================ */
+.todo-content {
+    margin-top: 10px;
+}
+
+.todo-header-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+.todo-filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.todo-filter-select {
+    padding: 6px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface);
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.todo-filter-select:focus {
+    border-color: var(--sage);
+    box-shadow: 0 0 0 3px rgba(143, 167, 139, 0.2);
+    outline: none;
+}
+
+.todo-actions-bar {
+    display: flex;
+    gap: 8px;
+}
+
+/* Quick-add form */
+.todo-add-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+}
+
+.todo-quick-input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-size: 1rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    transition: border-color 0.2s;
+}
+
+.todo-quick-input:focus {
+    border-color: var(--forest);
+    box-shadow: 0 0 0 3px rgba(76, 111, 65, 0.15);
+    outline: none;
+}
+
+.todo-quick-add-btn {
+    width: 42px;
+    height: 42px;
+    border: none;
+    border-radius: 8px;
+    background: var(--forest);
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.todo-quick-add-btn:hover {
+    background: var(--sage);
+}
+
+/* TODO list */
+.todo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.todo-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.todo-item:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.todo-item--done {
+    opacity: 0.55;
+}
+
+.todo-item--done .todo-item-text {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.todo-item-checkbox {
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    accent-color: var(--forest);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.todo-item-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.todo-item-text {
+    font-size: 1rem;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.todo-item-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 5px;
+}
+
+.todo-meta-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    background: rgba(143, 167, 139, 0.15);
+    color: var(--forest);
+}
+
+.todo-meta-badge--overdue {
+    background: rgba(198, 90, 70, 0.12);
+    color: var(--terracotta);
+}
+
+.todo-meta-badge--photos {
+    background: rgba(143, 167, 139, 0.1);
+    color: var(--sage);
+}
+
+.todo-item-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.todo-item:hover .todo-item-actions {
+    opacity: 1;
+}
+
+.todo-action-btn {
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    transition: background 0.15s;
+}
+
+.todo-action-btn:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
+.todo-action-btn--journal {
+    color: var(--forest);
+}
+
+.todo-action-btn--delete {
+    color: var(--terracotta);
+}
+
+/* Empty state */
+.todo-empty-state {
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-secondary);
+}
+
+.todo-empty-state h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    margin: 12px 0 6px;
+    color: var(--text-primary);
+}
+
+.todo-empty-state p {
+    font-size: 0.95rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .todo-header-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .todo-filter-row {
+        flex-wrap: wrap;
+    }
+    .todo-filter-select {
+        flex: 1;
+        min-width: 0;
+    }
+    .todo-actions-bar {
+        justify-content: flex-end;
+    }
+    .todo-item-actions {
+        opacity: 1;
+    }
+    .todo-item-meta {
+        flex-direction: column;
+        gap: 4px;
+    }
 }

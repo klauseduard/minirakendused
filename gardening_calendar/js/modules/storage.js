@@ -17,6 +17,7 @@ const STORAGE_KEYS = {
     CUSTOM_ENTRIES: 'gardening_custom_entries',
     CUSTOM_PERIODS: 'gardening_custom_periods',
     WIND_UNIT: 'gardening_wind_unit',
+    TODO_ITEMS: 'gardening_todo_items',
 };
 
 // Built-in periods definition
@@ -1061,5 +1062,22 @@ export function getSelectionCount() {
     return count;
 }
 
+/**
+ * Get all TODO items
+ * @returns {Array} Array of todo items
+ */
+export function getTodoItems() {
+    const stored = localStorage.getItem(STORAGE_KEYS.TODO_ITEMS);
+    return stored ? JSON.parse(stored) : [];
+}
+
+/**
+ * Save TODO items
+ * @param {Array} items - Todo items to save
+ */
+export function saveTodoItems(items) {
+    localStorage.setItem(STORAGE_KEYS.TODO_ITEMS, JSON.stringify(items));
+}
+
 // Export all constants
-export { STORAGE_KEYS }; 
+export { STORAGE_KEYS };

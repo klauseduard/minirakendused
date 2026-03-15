@@ -131,6 +131,10 @@
                         <div class="social-share-container" id="calendarShareContainer"></div>
                     </div>
                 </div>
+                <div class="schedule-tabs" id="scheduleTabs">
+                    <button class="schedule-tab active" data-tab="calendar">Planting Calendar</button>
+                    <button class="schedule-tab" data-tab="todo">TODO</button>
+                </div>
                 <div class="calendar-explainer">Choose a growing period to see recommended plants and tasks:</div>
                 <div class="calendar-nav" id="calendarNav">
                     <!-- Period buttons will be generated dynamically -->
@@ -161,6 +165,40 @@
             <section class="calendar-content" id="calendarContent">
                 <!-- Content will be added by JavaScript -->
             </section>
+            <section class="todo-content hidden-default" id="todoContent">
+                <div class="todo-header-bar">
+                    <div class="todo-filter-row">
+                        <select id="todoFilterPeriod" class="todo-filter-select">
+                            <option value="">All periods</option>
+                        </select>
+                        <select id="todoFilterStatus" class="todo-filter-select">
+                            <option value="active">Active</option>
+                            <option value="completed">Completed</option>
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                    <div class="todo-actions-bar">
+                        <button id="todoExportBtn" class="data-manage-btn">
+                            <span class="icon-size-sm">📤</span> Export
+                        </button>
+                        <button id="todoImportBtn" class="data-manage-btn">
+                            <span class="icon-size-sm">📥</span> Import
+                        </button>
+                    </div>
+                </div>
+                <div class="todo-add-form" id="todoAddForm">
+                    <input type="text" id="todoQuickAddInput" class="todo-quick-input"
+                        placeholder="Add a task..." aria-label="Add a new task">
+                    <button id="todoQuickAddBtn" class="todo-quick-add-btn" aria-label="Add task">+</button>
+                </div>
+                <div id="todoList" class="todo-list"></div>
+                <div id="todoEmptyState" class="todo-empty-state hidden-default">
+                    <div class="icon-size-jumbo">📋</div>
+                    <h3>No tasks yet</h3>
+                    <p>Type in the field above to add your first task.</p>
+                </div>
+            </section>
+
             <div class="onboarding-hint hidden-default" id="calendarHint">
                 Check the plants you're growing this season to track them
             </div>
@@ -346,6 +384,7 @@
                             <option value="harvest">🥕 Harvest</option>
                             <option value="observation">👁️ Observation</option>
                             <option value="maintenance">🧰 Maintenance</option>
+                            <option value="task">✅ Completed Task</option>
                         </select>
                     </div>
                 </div>
@@ -413,6 +452,55 @@
                 <div class="social-share-container" id="journalEntryShareContainer"></div>
                 <button id="journalEntryViewCloseBtn" class="modal-btn-close">Close</button>
             </div>
+        </div>
+    </div>
+
+    <!-- TODO Edit Modal -->
+    <div id="todoEditModal" class="weather-modal-overlay hidden-default modal-overlay-high-z">
+        <div class="weather-modal modal-body-form">
+            <button class="weather-modal-close" id="todoEditModalCloseBtn" aria-label="Close todo editor">&times;</button>
+            <div class="modal-title" id="todoEditModalTitle">Edit Task</div>
+
+            <form id="todoEditForm" class="modal-form">
+                <div class="form-row">
+                    <label for="todoEditText" class="form-label">Task</label>
+                    <input type="text" id="todoEditText" class="form-input" required placeholder="What needs to be done?">
+                </div>
+
+                <div class="form-row form-row-flex">
+                    <div class="form-column form-column-flex">
+                        <label for="todoEditDate" class="form-label">Due Date</label>
+                        <input type="date" id="todoEditDate" class="form-input">
+                    </div>
+
+                    <div class="form-column form-column-flex">
+                        <label for="todoEditPeriod" class="form-label">Period</label>
+                        <select id="todoEditPeriod" class="form-input">
+                            <option value="">No period</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-notes-group">
+                    <label for="todoEditNotes" class="form-label">Notes</label>
+                    <textarea id="todoEditNotes" rows="4" class="form-textarea" placeholder="Additional details..."></textarea>
+                </div>
+
+                <div class="form-photos-group">
+                    <label for="todoEditPhotos" class="form-label">Photos</label>
+                    <input type="file" id="todoEditPhotos" accept="image/*" multiple class="hidden-default">
+                    <button type="button" id="todoPhotoSelectBtn" class="form-photo-select-btn">
+                        <span class="icon-size-sm">📷</span>
+                        <span>Add Photos</span>
+                    </button>
+                    <div id="todoPhotoPreviewContainer" class="form-photo-preview-container"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="todoEditCancelBtn" class="modal-btn-cancel">Cancel</button>
+                    <button type="submit" id="todoEditSaveBtn" class="modal-btn-confirm">Save Task</button>
+                </div>
+            </form>
         </div>
     </div>
 

@@ -17,6 +17,7 @@ import * as journalModule from './modules/journal.js';
 import * as customEntriesModule from './modules/custom-entries.js';
 import * as socialModule from './modules/social.js';
 import * as photoStorage from './modules/photo-storage.js';
+import * as todoModule from './modules/todo.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -33,7 +34,8 @@ window.GardeningApp = {
         journal: journalModule,
         customEntries: customEntriesModule,
         social: socialModule,
-        photoStorage: photoStorage
+        photoStorage: photoStorage,
+        todo: todoModule
     },
     state: {
         currentMonth: null,
@@ -149,6 +151,10 @@ async function initApp() {
     document.dispatchEvent(new CustomEvent('journalModuleLoaded'));
     console.log('Journal module initialized');
     
+    // Step 9b: Initialize TODO module
+    todoModule.initTodo();
+    console.log('TODO module initialized');
+
     // Step 10: Initialize social sharing module - only for footer
     socialModule.initSocialSharing({
         selector: '#footerShareContainer',
@@ -333,11 +339,16 @@ function navigateToSection(sectionId, { isMobile = false } = {}) {
         // Leave journal view, restore main sections
         closeJournalPanel();
 
-        // Re-render calendar when navigating to schedule
+        // Re-render calendar/todo when navigating to schedule
         if (sectionId === 'monthly-calendar') {
-            const calendarContent = document.getElementById('calendarContent');
-            if (calendarContent) calendarContent.style.display = 'grid';
-            calendarModule.renderCalendar(window.GardeningApp.activeMonth || 'april');
+            const activeTab = window.GardeningApp.state.activeScheduleTab || 'calendar';
+            if (activeTab === 'todo') {
+                todoModule.switchTab('todo');
+            } else {
+                const calendarContent = document.getElementById('calendarContent');
+                if (calendarContent) calendarContent.style.display = 'grid';
+                calendarModule.renderCalendar(window.GardeningApp.activeMonth || 'april');
+            }
         }
 
         // Scroll to target section
@@ -431,18 +442,40 @@ function setupMobileNavigation() {
  * Helper function to show all main sections
  */
 function showAllMainSections() {
+    const activeTab = window.GardeningApp.state.activeScheduleTab || 'calendar';
+    const calendarContent = document.getElementById('calendarContent');
+
     // Show all main sections and elements except journal
     document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.bottom-nav):not(#scrollToTop)').forEach(el => {
-        if (el.id === 'calendarContent') {
-            // Use stored display value if available
-            const originalDisplay = el.getAttribute('data-original-display');
-            el.style.display = originalDisplay || 'grid';
+        // When TODO tab is active, keep calendar-specific elements hidden
+        if (activeTab === 'todo') {
+            if (el.id === 'search-section' || el.id === 'calendarHint') {
+                el.style.display = 'none';
+                return;
+            }
+            if (el.classList.contains('custom-entries-toolbar')) {
+                el.style.display = 'none';
+                return;
+            }
+            if (el.id === 'todoContent') {
+                el.style.display = 'block';
+                return;
+            }
+        }
+
+        if (el.id === 'todoContent') {
+            el.style.display = activeTab === 'todo' ? 'block' : 'none';
         } else if (el.classList.contains('custom-entries-toolbar')) {
-            el.style.display = 'flex';
+            el.style.display = activeTab === 'todo' ? 'none' : 'flex';
         } else {
             el.style.display = 'block';
         }
     });
+
+    // Handle calendarContent separately due to !important CSS
+    if (calendarContent) {
+        calendarContent.classList.toggle('hidden-by-tab', activeTab === 'todo');
+    }
 }
 
 // Initialize the application when DOM is loaded

@@ -15,7 +15,8 @@ const journalEntryTypes = {
     "care": { icon: "🌿", name: "Garden Care" },
     "harvest": { icon: "🥕", name: "Harvest" },
     "observation": { icon: "👁️", name: "Observation" },
-    "maintenance": { icon: "🧰", name: "Maintenance" }
+    "maintenance": { icon: "🧰", name: "Maintenance" },
+    "task": { icon: "✅", name: "Completed Task" }
 };
 
 // Core Journal Functions
