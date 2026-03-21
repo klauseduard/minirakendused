@@ -22,9 +22,9 @@ const STORAGE_KEYS = {
 
 // Built-in periods definition
 const BUILTIN_PERIODS = [
-    { id: 'april', name: 'April', builtin: true, order: 1 },
-    { id: 'may', name: 'May', builtin: true, order: 2 },
-    { id: 'early_june', name: 'Early June', builtin: true, order: 3 }
+    { id: 'april', name: 'Early Spring', builtin: true, order: 1 },
+    { id: 'may', name: 'Spring', builtin: true, order: 2 },
+    { id: 'early_june', name: 'Late Spring', builtin: true, order: 3 }
 ];
 
 const BUILTIN_ORDER_KEY = 'gardenCal_builtinPeriodOrders';

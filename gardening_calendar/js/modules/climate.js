@@ -10,6 +10,58 @@ let userClimateZoneOverride = null;
 let userLat = null;
 
 /**
+ * Phase configuration: frost-relative timing for each built-in period.
+ * Offsets are in weeks relative to last frost date (negative = before frost).
+ */
+const PHASE_CONFIG = {
+    april:      { startWeeks: -8, endWeeks: -4 },
+    may:        { startWeeks: -4, endWeeks: 0 },
+    early_june: { startWeeks: 0,  endWeeks: 3 }
+};
+
+/**
+ * Map Köppen first letter to a broad zone group name.
+ * @param {string} koppenCode - Full Köppen code (e.g. 'Dfb', 'Cfa')
+ * @returns {string|null} Zone group name or null if unknown
+ */
+export function getZoneGroup(koppenCode) {
+    if (!koppenCode) return null;
+    const letter = koppenCode.charAt(0).toUpperCase();
+    const map = { A: 'tropical', B: 'arid', C: 'temperate', D: 'continental', E: 'polar' };
+    return map[letter] || null;
+}
+
+/**
+ * Get frost data for the current user location.
+ * @returns {{ lastSpring: Date|null, firstAutumn: Date|null, label: string, confidence: string }|null}
+ */
+export function getUserFrostData() {
+    if (userLat == null || !userClimateZone) return null;
+    return estimateLastFrostDate(userLat, userClimateZone);
+}
+
+/**
+ * Get calendar date range for a built-in period based on frost date.
+ * @param {string} periodId - 'april', 'may', or 'early_june'
+ * @returns {{ start: Date, end: Date, label: string }|null} Date range or null if unavailable
+ */
+export function getPhaseCalendarDates(periodId) {
+    const config = PHASE_CONFIG[periodId];
+    if (!config) return null;
+
+    const frost = getUserFrostData();
+    if (!frost || !frost.lastSpring) return null;
+
+    const frostMs = frost.lastSpring.getTime();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+    const start = new Date(frostMs + config.startWeeks * weekMs);
+    const end = new Date(frostMs + config.endWeeks * weekMs);
+
+    const fmt = (d) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return { start, end, label: `${fmt(start)} – ${fmt(end)}` };
+}
+
+/**
  * Initialize the climate zone module.
  * Loads Köppen climate classification grid data.
  */
@@ -46,6 +98,7 @@ export function initClimateZone() {
     const override = localStorage.getItem('gardening_climate_zone_override');
     if (override) {
         userClimateZoneOverride = override;
+        userClimateZone = override;
     }
 }
 
@@ -158,6 +211,11 @@ export function showClimateZone(lat, lon) {
         }
     }
     renderClimateZoneUI(lookupKey, foundZone);
+
+    // Notify other modules that the climate zone has been determined/changed
+    document.dispatchEvent(new CustomEvent('climateZoneUpdated', {
+        detail: { zone: userClimateZone, zoneGroup: getZoneGroup(userClimateZone), lat: userLat }
+    }));
 }
 
 /**
@@ -224,6 +282,9 @@ export function renderClimateZoneUI(lookupKey = '', foundZone = '') {
                 userClimateZoneOverride = val;
                 userClimateZone = val;
                 renderClimateZoneUI();
+                document.dispatchEvent(new CustomEvent('climateZoneUpdated', {
+                    detail: { zone: val, zoneGroup: getZoneGroup(val), lat: userLat }
+                }));
             }
         });
     }
@@ -231,7 +292,7 @@ export function renderClimateZoneUI(lookupKey = '', foundZone = '') {
         clearBtn.addEventListener('click', function() {
             localStorage.removeItem('gardening_climate_zone_override');
             userClimateZoneOverride = null;
-            // Recompute from location
+            // Recompute from location (showClimateZone dispatches the event)
             const cached = localStorage.getItem('gardening_last_location');
             if (cached) {
                 try {
@@ -245,6 +306,9 @@ export function renderClimateZoneUI(lookupKey = '', foundZone = '') {
                 } catch (e) {}
             }
             renderClimateZoneUI();
+            document.dispatchEvent(new CustomEvent('climateZoneUpdated', {
+                detail: { zone: null, zoneGroup: null, lat: userLat }
+            }));
         });
     }
 }
@@ -275,6 +339,9 @@ export function setClimateZoneOverride(zone) {
         userClimateZoneOverride = zone;
         userClimateZone = zone;
         renderClimateZoneUI();
+        document.dispatchEvent(new CustomEvent('climateZoneUpdated', {
+            detail: { zone: zone, zoneGroup: getZoneGroup(zone), lat: userLat }
+        }));
     }
 }
 

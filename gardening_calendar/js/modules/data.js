@@ -36,9 +36,9 @@ export const translations = {
 
         // Month selection
         'select_period': 'Select Growing Period',
-        'april': 'April',
-        'may': 'May',
-        'early_june': 'Early June',
+        'april': 'Early Spring',
+        'may': 'Spring',
+        'early_june': 'Late Spring',
         
         // Plant categories
         'direct_sowing': 'Direct Sowing',
@@ -90,119 +90,138 @@ export const translations = {
 export const calendarData = {
     "april": {
         "direct_sowing": [
-            {"en": "carrot", "et": "porgand"},
-            {"en": "parsnip", "et": "pastinaak"},
-            {"en": "radish", "et": "redis"},
-            {"en": "turnip", "et": "naeris"},
-            {"en": "peas", "et": "hernes"},
-            {"en": "spinach", "et": "spinat"},
-            {"en": "arugula", "et": "rukola"},
-            {"en": "lettuce", "et": "salat"},
-            {"en": "dill", "et": "till"},
-            {"en": "parsley", "et": "petersell"}
+            {"en": "carrot", "et": "porgand", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "parsnip", "et": "pastinaak", "zones": ["temperate", "continental"]},
+            {"en": "radish", "et": "redis", "zones": ["temperate", "continental", "arid", "polar"]},
+            {"en": "turnip", "et": "naeris", "zones": ["temperate", "continental", "polar"]},
+            {"en": "peas", "et": "hernes", "zones": ["temperate", "continental", "polar"]},
+            {"en": "spinach", "et": "spinat", "zones": ["temperate", "continental", "arid", "polar"]},
+            {"en": "arugula", "et": "rukola", "zones": ["temperate", "continental", "arid"]},
+            {"en": "lettuce", "et": "salat", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "dill", "et": "till", "zones": ["temperate", "continental"]},
+            {"en": "parsley", "et": "petersell", "zones": ["temperate", "continental", "arid"]},
+            {"en": "okra", "et": "okra", "zones": ["tropical", "arid"]},
+            {"en": "sweet potato (slips)", "et": "bataat (istikud)", "zones": ["tropical"]},
+            {"en": "cowpea", "et": "lehmahernes", "zones": ["tropical", "arid"]}
         ],
         "seedling_start": [
-            {"en": "cabbage", "et": "kapsas"},
-            {"en": "cauliflower", "et": "lillkapsas"},
-            {"en": "broccoli", "et": "brokoli"},
-            {"en": "kale", "et": "lehtkapsas"},
-            {"en": "tomato", "et": "tomat"},
-            {"en": "pepper", "et": "paprika"},
-            {"en": "eggplant", "et": "baklažaan"},
-            {"en": "pumpkin", "et": "kõrvits"},
-            {"en": "zucchini", "et": "suvikõrvits"},
-            {"en": "melon", "et": "melon"},
-            {"en": "basil", "et": "basiilik"},
-            {"en": "thyme", "et": "tüümian"},
-            {"en": "sage", "et": "salvei"}
+            {"en": "cabbage", "et": "kapsas", "zones": ["temperate", "continental"]},
+            {"en": "cauliflower", "et": "lillkapsas", "zones": ["temperate", "continental"]},
+            {"en": "broccoli", "et": "brokoli", "zones": ["temperate", "continental"]},
+            {"en": "kale", "et": "lehtkapsas", "zones": ["temperate", "continental", "polar"]},
+            {"en": "tomato", "et": "tomat", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "pepper", "et": "paprika", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "eggplant", "et": "baklažaan", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "pumpkin", "et": "kõrvits", "zones": ["temperate", "continental", "arid"]},
+            {"en": "zucchini", "et": "suvikõrvits", "zones": ["temperate", "continental", "arid"]},
+            {"en": "melon", "et": "melon", "zones": ["temperate", "arid", "tropical"]},
+            {"en": "basil", "et": "basiilik", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "thyme", "et": "tüümian", "zones": ["temperate", "continental", "arid"]},
+            {"en": "sage", "et": "salvei", "zones": ["temperate", "continental", "arid"]}
         ],
         "greenhouse": [
-            {"en": "radish", "et": "redis"},
-            {"en": "spinach", "et": "spinat"},
-            {"en": "lettuce", "et": "salat"},
-            {"en": "dill", "et": "till"}
+            {"en": "radish", "et": "redis", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "spinach", "et": "spinat", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "lettuce", "et": "salat", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "dill", "et": "till", "zones": ["temperate", "continental", "arid", "tropical", "polar"]}
         ],
         "garden_tasks": [
-            {"en": "Pruning fruit trees and berry bushes (before bud break)", "et": "Viljapuude ja marjapõõsaste lõikamine (enne pungade puhkemist)"},
-            {"en": "Cleaning strawberry beds", "et": "Maasikapeenarde puhastamine"},
-            {"en": "Turning compost", "et": "Komposti segamine"},
-            {"en": "Cleaning and preparing greenhouse", "et": "Kasvuhoone puhastamine ja ettevalmistamine"},
-            {"en": "Loosening and fertilizing beds", "et": "Peenarde kobestamine ja väetamine"}
+            {"en": "Pruning fruit trees and berry bushes (before bud break)", "et": "Viljapuude ja marjapõõsaste lõikamine (enne pungade puhkemist)", "zones": ["temperate", "continental"]},
+            {"en": "Cleaning strawberry beds", "et": "Maasikapeenarde puhastamine", "zones": ["temperate", "continental"]},
+            {"en": "Turning compost", "et": "Komposti segamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Cleaning and preparing greenhouse", "et": "Kasvuhoone puhastamine ja ettevalmistamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Loosening and fertilizing beds", "et": "Peenarde kobestamine ja väetamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Setting up shade structures", "et": "Varjualuste paigaldamine", "zones": ["tropical", "arid"]},
+            {"en": "Preparing raised beds for drainage", "et": "Kõrgpeenarde ettevalmistamine drenaažiks", "zones": ["tropical"]},
+            {"en": "Installing drip irrigation", "et": "Tilkkastmissüsteemi paigaldamine", "zones": ["arid"]},
+            {"en": "Preparing cold frames and row covers", "et": "Külmakastide ja reakattematerjali ettevalmistamine", "zones": ["polar", "continental"]},
+            {"en": "Starting seeds indoors under grow lights", "et": "Seemnete idandamine siseruumis kasvulampide all", "zones": ["polar"]}
         ],
         "custom_plants": [],
         "custom_tasks": []
     },
     "may": {
         "direct_sowing": [
-            {"en": "carrot", "et": "porgand"},
-            {"en": "beetroot", "et": "peet"},
-            {"en": "radish", "et": "redis"},
-            {"en": "turnip", "et": "naeris"},
-            {"en": "parsnip", "et": "pastinaak"},
-            {"en": "dill", "et": "till"},
-            {"en": "parsley", "et": "petersell"},
-            {"en": "lettuce", "et": "salat"},
-            {"en": "arugula", "et": "rukola"},
-            {"en": "spinach (new sowing)", "et": "spinat (uus külv)"},
-            {"en": "chard", "et": "lehtpeet"},
-            {"en": "peas", "et": "hernes"},
-            {"en": "beans", "et": "oad"},
-            {"en": "potato", "et": "kartul"},
-            {"en": "onion (sets or seeds)", "et": "sibul (istikud või seemned)"}
+            {"en": "carrot", "et": "porgand", "zones": ["temperate", "continental", "arid"]},
+            {"en": "beetroot", "et": "peet", "zones": ["temperate", "continental", "arid"]},
+            {"en": "radish", "et": "redis", "zones": ["temperate", "continental", "arid", "polar"]},
+            {"en": "turnip", "et": "naeris", "zones": ["temperate", "continental", "polar"]},
+            {"en": "parsnip", "et": "pastinaak", "zones": ["temperate", "continental"]},
+            {"en": "dill", "et": "till", "zones": ["temperate", "continental"]},
+            {"en": "parsley", "et": "petersell", "zones": ["temperate", "continental", "arid"]},
+            {"en": "lettuce", "et": "salat", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "arugula", "et": "rukola", "zones": ["temperate", "continental", "arid"]},
+            {"en": "spinach (new sowing)", "et": "spinat (uus külv)", "zones": ["temperate", "continental", "arid"]},
+            {"en": "chard", "et": "lehtpeet", "zones": ["temperate", "continental", "arid"]},
+            {"en": "peas", "et": "hernes", "zones": ["temperate", "continental", "polar"]},
+            {"en": "beans", "et": "oad", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "potato", "et": "kartul", "zones": ["temperate", "continental", "polar"]},
+            {"en": "onion (sets or seeds)", "et": "sibul (istikud või seemned)", "zones": ["temperate", "continental", "arid"]},
+            {"en": "cassava (cuttings)", "et": "kassaava (pistikud)", "zones": ["tropical"]}
         ],
         "transplanting": [
-            {"en": "cabbage", "et": "kapsas"},
-            {"en": "cauliflower", "et": "lillkapsas"},
-            {"en": "broccoli", "et": "brokoli"},
-            {"en": "kale", "et": "lehtkapsas"},
-            {"en": "tomato (in greenhouse)", "et": "tomat (kasvuhoones)"},
-            {"en": "pepper (in greenhouse)", "et": "paprika (kasvuhoones)"},
-            {"en": "eggplant (in greenhouse)", "et": "baklažaan (kasvuhoones)"},
-            {"en": "zucchini (late May)", "et": "suvikõrvits (mai lõpus)"},
-            {"en": "pumpkin (late May)", "et": "kõrvits (mai lõpus)"}
+            {"en": "cabbage", "et": "kapsas", "zones": ["temperate", "continental"]},
+            {"en": "cauliflower", "et": "lillkapsas", "zones": ["temperate", "continental"]},
+            {"en": "broccoli", "et": "brokoli", "zones": ["temperate", "continental"]},
+            {"en": "kale", "et": "lehtkapsas", "zones": ["temperate", "continental"]},
+            {"en": "tomato (in greenhouse)", "et": "tomat (kasvuhoones)", "zones": ["temperate", "continental"]},
+            {"en": "pepper (in greenhouse)", "et": "paprika (kasvuhoones)", "zones": ["temperate", "continental"]},
+            {"en": "eggplant (in greenhouse)", "et": "baklažaan (kasvuhoones)", "zones": ["temperate", "continental"]},
+            {"en": "zucchini (late May)", "et": "suvikõrvits (mai lõpus)", "zones": ["temperate", "continental"]},
+            {"en": "pumpkin (late May)", "et": "kõrvits (mai lõpus)", "zones": ["temperate", "continental"]},
+            {"en": "tomato", "et": "tomat", "zones": ["arid", "tropical"]},
+            {"en": "pepper", "et": "paprika", "zones": ["arid", "tropical"]},
+            {"en": "eggplant", "et": "baklažaan", "zones": ["arid", "tropical"]}
         ],
         "greenhouse": [
-            {"en": "tomato", "et": "tomat"},
-            {"en": "cucumber", "et": "kurk"},
-            {"en": "pepper", "et": "paprika"},
-            {"en": "eggplant", "et": "baklažaan"},
-            {"en": "zucchini", "et": "suvikõrvits"},
-            {"en": "basil", "et": "basiilik"}
+            {"en": "tomato", "et": "tomat", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "cucumber", "et": "kurk", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "pepper", "et": "paprika", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "eggplant", "et": "baklažaan", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "zucchini", "et": "suvikõrvits", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "basil", "et": "basiilik", "zones": ["temperate", "continental", "arid", "tropical", "polar"]}
         ],
         "garden_tasks": [
-            {"en": "Checking fruit tree flower buds (thinning if needed)", "et": "Viljapuude õiepungade kontrollimine (vajadusel harvendamine)"},
-            {"en": "Planting containers and balcony plants", "et": "Pottide ja rõdutaimede istutamine"},
-            {"en": "Adding mulch to beds", "et": "Multši lisamine peenardele"},
-            {"en": "Weed control", "et": "Umbrohutõrje"},
-            {"en": "Adding green matter to compost", "et": "Rohelise materjali lisamine kompostile"}
+            {"en": "Checking fruit tree flower buds (thinning if needed)", "et": "Viljapuude õiepungade kontrollimine (vajadusel harvendamine)", "zones": ["temperate", "continental"]},
+            {"en": "Planting containers and balcony plants", "et": "Pottide ja rõdutaimede istutamine", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "Adding mulch to beds", "et": "Multši lisamine peenardele", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Weed control", "et": "Umbrohutõrje", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Adding green matter to compost", "et": "Rohelise materjali lisamine kompostile", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Monitoring for pests and diseases", "et": "Kahjurite ja haiguste jälgimine", "zones": ["tropical", "arid"]},
+            {"en": "Deep watering for new plantings", "et": "Uute istutuste sügavkastmine", "zones": ["arid"]},
+            {"en": "Hardening off indoor-started seedlings", "et": "Siseruumis kasvatatud taimede karastamine", "zones": ["polar", "continental"]}
         ],
         "custom_plants": [],
         "custom_tasks": []
     },
     "early_june": {
         "direct_sowing": [
-            {"en": "beans (late varieties)", "et": "oad (hilised sordid)"},
-            {"en": "zucchini (direct sowing)", "et": "suvikõrvits (otse külvamine)"},
-            {"en": "cucumber (direct sowing)", "et": "kurk (otse külvamine)"}
+            {"en": "beans (late varieties)", "et": "oad (hilised sordid)", "zones": ["temperate", "continental", "arid", "tropical"]},
+            {"en": "zucchini (direct sowing)", "et": "suvikõrvits (otse külvamine)", "zones": ["temperate", "continental", "arid"]},
+            {"en": "cucumber (direct sowing)", "et": "kurk (otse külvamine)", "zones": ["temperate", "continental", "arid"]},
+            {"en": "yard-long bean", "et": "pikauba", "zones": ["tropical"]}
         ],
         "transplanting": [
-            {"en": "zucchini", "et": "suvikõrvits"},
-            {"en": "pumpkin", "et": "kõrvits"},
-            {"en": "cucumber (if soil is warm)", "et": "kurk (kui muld on soe)"}
+            {"en": "zucchini", "et": "suvikõrvits", "zones": ["temperate", "continental", "arid"]},
+            {"en": "pumpkin", "et": "kõrvits", "zones": ["temperate", "continental", "arid"]},
+            {"en": "cucumber (if soil is warm)", "et": "kurk (kui muld on soe)", "zones": ["temperate", "continental"]},
+            {"en": "okra", "et": "okra", "zones": ["tropical", "arid"]}
         ],
         "greenhouse": [
-            {"en": "Tomato maintenance and staking", "et": "Tomatite hooldus ja toestamine"},
-            {"en": "Fertilizing", "et": "Väetamine"},
-            {"en": "Ventilation", "et": "Õhutamine"},
-            {"en": "Removing side shoots", "et": "Võsundite eemaldamine"},
-            {"en": "Succession planting (lettuce, radish, herbs)", "et": "Järkjärguline külvamine (salat, redis, maitsetaimed)"},
-            {"en": "Cucumber staking", "et": "Kurkide toestamine"}
+            {"en": "Tomato maintenance and staking", "et": "Tomatite hooldus ja toestamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Fertilizing", "et": "Väetamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Ventilation", "et": "Õhutamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Removing side shoots", "et": "Võsundite eemaldamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Succession planting (lettuce, radish, herbs)", "et": "Järkjärguline külvamine (salat, redis, maitsetaimed)", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Cucumber staking", "et": "Kurkide toestamine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]}
         ],
         "garden_tasks": [
-            {"en": "Removing row covers", "et": "Reakattematerjali eemaldamine"},
-            {"en": "Monitoring watering schedule", "et": "Kastmisgraafiku jälgimine"},
-            {"en": "Weed control", "et": "Umbrohutõrje"},
-            {"en": "Covering strawberries with bird netting", "et": "Maasikate katmine linnuvõrguga"}
+            {"en": "Removing row covers", "et": "Reakattematerjali eemaldamine", "zones": ["temperate", "continental"]},
+            {"en": "Monitoring watering schedule", "et": "Kastmisgraafiku jälgimine", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Weed control", "et": "Umbrohutõrje", "zones": ["temperate", "continental", "arid", "tropical", "polar"]},
+            {"en": "Covering strawberries with bird netting", "et": "Maasikate katmine linnuvõrguga", "zones": ["temperate", "continental"]},
+            {"en": "Harvesting and succession planting", "et": "Saagikoristus ja järelkülv", "zones": ["tropical"]},
+            {"en": "Adjusting irrigation for rising temperatures", "et": "Kastmise kohandamine tõusvate temperatuuridega", "zones": ["arid"]}
         ],
         "custom_plants": [],
         "custom_tasks": []

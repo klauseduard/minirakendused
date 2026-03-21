@@ -11,6 +11,7 @@ import { getSelectedItems, isItemSelected, toggleItemSelection,
 import { showNotification } from './ui.js';
 import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
 import { initSocialSharing, shareContent } from './social.js';
+import { getCurrentClimateZone, getZoneGroup, getPhaseCalendarDates } from './climate.js';
 
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
 const ICON_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
@@ -77,23 +78,38 @@ export function renderCalendar(month, searchTerm = '') {
     
     // Show categories
     const categories = Object.keys(calendarData[month]);
-    
+
+    // Zone filtering: determine current zone group
+    const currentZone = getCurrentClimateZone();
+    const currentZoneGroup = getZoneGroup(currentZone);
+
     // Filter for search
     let hasResults = false;
     let delay = 0;
-    
+
     categories.forEach(category => {
         const items = calendarData[month][category];
         let filteredItems = items;
-        
+
         // Skip empty categories, except for custom entries categories
         if ((!items || items.length === 0) && category !== 'custom_plants' && category !== 'custom_tasks') {
             return;
         }
-        
+
+        // Apply zone filter: hide built-in entries whose zones don't match
+        if (currentZoneGroup && filteredItems) {
+            filteredItems = filteredItems.filter(item => {
+                // Custom entries are never filtered
+                if (item.custom) return true;
+                // Items without zones array are always shown
+                if (!item.zones || !Array.isArray(item.zones)) return true;
+                return item.zones.includes(currentZoneGroup);
+            });
+        }
+
         // Apply filter if search term exists
         if (searchTerm) {
-            filteredItems = items.filter(item => {
+            filteredItems = filteredItems.filter(item => {
                 const itemText = item[currentLang] || item.en;
                 return itemText.toLowerCase().includes(searchTerm.toLowerCase());
             });
@@ -534,7 +550,20 @@ export function renderPeriodButtons(periods, activeMonth) {
         const btn = document.createElement('button');
         btn.className = `month-btn${period.id === activeMonth ? ' active' : ''}`;
         btn.dataset.month = period.id;
-        btn.textContent = period.name;
+
+        // Two-line button: phase name + date range (if available)
+        const phaseDates = getPhaseCalendarDates(period.id);
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'period-name';
+        nameSpan.textContent = period.name;
+        btn.appendChild(nameSpan);
+        if (phaseDates) {
+            const dateSpan = document.createElement('span');
+            dateSpan.className = 'period-dates';
+            dateSpan.textContent = phaseDates.label;
+            btn.appendChild(dateSpan);
+        }
+
         btn.addEventListener('click', () => handlePeriodClick(period.id));
 
         // All periods get a ⋮ menu (for move + rename/delete on custom)
@@ -888,6 +917,13 @@ export function initCalendar(initialMonth) {
     if (addPeriodBtn) {
         addPeriodBtn.addEventListener('click', handleAddPeriod);
     }
+
+    // Re-render when climate zone changes (updates date ranges + zone filtering)
+    document.addEventListener('climateZoneUpdated', () => {
+        const currentPeriods = getAllPeriods();
+        renderPeriodButtons(currentPeriods, window.GardeningApp.activeMonth);
+        renderCalendar(window.GardeningApp.activeMonth);
+    });
 
     // Initialize share button for calendar selections
     const shareContainer = document.getElementById('calendarShareContainer');
