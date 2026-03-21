@@ -7,7 +7,7 @@ import { calendarData, translations, categoryIcons, categoryNames } from './data
 import { getSelectedItems, isItemSelected, toggleItemSelection,
          getAllPeriods, addCustomPeriod, renameCustomPeriod, deleteCustomPeriod,
          movePeriod, initializeCustomPeriodData, getSelectionCount,
-         addCustomPlant, addCustomTask } from './storage.js';
+         addCustomPlant, addCustomTask, reorderCustomEntry, getCustomEntries } from './storage.js';
 import { showNotification } from './ui.js';
 import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
 import { initSocialSharing, shareContent } from './social.js';
@@ -16,6 +16,7 @@ const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" st
 const ICON_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
 const ICON_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
 const ICON_SORT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h8"/><path d="M3 12h5"/><path d="M3 18h3"/><path d="M16 4l-4 4h3v8h2V8h3l-4-4z"/></svg>`;
+const ICON_DRAG = `<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>`;
 
 const SORT_STORAGE_KEY = 'gardening_custom_sort_alpha';
 
@@ -147,7 +148,7 @@ export function renderCalendar(month, searchTerm = '') {
                     <span>Select All ${isTaskCategory ? 'Tasks' : 'Plants'}</span>
                 </label>
             </div>
-            <ul class="plant-list">
+            <ul class="plant-list${isCustomCategory && alphaSort ? ' alpha-sorted' : ''}"${isCustomCategory ? ` data-custom-type="${isTaskCategory ? 'task' : 'plant'}"` : ''}>
                 ${filteredItems.map(item => {
                     const itemText = item[currentLang] || item.en;
                     const itemId = JSON.stringify(item); // Store the full item object
@@ -167,10 +168,15 @@ export function renderCalendar(month, searchTerm = '') {
                         </div>
                     ` : '';
                     
+                    const dragHandle = item.custom && !alphaSort ? `
+                        <span class="custom-item-drag-handle" aria-label="Drag to reorder">${ICON_DRAG}</span>
+                    ` : '';
+
                     return `
-                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}${item.custom ? ' custom-item' : ''}" data-item-id="${encodeURIComponent(itemId)}">
+                        <li class="${isTaskCategory ? 'task-item' : 'plant-item'}${item.custom ? ' custom-item' : ''}" data-item-id="${encodeURIComponent(itemId)}"${item.custom ? ` data-custom-id="${item.customId}"` : ''}>
+                            ${dragHandle}
                             <label class="item-label">
-                                <input type="checkbox" class="item-checkbox" 
+                                <input type="checkbox" class="item-checkbox"
                                     ${isItemSelected(month, category, item) ? 'checked' : ''}>
                                 <span class="item-text">${displayText}</span>
                                 ${editButton}
@@ -378,6 +384,13 @@ export function renderCalendar(month, searchTerm = '') {
                 setAlphaSort(!isAlphaSortEnabled());
                 renderCalendar(month, searchTerm);
             });
+        }
+
+        // Drag-to-reorder for custom items
+        if (isCustomCategory && !alphaSort) {
+            const plantList = categoryCard.querySelector('.plant-list');
+            const entryType = isTaskCategory ? 'task' : 'plant';
+            initDragReorder(plantList, entryType, month, searchTerm);
         }
 
         calendarContent.appendChild(categoryCard);
@@ -781,6 +794,72 @@ function handleAddPeriod() {
     overlay.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeModal(); });
 
     setTimeout(() => nameInput.focus(), 50);
+}
+
+/**
+ * Set up pointer-event-based drag-to-reorder on a custom items list
+ * @param {HTMLUListElement} list - The <ul> containing custom items
+ * @param {string} entryType - 'plant' or 'task'
+ * @param {string} month - Current month/period ID
+ * @param {string} searchTerm - Current search filter
+ */
+function initDragReorder(list, entryType, month, searchTerm) {
+    const handles = list.querySelectorAll('.custom-item-drag-handle');
+    if (!handles.length) return;
+
+    handles.forEach(handle => {
+        handle.addEventListener('pointerdown', (e) => {
+            if (e.button !== 0) return;
+            e.preventDefault();
+
+            const draggedLi = handle.closest('li');
+            if (!draggedLi) return;
+
+            draggedLi.classList.add('dragging');
+
+            const onMove = (ev) => {
+                const siblings = [...list.querySelectorAll('li.custom-item')];
+                for (const sibling of siblings) {
+                    if (sibling === draggedLi) continue;
+                    const rect = sibling.getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+
+                    if (ev.clientY < midY && draggedLi.compareDocumentPosition(sibling) & Node.DOCUMENT_POSITION_PRECEDING) {
+                        // Pointer moved above a sibling that precedes us — move up
+                        list.insertBefore(draggedLi, sibling);
+                        break;
+                    } else if (ev.clientY > midY && draggedLi.compareDocumentPosition(sibling) & Node.DOCUMENT_POSITION_FOLLOWING) {
+                        // Pointer moved below a sibling that follows us — move down
+                        sibling.after(draggedLi);
+                        break;
+                    }
+                }
+            };
+
+            const onUp = () => {
+                draggedLi.classList.remove('dragging');
+                document.removeEventListener('pointermove', onMove);
+                document.removeEventListener('pointerup', onUp);
+                document.removeEventListener('pointercancel', onUp);
+
+                // Persist new order from DOM
+                const orderedIds = [...list.querySelectorAll('li.custom-item')]
+                    .map(li => li.dataset.customId)
+                    .filter(Boolean);
+
+                orderedIds.forEach((id, i) => {
+                    reorderCustomEntry(entryType, id, i);
+                });
+
+                loadCustomEntries();
+                renderCalendar(month, searchTerm);
+            };
+
+            document.addEventListener('pointermove', onMove);
+            document.addEventListener('pointerup', onUp);
+            document.addEventListener('pointercancel', onUp);
+        });
+    });
 }
 
 /**

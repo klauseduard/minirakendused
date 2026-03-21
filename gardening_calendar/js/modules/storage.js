@@ -1079,5 +1079,22 @@ export function saveTodoItems(items) {
     localStorage.setItem(STORAGE_KEYS.TODO_ITEMS, JSON.stringify(items));
 }
 
+/**
+ * Reorder a custom entry within its array
+ * @param {string} type - 'plant' or 'task'
+ * @param {string} itemId - The custom entry ID
+ * @param {number} newIndex - The target index in the array
+ */
+export function reorderCustomEntry(type, itemId, newIndex) {
+    const entries = getCustomEntries();
+    const arr = type === 'plant' ? entries.plants : entries.tasks;
+    const oldIndex = arr.findIndex(e => e.id === itemId);
+    if (oldIndex === -1 || oldIndex === newIndex) return;
+
+    const [item] = arr.splice(oldIndex, 1);
+    arr.splice(newIndex, 0, item);
+    saveCustomEntries(entries);
+}
+
 // Export all constants
 export { STORAGE_KEYS };

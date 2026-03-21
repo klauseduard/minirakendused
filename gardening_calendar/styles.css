@@ -946,6 +946,62 @@ h1, h2, h3 {
     border-color: var(--sage);
 }
 
+/* Drag handle for custom item reorder */
+.custom-item-drag-handle {
+    width: 20px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    cursor: grab;
+    color: var(--text-secondary);
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+.custom-item-drag-handle:active {
+    cursor: grabbing;
+}
+
+.custom-item-drag-handle svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Hide drag handles when alpha sort is active */
+.plant-list.alpha-sorted .custom-item-drag-handle {
+    display: none;
+}
+
+/* Dragging state */
+li.dragging {
+    opacity: 0.4;
+    background: var(--highlight);
+}
+
+/* Desktop: show drag handle on hover/focus-within */
+@media (min-width: 769px) {
+    .custom-item-drag-handle {
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    li.custom-item:hover .custom-item-drag-handle,
+    li.custom-item:focus-within .custom-item-drag-handle,
+    li.dragging .custom-item-drag-handle {
+        opacity: 1;
+    }
+}
+
+/* Mobile: drag handle always visible */
+@media (max-width: 768px) {
+    .custom-item-drag-handle {
+        opacity: 0.5;
+    }
+}
+
 .highlight {
     background-color: #ffe066;
     padding: 2px;
