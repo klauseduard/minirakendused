@@ -6,10 +6,15 @@
 import { calendarData, translations, categoryIcons, categoryNames } from './data.js';
 import { getSelectedItems, isItemSelected, toggleItemSelection,
          getAllPeriods, addCustomPeriod, renameCustomPeriod, deleteCustomPeriod,
-         movePeriod, initializeCustomPeriodData, getSelectionCount } from './storage.js';
+         movePeriod, initializeCustomPeriodData, getSelectionCount,
+         addCustomPlant, addCustomTask } from './storage.js';
 import { showNotification } from './ui.js';
 import { openPlantModal, openTaskModal, loadCustomEntries } from './custom-entries.js';
 import { initSocialSharing, shareContent } from './social.js';
+
+const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
+const ICON_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
+const ICON_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
 
 /**
  * Update the selection badge with the current count of selected items
@@ -121,13 +126,13 @@ export function renderCalendar(month, searchTerm = '') {
                     // Add edit button for custom items
                     const editButton = item.custom ? `
                         <div class="custom-item-actions">
-                            <button class="custom-item-edit-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}" 
+                            <button class="custom-item-btn custom-item-btn-edit custom-item-edit-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}"
                                 aria-label="Edit ${isTaskCategory ? 'task' : 'plant'}">
-                                <span>✏️</span>
+                                ${ICON_EDIT}
                             </button>
-                            <button class="custom-item-delete-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}"
+                            <button class="custom-item-btn custom-item-btn-delete custom-item-delete-btn" data-id="${item.customId}" data-type="${isTaskCategory ? 'task' : 'plant'}"
                                 aria-label="Delete ${isTaskCategory ? 'task' : 'plant'}">
-                                <span>❌</span>
+                                ${ICON_DELETE}
                             </button>
                         </div>
                     ` : '';
@@ -145,10 +150,20 @@ export function renderCalendar(month, searchTerm = '') {
                 }).join('')}
                 ${(category === 'custom_plants' || category === 'custom_tasks') && filteredItems.length === 0 ? `
                     <li class="empty-custom-entries" style="padding: 15px; color: #666; text-align: center; font-style: italic;">
-                        ${category === 'custom_plants' ? 'No custom plants added yet. Use the "Add Custom Plant" button above.' : 'No custom tasks added yet. Use the "Add Custom Task" button above.'}
+                        ${category === 'custom_plants' ? 'No custom plants yet — type below to add one quickly.' : 'No custom tasks yet — type below to add one quickly.'}
                     </li>
                 ` : ''}
             </ul>
+            ${isCustomCategory ? `
+                <div class="quick-add-container" data-category="${category}">
+                    <input type="text" class="quick-add-input"
+                        placeholder="${isTaskCategory ? 'Add a task...' : 'Add a plant...'}"
+                        aria-label="${isTaskCategory ? 'Quick add task' : 'Quick add plant'}">
+                    <button class="quick-add-btn" disabled aria-label="Add">
+                        ${ICON_PLUS}
+                    </button>
+                </div>
+            ` : ''}
         `;
 
         // Add event listeners for checkboxes
@@ -285,6 +300,47 @@ export function renderCalendar(month, searchTerm = '') {
             });
         });
         
+        // Quick-add event listeners for custom categories
+        const quickAddContainer = categoryCard.querySelector('.quick-add-container');
+        if (quickAddContainer) {
+            const input = quickAddContainer.querySelector('.quick-add-input');
+            const addBtn = quickAddContainer.querySelector('.quick-add-btn');
+            const quickCategory = quickAddContainer.dataset.category;
+
+            input.addEventListener('input', () => {
+                addBtn.disabled = !input.value.trim();
+            });
+
+            const handleQuickAdd = () => {
+                const name = input.value.trim();
+                if (!name) return;
+
+                if (quickCategory === 'custom_plants') {
+                    addCustomPlant({ name, category: 'custom_plants', months: [month] });
+                } else {
+                    addCustomTask({ name, category: 'custom_tasks', months: [month] });
+                }
+
+                loadCustomEntries();
+                renderCalendar(month, searchTerm);
+                showNotification(`"${name}" added`, 'success');
+
+                // Re-focus the quick-add input after re-render
+                requestAnimationFrame(() => {
+                    const newInput = document.querySelector(`.quick-add-container[data-category="${quickCategory}"] .quick-add-input`);
+                    if (newInput) newInput.focus();
+                });
+            };
+
+            addBtn.addEventListener('click', handleQuickAdd);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleQuickAdd();
+                }
+            });
+        }
+
         calendarContent.appendChild(categoryCard);
     });
     

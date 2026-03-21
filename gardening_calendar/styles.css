@@ -779,6 +779,138 @@ h1, h2, h3 {
     padding: 2px 0;
 }
 
+/* Custom item action buttons (edit/delete) */
+.custom-item-actions {
+    display: flex;
+    gap: 2px;
+    margin-left: auto;
+    flex-shrink: 0;
+}
+
+.custom-item-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.custom-item-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.custom-item-btn-edit:hover {
+    background: var(--highlight);
+    color: var(--sage);
+}
+
+.custom-item-btn-delete:hover {
+    background: rgba(220, 53, 69, 0.08);
+    color: #dc3545;
+}
+
+/* Desktop: hide buttons until row hover/focus */
+@media (min-width: 769px) {
+    .custom-item-actions {
+        opacity: 0;
+        transition: opacity 0.15s;
+    }
+
+    .item-label:hover .custom-item-actions,
+    .item-label:focus-within .custom-item-actions {
+        opacity: 1;
+    }
+}
+
+/* Mobile: always visible, larger touch targets */
+@media (max-width: 768px) {
+    .custom-item-actions {
+        opacity: 0.7;
+    }
+
+    .custom-item-btn {
+        width: 32px;
+        height: 32px;
+    }
+
+    .custom-item-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+}
+
+/* Quick-add inline field */
+.quick-add-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    padding: 10px 12px;
+    border-top: 1px dashed var(--border);
+    background: var(--bg-cream);
+    border-radius: 0 0 8px 8px;
+}
+
+.quick-add-input {
+    flex: 1;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    background: var(--surface);
+    color: var(--text-primary);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.quick-add-input::placeholder {
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.quick-add-input:focus {
+    outline: none;
+    border-color: var(--sage);
+    box-shadow: 0 0 0 2px rgba(143, 167, 139, 0.25);
+}
+
+.quick-add-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1.5px solid var(--terracotta);
+    border-radius: 4px;
+    color: var(--terracotta);
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: background-color 0.15s, color 0.15s;
+}
+
+.quick-add-btn svg {
+    width: 16px;
+    height: 16px;
+}
+
+.quick-add-btn:hover:not(:disabled) {
+    background: rgba(196, 101, 58, 0.08);
+}
+
+.quick-add-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+}
+
 .highlight {
     background-color: #ffe066;
     padding: 2px;
