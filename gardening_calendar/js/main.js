@@ -21,7 +21,7 @@ import * as todoModule from './modules/todo.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
-    activeMonth: 'april',
+    activeMonth: localStorage.getItem('gardening_active_period') || 'april',
     currentLang: 'en',
     modules: {
         data: dataModule,

@@ -606,6 +606,7 @@ function handlePeriodClick(periodId) {
     if (activeBtn) activeBtn.classList.add('active');
 
     window.GardeningApp.activeMonth = periodId;
+    localStorage.setItem('gardening_active_period', periodId);
     renderCalendar(periodId);
     document.dispatchEvent(new CustomEvent('periodChanged', { detail: { periodId } }));
 }
@@ -638,6 +639,7 @@ function handleDeletePeriod(period) {
         if (wasActive) {
             const periods = getAllPeriods();
             window.GardeningApp.activeMonth = periods[0]?.id || 'april';
+            localStorage.setItem('gardening_active_period', window.GardeningApp.activeMonth);
             renderCalendar(window.GardeningApp.activeMonth);
         }
 
@@ -764,6 +766,7 @@ function handleAddPeriod() {
         closeModal();
 
         window.GardeningApp.activeMonth = newPeriod.id;
+        localStorage.setItem('gardening_active_period', newPeriod.id);
         const periods = getAllPeriods();
         renderPeriodButtons(periods, newPeriod.id);
         renderCalendar(newPeriod.id);
@@ -792,6 +795,13 @@ export function initCalendar(initialMonth) {
 
     // Render period buttons dynamically
     const periods = getAllPeriods();
+
+    // Validate saved period still exists, fall back to first period
+    if (!periods.some(p => p.id === initialMonth)) {
+        initialMonth = periods[0]?.id || 'april';
+        window.GardeningApp.activeMonth = initialMonth;
+    }
+
     renderPeriodButtons(periods, initialMonth);
 
     // Set up the "Add Period" button
