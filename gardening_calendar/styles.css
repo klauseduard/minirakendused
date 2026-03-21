@@ -911,6 +911,41 @@ h1, h2, h3 {
     cursor: default;
 }
 
+/* Sort toggle button in category header */
+.custom-sort-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    color: var(--text-secondary);
+    padding: 0;
+    margin-left: auto;
+    flex-shrink: 0;
+    transition: background-color 0.15s, color 0.15s, border-color 0.15s;
+}
+
+.custom-sort-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
+.custom-sort-btn:hover {
+    background: var(--highlight);
+    color: var(--forest);
+    border-color: var(--sage);
+}
+
+.custom-sort-btn.active {
+    background: var(--highlight);
+    color: var(--forest);
+    border-color: var(--sage);
+}
+
 .highlight {
     background-color: #ffe066;
     padding: 2px;

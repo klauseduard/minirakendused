@@ -15,6 +15,17 @@ import { initSocialSharing, shareContent } from './social.js';
 const ICON_EDIT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.83 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>`;
 const ICON_DELETE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>`;
 const ICON_PLUS = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`;
+const ICON_SORT = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h8"/><path d="M3 12h5"/><path d="M3 18h3"/><path d="M16 4l-4 4h3v8h2V8h3l-4-4z"/></svg>`;
+
+const SORT_STORAGE_KEY = 'gardening_custom_sort_alpha';
+
+function isAlphaSortEnabled() {
+    return localStorage.getItem(SORT_STORAGE_KEY) === 'true';
+}
+
+function setAlphaSort(enabled) {
+    localStorage.setItem(SORT_STORAGE_KEY, String(enabled));
+}
 
 /**
  * Update the selection badge with the current count of selected items
@@ -105,11 +116,30 @@ export function renderCalendar(month, searchTerm = '') {
         const isTaskCategory = category === 'garden_tasks' || category === 'custom_tasks';
         const isCustomCategory = category === 'custom_plants' || category === 'custom_tasks';
         const categoryDisplayName = translations[currentLang][category] || categoryNames[category] || category;
-        
+
+        // Sort custom entries alphabetically if enabled
+        const alphaSort = isAlphaSortEnabled();
+        if (isCustomCategory && alphaSort && filteredItems.length > 1) {
+            filteredItems = [...filteredItems].sort((a, b) => {
+                const aText = (a[currentLang] || a.en).toLowerCase();
+                const bText = (b[currentLang] || b.en).toLowerCase();
+                return aText.localeCompare(bText);
+            });
+        }
+
+        const sortToggle = isCustomCategory ? `
+            <button class="custom-sort-btn${alphaSort ? ' active' : ''}" data-category="${category}"
+                aria-label="${alphaSort ? 'Sort by date added' : 'Sort alphabetically'}"
+                title="${alphaSort ? 'Sorted A→Z (click for added order)' : 'Sort A→Z'}">
+                ${ICON_SORT}
+            </button>
+        ` : '';
+
         categoryCard.innerHTML = `
             <div class="category-header">
                 <div class="category-icon">${categoryIcons[category] || '🌿'}</div>
                 <h2 class="category-title">${categoryDisplayName}</h2>
+                ${sortToggle}
             </div>
             <div class="select-all-container">
                 <label class="select-all-label">
@@ -338,6 +368,15 @@ export function renderCalendar(month, searchTerm = '') {
                     e.preventDefault();
                     handleQuickAdd();
                 }
+            });
+        }
+
+        // Sort toggle event listener
+        const sortBtn = categoryCard.querySelector('.custom-sort-btn');
+        if (sortBtn) {
+            sortBtn.addEventListener('click', () => {
+                setAlphaSort(!isAlphaSortEnabled());
+                renderCalendar(month, searchTerm);
             });
         }
 
