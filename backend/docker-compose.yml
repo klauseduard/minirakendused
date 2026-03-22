@@ -1,0 +1,13 @@
+services:
+  api:
+    build: .
+    ports:
+      - '8000:8000'
+    volumes:
+      - garden-data:/app/data
+    environment:
+      - GARDEN_JWT_SECRET=${GARDEN_JWT_SECRET:-change-me-in-production}
+    restart: unless-stopped
+
+volumes:
+  garden-data:
