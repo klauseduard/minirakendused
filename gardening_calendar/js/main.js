@@ -19,6 +19,7 @@ import * as socialModule from './modules/social.js';
 import * as photoStorage from './modules/photo-storage.js';
 import * as todoModule from './modules/todo.js';
 import * as backupModule from './modules/backup.js';
+import * as syncModule from './modules/sync.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -37,7 +38,8 @@ window.GardeningApp = {
         social: socialModule,
         photoStorage: photoStorage,
         todo: todoModule,
-        backup: backupModule
+        backup: backupModule,
+        sync: syncModule
     },
     state: {
         currentMonth: null,
@@ -170,6 +172,10 @@ async function initApp() {
     // Step 11: Initialize backup module
     backupModule.initBackup();
     console.log('Backup module initialized');
+
+    // Step 12: Initialize sync module
+    syncModule.initSync();
+    console.log('Sync module initialized');
     
     // Set up header illustration with seasonal swapping
     updateHeaderIllustration(window.GardeningApp.activeMonth);
