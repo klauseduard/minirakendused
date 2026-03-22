@@ -1,4 +1,5 @@
 import os
+import shutil
 import tempfile
 
 import pytest
@@ -35,6 +36,10 @@ async def reset_db():
     # Remove existing DB
     if os.path.exists(db_mod.DB_PATH):
         os.remove(db_mod.DB_PATH)
+    # Remove photos directory
+    photos_dir = os.path.join(db_mod.DB_DIR, 'photos')
+    if os.path.exists(photos_dir):
+        shutil.rmtree(photos_dir)
     # Recreate schema
     await init_db()
     yield
