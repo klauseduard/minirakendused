@@ -7,7 +7,7 @@ import { saveJournalEntries, getJournalEntries } from './storage.js';
 import { getLastWeatherData, weatherCodeToIconTextColor as weatherCodeToIconTextColorFn } from './weather.js';
 import { initSocialSharing, shareContent } from './social.js';
 import * as photoStorage from './photo-storage.js';
-import { showConfirmDialog, showOptionsModal } from './ui.js';
+import { showConfirmDialog } from './ui.js';
 
 // Journal entry types
 const journalEntryTypes = {
@@ -70,173 +70,6 @@ function deleteJournalEntry(id) {
 }
 
 // Export journal to JSON file
-async function exportJournal(includeImages = true) {
-    const entries = getJournalEntries();
-
-    // If no entries, show message
-    if (entries.length === 0) {
-        alert('No journal entries to export.');
-        return;
-    }
-
-    // Clone entries to avoid modifying the original data
-    let exportData = JSON.parse(JSON.stringify(entries));
-
-    if (includeImages) {
-        // For entries with imageIds, fetch photos from IndexedDB and inline as images
-        for (const entry of exportData) {
-            if (entry.imageIds && entry.imageIds.length > 0) {
-                try {
-                    const photos = await photoStorage.getPhotos(entry.id);
-                    entry.images = photos.map(p => ({ data: p.data, thumbnail: p.thumbnail }));
-                } catch (e) {
-                    console.warn(`Export: failed to fetch photos for entry ${entry.id}`, e);
-                    entry.images = [];
-                }
-                delete entry.imageIds;
-            }
-            // entries with legacy images are exported as-is
-        }
-    } else {
-        // Remove images/imageIds when not including them
-        exportData = exportData.map(entry => {
-            const entryCopy = {...entry};
-            delete entryCopy.images;
-            delete entryCopy.imageIds;
-            return entryCopy;
-        });
-    }
-
-    // Create the export file
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
-    // Generate filename with timestamp
-    const date = new Date().toISOString().slice(0, 10);
-    const filename = `garden_journal_${date}${includeImages ? '_with_images' : '_no_images'}.json`;
-
-    // Create download link and trigger download
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// Show export options modal (dynamically created via showOptionsModal)
-function showExportOptionsModal() {
-    showOptionsModal(
-        'Export Options',
-        'Choose how you would like to export your journal:',
-        [
-            {
-                icon: '📷',
-                title: 'Complete Export',
-                description: 'Include all entries with images (larger file size)',
-                onClick: () => exportJournal(true)
-            },
-            {
-                icon: '📝',
-                title: 'Lightweight Export',
-                description: 'Text-only export without images (smaller file size)',
-                onClick: () => exportJournal(false)
-            }
-        ]
-    );
-}
-
-// Show import options modal (dynamically created via showOptionsModal)
-function showImportOptionsModal(importData) {
-    const count = importData.length;
-    const description = `Found ${count} journal ${count === 1 ? 'entry' : 'entries'} to import.`;
-
-    showOptionsModal(
-        'Import Options',
-        description,
-        [
-            {
-                icon: '🔄',
-                title: 'Merge',
-                description: 'Add new entries and update existing ones',
-                onClick: () => handleImport(importData, true)
-            },
-            {
-                icon: '♻️',
-                title: 'Replace All',
-                description: 'Delete all existing entries and use imported ones',
-                onClick: () => handleImport(importData, false)
-            }
-        ]
-    );
-}
-
-// Handle import of journal entries
-async function handleImport(importData, isMerge) {
-    const existingEntries = getJournalEntries();
-
-    // Migrate imported entries: extract inline images to IndexedDB
-    for (const entry of importData) {
-        if (entry.images && Array.isArray(entry.images) && entry.images.length > 0) {
-            try {
-                const photoIds = await photoStorage.importPhotos(entry.id, entry.images);
-                entry.imageIds = photoIds;
-                delete entry.images;
-            } catch (e) {
-                console.warn(`Import: failed to save photos for entry ${entry.id}`, e);
-                // Keep inline images as fallback
-            }
-        }
-    }
-
-    if (isMerge) {
-        // Merge: Keep existing entries and add new ones
-        const mergedEntries = [...existingEntries];
-
-        // Track stats for user feedback
-        let added = 0;
-        let updated = 0;
-
-        for (const importEntry of importData) {
-            const existingIndex = mergedEntries.findIndex(e => e.id === importEntry.id);
-
-            if (existingIndex >= 0) {
-                // Delete old photos for the entry being replaced
-                await photoStorage.deletePhotos(mergedEntries[existingIndex].id);
-                // Update existing entry
-                mergedEntries[existingIndex] = importEntry;
-                updated++;
-            } else {
-                // Add new entry
-                mergedEntries.push(importEntry);
-                added++;
-            }
-        }
-
-        // Save merged entries
-        saveJournalEntries(mergedEntries);
-
-        // Show success message
-        alert(`Import successful!\nAdded ${added} new ${added === 1 ? 'entry' : 'entries'}\nUpdated ${updated} existing ${updated === 1 ? 'entry' : 'entries'}`);
-    } else {
-        // Replace: Delete all existing photos first
-        for (const entry of existingEntries) {
-            await photoStorage.deletePhotos(entry.id);
-        }
-
-        // Replace all entries with imported ones
-        saveJournalEntries(importData);
-
-        // Show success message
-        alert(`Import successful!\nReplaced all entries with ${importData.length} imported ${importData.length === 1 ? 'entry' : 'entries'}`);
-    }
-
-    // Refresh the journal display
-    if (typeof renderJournal === 'function') {
-        renderJournal();
-    }
-}
-
 // Function to open the journal entry modal (new or edit)
 async function openJournalEntryModal(entryId = null) {
     // Get required DOM elements
@@ -1098,10 +931,6 @@ export {
     renderJournalCalendar,
     showImageLightbox,
     weatherCodeToIconTextColor,
-    showImportOptionsModal,
-    showExportOptionsModal,
-    exportJournal,
-    handleImport,
     openJournalEntryModal,
     handlePhotoSelection
 };
@@ -1162,52 +991,6 @@ export function initJournal() {
     
     if (emptyAddBtn) {
         emptyAddBtn.addEventListener('click', () => openJournalEntryModal());
-    }
-    
-    // Export/Import buttons
-    const exportJournalBtn = document.getElementById('exportJournalBtn');
-    const importJournalBtn = document.getElementById('importJournalBtn');
-    
-    if (exportJournalBtn) {
-        exportJournalBtn.addEventListener('click', function() {
-            showExportOptionsModal();
-        });
-    }
-    
-    if (importJournalBtn) {
-        importJournalBtn.addEventListener('click', function() {
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = 'application/json';
-            
-            fileInput.onchange = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    try {
-                        const importData = JSON.parse(event.target.result);
-                        
-                        // Validate data format
-                        if (!Array.isArray(importData)) {
-                            throw new Error('Invalid format: Data should be an array of journal entries');
-                        }
-                        
-                        // Show import options modal
-                        showImportOptionsModal(importData);
-                        
-                    } catch (error) {
-                        console.error('Import error:', error);
-                        alert(`Error importing journal: ${error.message}`);
-                    }
-                };
-                
-                reader.readAsText(file);
-            };
-            
-            fileInput.click();
-        });
     }
     
     // Tab switching

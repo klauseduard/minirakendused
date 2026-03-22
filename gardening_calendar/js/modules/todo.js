@@ -6,7 +6,7 @@
 import { getTodoItems, saveTodoItems, getAllPeriods } from './storage.js';
 import { createJournalEntry, fileToBase64, compressImage, generateThumbnail, showImageLightbox, renderJournal } from './journal.js';
 import * as photoStorage from './photo-storage.js';
-import { showConfirmDialog, showOptionsModal, showNotification } from './ui.js';
+import { showConfirmDialog, showNotification } from './ui.js';
 
 // ─── CRUD ───────────────────────────────────────────────────
 
@@ -409,9 +409,6 @@ function switchTab(tabName) {
     const todoContent = document.getElementById('todoContent');
     const scheduleHeader = document.querySelector('.month-nav-header');
 
-    // Schedule header export/import buttons — swap between calendar and todo
-    const calExportBtn = document.getElementById('exportCustomEntriesBtn');
-    const calImportBtn = document.getElementById('importCustomEntriesBtn');
     const calShareContainer = document.getElementById('calendarShareContainer');
 
     const calendarContent = document.getElementById('calendarContent');
@@ -421,8 +418,6 @@ function switchTab(tabName) {
         // Use class toggle for calendarContent since it has !important grid display
         if (calendarContent) calendarContent.classList.add('hidden-by-tab');
         if (todoContent) todoContent.style.display = 'block';
-        if (calExportBtn) calExportBtn.style.display = 'none';
-        if (calImportBtn) calImportBtn.style.display = 'none';
         if (calShareContainer) calShareContainer.style.display = 'none';
         renderTodoList();
     } else {
@@ -436,8 +431,6 @@ function switchTab(tabName) {
         });
         if (calendarContent) calendarContent.classList.remove('hidden-by-tab');
         if (todoContent) todoContent.style.display = 'none';
-        if (calExportBtn) calExportBtn.style.display = '';
-        if (calImportBtn) calImportBtn.style.display = '';
         if (calShareContainer) calShareContainer.style.display = '';
     }
 }
@@ -465,177 +458,6 @@ function populatePeriodDropdown(selectId) {
 
     // Restore selection if it still exists
     if (currentValue) select.value = currentValue;
-}
-
-// ─── Export/Import ──────────────────────────────────────────
-
-async function exportTodo(includeImages = true) {
-    const items = getTodoItems();
-    if (items.length === 0) {
-        showNotification('No tasks to export', 'info');
-        return;
-    }
-
-    let exportItems = JSON.parse(JSON.stringify(items));
-
-    if (includeImages) {
-        for (const item of exportItems) {
-            if (item.imageIds && item.imageIds.length > 0) {
-                try {
-                    const photos = await photoStorage.getPhotos(item.id);
-                    item.images = photos.map(p => ({ data: p.data, thumbnail: p.thumbnail }));
-                } catch (e) {
-                    console.warn(`Export: failed to fetch photos for ${item.id}`, e);
-                    item.images = [];
-                }
-                delete item.imageIds;
-            }
-        }
-    } else {
-        exportItems = exportItems.map(item => {
-            const copy = { ...item };
-            delete copy.imageIds;
-            return copy;
-        });
-    }
-
-    const exportData = {
-        version: 1,
-        type: 'garden_planner_todo',
-        exportDate: new Date().toISOString(),
-        items: exportItems
-    };
-
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-
-    const date = new Date().toISOString().slice(0, 10);
-    const filename = `garden_todo_${date}${includeImages ? '_with_images' : ''}.json`;
-
-    const link = document.createElement('a');
-    link.setAttribute('href', dataUri);
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-function showExportOptions() {
-    showOptionsModal(
-        'Export TODO',
-        'Choose how to export your tasks:',
-        [
-            {
-                icon: '📷',
-                title: 'Complete Export',
-                description: 'Include all tasks with images',
-                onClick: () => exportTodo(true)
-            },
-            {
-                icon: '📝',
-                title: 'Lightweight Export',
-                description: 'Text-only export without images',
-                onClick: () => exportTodo(false)
-            }
-        ]
-    );
-}
-
-function triggerImport() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            const text = await file.text();
-            const data = JSON.parse(text);
-
-            let importItems;
-            // Support both wrapped and raw array formats
-            if (data.type === 'garden_planner_todo' && Array.isArray(data.items)) {
-                importItems = data.items;
-            } else if (Array.isArray(data)) {
-                importItems = data;
-            } else {
-                showNotification('Invalid TODO export file', 'error');
-                return;
-            }
-
-            showImportOptions(importItems);
-        } catch (err) {
-            showNotification('Failed to read import file', 'error');
-        }
-    };
-    input.click();
-}
-
-function showImportOptions(importItems) {
-    const count = importItems.length;
-    showOptionsModal(
-        'Import TODO',
-        `Found ${count} task${count === 1 ? '' : 's'} to import.`,
-        [
-            {
-                icon: '🔄',
-                title: 'Merge',
-                description: 'Add new tasks and update existing ones',
-                onClick: () => handleImport(importItems, true)
-            },
-            {
-                icon: '♻️',
-                title: 'Replace All',
-                description: 'Delete all existing tasks and use imported ones',
-                onClick: () => handleImport(importItems, false)
-            }
-        ]
-    );
-}
-
-async function handleImport(importItems, isMerge) {
-    // Migrate inline images to IndexedDB
-    for (const item of importItems) {
-        if (item.images && Array.isArray(item.images) && item.images.length > 0) {
-            try {
-                const photoIds = await photoStorage.importPhotos(item.id, item.images);
-                item.imageIds = photoIds;
-                delete item.images;
-            } catch (e) {
-                console.warn(`Import: failed to save photos for ${item.id}`, e);
-            }
-        }
-    }
-
-    const existing = getTodoItems();
-
-    if (isMerge) {
-        const merged = [...existing];
-        let added = 0, updated = 0;
-
-        for (const importItem of importItems) {
-            const idx = merged.findIndex(i => i.id === importItem.id);
-            if (idx >= 0) {
-                await photoStorage.deletePhotos(merged[idx].id);
-                merged[idx] = importItem;
-                updated++;
-            } else {
-                merged.push(importItem);
-                added++;
-            }
-        }
-        saveTodoItems(merged);
-        showNotification(`Imported: ${added} added, ${updated} updated`, 'success');
-    } else {
-        for (const item of existing) {
-            await photoStorage.deletePhotos(item.id);
-        }
-        saveTodoItems(importItems);
-        showNotification(`Replaced with ${importItems.length} task${importItems.length === 1 ? '' : 's'}`, 'success');
-    }
-
-    renderTodoList();
 }
 
 // ─── Event Delegation ───────────────────────────────────────
@@ -756,13 +578,6 @@ export function initTodo() {
         photoSelectBtn.addEventListener('click', () => photoInput.click());
         photoInput.addEventListener('change', () => handleTodoPhotoSelection(photoInput));
     }
-
-    // Export/Import buttons
-    const exportBtn = document.getElementById('todoExportBtn');
-    if (exportBtn) exportBtn.addEventListener('click', showExportOptions);
-
-    const importBtn = document.getElementById('todoImportBtn');
-    if (importBtn) importBtn.addEventListener('click', triggerImport);
 
     console.log('TODO module initialized');
 }

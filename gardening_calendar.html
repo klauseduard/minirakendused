@@ -26,6 +26,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Source+Sans+3:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="gardening_calendar/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3/dist/jszip.min.js"></script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌱</text></svg>">
 </head>
 <body>
@@ -122,12 +123,6 @@
                 <div class="month-nav-header">
                     <h2 class="month-nav-title">Planting Schedule</h2>
                     <div class="data-management-buttons">
-                        <button id="exportCustomEntriesBtn" class="data-manage-btn">
-                            <span class="icon-size-sm">📤</span> Export
-                        </button>
-                        <button id="importCustomEntriesBtn" class="data-manage-btn">
-                            <span class="icon-size-sm">📥</span> Import
-                        </button>
                         <div class="social-share-container" id="calendarShareContainer"></div>
                     </div>
                 </div>
@@ -178,12 +173,6 @@
                         </select>
                     </div>
                     <div class="todo-actions-bar">
-                        <button id="todoExportBtn" class="data-manage-btn">
-                            <span class="icon-size-sm">📤</span> Export
-                        </button>
-                        <button id="todoImportBtn" class="data-manage-btn">
-                            <span class="icon-size-sm">📥</span> Import
-                        </button>
                     </div>
                 </div>
                 <div class="todo-add-form" id="todoAddForm">
@@ -208,14 +197,6 @@
                 <div class="journal-header journal-header-bar">
                     <h2 class="journal-title journal-title-text">Garden Journal</h2>
                     <div class="journal-actions-group">
-                        <button id="exportJournalBtn" class="journal-btn journal-btn-inline">
-                            <span class="icon-size-sm">📤</span>
-                            <span>Export</span>
-                        </button>
-                        <button id="importJournalBtn" class="journal-btn journal-btn-inline">
-                            <span class="icon-size-sm">📥</span>
-                            <span>Import</span>
-                        </button>
                         <button id="addJournalEntryBtn" class="journal-add-btn journal-add-btn-inline">
                             <span class="icon-size-sm">➕</span>
                             <span>New Entry</span>
@@ -355,6 +336,10 @@
 
         <footer>
             <div class="footer-content">
+                <div class="backup-controls">
+                    <button id="exportAllBtn" class="data-manage-btn">💾 Export All Data</button>
+                    <button id="importAllBtn" class="data-manage-btn">📂 Import All Data</button>
+                </div>
                 <div class="social-share-container" id="footerShareContainer"></div>
                 <p>Garden Planner © 2025</p>
             </div>

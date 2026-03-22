@@ -203,6 +203,31 @@ export async function importPhotos(entryId, photos) {
 }
 
 /**
+ * Get all photo records with full metadata (id, entryId, data, thumbnail).
+ * Used by the backup module to export individual photo files.
+ * @returns {Promise<Array<{id: string, entryId: string, data: string, thumbnail: string, created: number}>>}
+ */
+export async function getAllPhotosRaw() {
+    const database = await getDB();
+    const tx = database.transaction(STORE_NAME, 'readonly');
+    const store = tx.objectStore(STORE_NAME);
+    return promisifyRequest(store.getAll());
+}
+
+/**
+ * Delete all photos from IndexedDB.
+ * Used by the backup module during "Replace" import.
+ * @returns {Promise<void>}
+ */
+export async function clearAllPhotos() {
+    const database = await getDB();
+    const tx = database.transaction(STORE_NAME, 'readwrite');
+    const store = tx.objectStore(STORE_NAME);
+    store.clear();
+    await promisifyTransaction(tx);
+}
+
+/**
  * ONE-TIME migration: reads journal entries from localStorage, extracts inline images,
  * saves them to IndexedDB, updates the entries in localStorage to have imageIds instead
  * of images, and saves back.

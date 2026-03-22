@@ -10,7 +10,6 @@ import {
     addCustomPlant, addCustomTask,
     updateCustomPlant, updateCustomTask,
     deleteCustomPlant, deleteCustomTask,
-    exportCustomEntries, importCustomEntries,
     getAllPeriods
 } from './storage.js';
 import { renderCalendar } from './calendar.js';
@@ -18,8 +17,6 @@ import { renderCalendar } from './calendar.js';
 // DOM Elements
 let addCustomPlantBtn;
 let addCustomTaskBtn;
-let exportCustomEntriesBtn;
-let importCustomEntriesBtn;
 let customPlantModal;
 let customTaskModal;
 let customEntryForm;
@@ -40,11 +37,7 @@ export function initCustomEntries(initialActiveMonth) {
     
     // Add custom entry buttons to the calendar section
     addCustomEntryButtons();
-    
-    // Get the import/export buttons
-    exportCustomEntriesBtn = document.getElementById('exportCustomEntriesBtn');
-    importCustomEntriesBtn = document.getElementById('importCustomEntriesBtn');
-    
+
     // Load custom entries from storage
     loadCustomEntries();
 
@@ -156,11 +149,6 @@ function addCustomEntryButtons() {
     const calendarContent = document.getElementById('calendarContent');
     const calendarNav = monthNav.querySelector('.calendar-nav');
     
-    // Find existing export/import buttons
-    const exportBtn = document.getElementById('exportCustomEntriesBtn');
-    const importBtn = document.getElementById('importCustomEntriesBtn');
-    const dataManagementContainer = monthNav.querySelector('.data-management-buttons');
-    
     // Create custom entry buttons container
     const customButtonsContainer = document.createElement('div');
     customButtonsContainer.className = 'custom-entries-toolbar';
@@ -182,37 +170,6 @@ function addCustomEntryButtons() {
     customButtonsContainer.appendChild(addCustomPlantBtn);
     customButtonsContainer.appendChild(addCustomTaskBtn);
     
-    // Move export/import buttons to our new container if they exist
-    if (exportBtn && importBtn) {
-        // Create new buttons instead of cloning to avoid event listener issues
-        const newExportBtn = document.createElement('button');
-        newExportBtn.id = 'customToolbarExportBtn';
-        newExportBtn.className = 'toolbar-btn';
-        newExportBtn.innerHTML = exportBtn.innerHTML;
-
-        const newImportBtn = document.createElement('button');
-        newImportBtn.id = 'customToolbarImportBtn';
-        newImportBtn.className = 'toolbar-btn';
-        newImportBtn.innerHTML = importBtn.innerHTML;
-        
-        // Add the new buttons to our container
-        customButtonsContainer.appendChild(newExportBtn);
-        customButtonsContainer.appendChild(newImportBtn);
-        
-        // Hide the originals (but don't remove them to avoid breaking functionality)
-        exportBtn.style.display = 'none';
-        importBtn.style.display = 'none';
-        
-        // Set up new event listeners for the new buttons
-        newExportBtn.addEventListener('click', () => {
-            exportCustomEntries();
-        });
-        
-        newImportBtn.addEventListener('click', () => {
-            showImportModal();
-        });
-    }
-    
     // Insert the custom buttons container between monthNav and calendarContent
     if (calendarContent && calendarContent.parentNode) {
         calendarContent.parentNode.insertBefore(customButtonsContainer, calendarContent);
@@ -222,16 +179,7 @@ function addCustomEntryButtons() {
     }
     
     // calendarNav styling handled by CSS
-    
-    // If the data management container is now empty, hide it
-    if (dataManagementContainer && exportBtn && importBtn) {
-        dataManagementContainer.style.display = 'none';
-    }
-    
-    // Update UI to reflect that we have export/import buttons in the toolbar
-    exportCustomEntriesBtn = exportBtn;
-    importCustomEntriesBtn = importBtn;
-    
+
     // Add a MutationObserver to ensure the toolbar remains visible when switching views
     setupToolbarVisibilityObserver(customButtonsContainer);
 }
@@ -343,246 +291,6 @@ function setupEventListeners() {
         });
     }
     
-    // Export custom entries
-    if (exportCustomEntriesBtn) {
-        exportCustomEntriesBtn.addEventListener('click', () => {
-            exportCustomEntries();
-        });
-    }
-    
-    // Import custom entries
-    if (importCustomEntriesBtn) {
-        importCustomEntriesBtn.addEventListener('click', () => {
-            showImportModal();
-        });
-    }
-    
-    // Set up import modal listeners
-    setupImportModalListeners();
-}
-
-/**
- * Set up the import modal listeners
- * (No-op: the import modal is now created dynamically in showImportModal)
- */
-function setupImportModalListeners() {
-    // Import modal is created dynamically - no hardcoded listeners needed
-}
-
-/**
- * Show the import modal (dynamically created)
- */
-function showImportModal() {
-    // Remember previously focused element
-    const previouslyFocused = document.activeElement;
-    const focusableSelectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-    // Create modal overlay
-    const overlay = document.createElement('div');
-    overlay.className = 'weather-modal-overlay modal-overlay-high-z';
-    overlay.style.display = 'flex';
-    overlay.setAttribute('tabindex', '-1');
-
-    // Create modal body
-    const modalBody = document.createElement('div');
-    modalBody.className = 'weather-modal modal-body-compact';
-    modalBody.setAttribute('role', 'dialog');
-    modalBody.setAttribute('aria-modal', 'true');
-
-    // Close button
-    const closeBtn = document.createElement('button');
-    closeBtn.className = 'weather-modal-close';
-    closeBtn.innerHTML = '&times;';
-    closeBtn.setAttribute('aria-label', 'Close import options');
-
-    // Title
-    const titleEl = document.createElement('div');
-    titleEl.className = 'modal-title';
-    titleEl.textContent = 'Import Custom Entries';
-
-    // Stats message
-    const messageEl = document.createElement('div');
-    messageEl.className = 'modal-message';
-    messageEl.textContent = 'Select a file to import custom plants and tasks.';
-
-    // File input container
-    const fileContainer = document.createElement('div');
-    fileContainer.style.marginBottom = '15px';
-
-    const fileInput = document.createElement('input');
-    fileInput.type = 'file';
-    fileInput.accept = '.json';
-    fileInput.className = 'modal-file-input';
-    fileContainer.appendChild(fileInput);
-
-    // Options container (hidden until file is loaded)
-    const optionsContainer = document.createElement('div');
-    optionsContainer.style.display = 'none';
-
-    // Merge option
-    const mergeOption = document.createElement('div');
-    mergeOption.className = 'import-option';
-
-    const mergeIcon = document.createElement('div');
-    mergeIcon.className = 'modal-option-icon';
-    mergeIcon.textContent = '🔄';
-
-    const mergeContent = document.createElement('div');
-    mergeContent.className = 'modal-option-content';
-
-    const mergeTitle = document.createElement('div');
-    mergeTitle.className = 'modal-option-title';
-    mergeTitle.textContent = 'Merge';
-
-    const mergeDesc = document.createElement('div');
-    mergeDesc.className = 'modal-option-desc';
-    mergeDesc.textContent = 'Add new entries and update existing ones';
-
-    mergeContent.appendChild(mergeTitle);
-    mergeContent.appendChild(mergeDesc);
-    mergeOption.appendChild(mergeIcon);
-    mergeOption.appendChild(mergeContent);
-
-    // Replace option
-    const replaceOption = document.createElement('div');
-    replaceOption.className = 'import-option';
-
-    const replaceIcon = document.createElement('div');
-    replaceIcon.className = 'modal-option-icon';
-    replaceIcon.textContent = '♻️';
-
-    const replaceContent = document.createElement('div');
-    replaceContent.className = 'modal-option-content';
-
-    const replaceTitle = document.createElement('div');
-    replaceTitle.className = 'modal-option-title';
-    replaceTitle.textContent = 'Replace All';
-
-    const replaceDesc = document.createElement('div');
-    replaceDesc.className = 'modal-option-desc';
-    replaceDesc.textContent = 'Delete all existing entries and use imported ones';
-
-    replaceContent.appendChild(replaceTitle);
-    replaceContent.appendChild(replaceDesc);
-    replaceOption.appendChild(replaceIcon);
-    replaceOption.appendChild(replaceContent);
-
-    optionsContainer.appendChild(mergeOption);
-    optionsContainer.appendChild(replaceOption);
-
-    // Cancel button row
-    const actionsEl = document.createElement('div');
-    actionsEl.className = 'modal-actions-end';
-
-    const cancelBtn = document.createElement('button');
-    cancelBtn.className = 'button modal-btn-cancel';
-    cancelBtn.textContent = 'Cancel';
-
-    actionsEl.appendChild(cancelBtn);
-
-    // Assemble modal
-    modalBody.appendChild(closeBtn);
-    modalBody.appendChild(titleEl);
-    modalBody.appendChild(messageEl);
-    modalBody.appendChild(fileContainer);
-    modalBody.appendChild(optionsContainer);
-    modalBody.appendChild(actionsEl);
-    overlay.appendChild(modalBody);
-    document.body.appendChild(overlay);
-
-    // Close helper
-    function closeModal() {
-        overlay.remove();
-        if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
-            previouslyFocused.focus();
-        }
-    }
-
-    // File input change handler
-    fileInput.addEventListener('change', (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                try {
-                    const importData = JSON.parse(event.target.result);
-                    if (importData && (importData.plants || importData.tasks)) {
-                        messageEl.textContent = `Found ${importData.plants?.length || 0} plants and ${importData.tasks?.length || 0} tasks to import.`;
-                        optionsContainer.style.display = 'block';
-
-                        mergeOption.onclick = () => {
-                            handleCustomImport(importData, false, closeModal);
-                        };
-
-                        replaceOption.onclick = () => {
-                            handleCustomImport(importData, true, closeModal);
-                        };
-                    } else {
-                        alert('Invalid custom entries file format.');
-                    }
-                } catch (error) {
-                    console.error('Error parsing import file:', error);
-                    alert('Error parsing import file. Please make sure it is a valid JSON file.');
-                }
-            };
-            reader.readAsText(file);
-        }
-    });
-
-    // Close handlers
-    closeBtn.addEventListener('click', closeModal);
-    cancelBtn.addEventListener('click', closeModal);
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) closeModal();
-    });
-
-    // Keyboard: Escape to close, focus trap
-    overlay.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            closeModal();
-            return;
-        }
-        if (e.key === 'Tab') {
-            const focusable = overlay.querySelectorAll(focusableSelectors);
-            const first = focusable[0];
-            const last = focusable[focusable.length - 1];
-            if (e.shiftKey) {
-                if (document.activeElement === first || document.activeElement === overlay) {
-                    e.preventDefault();
-                    last.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first.focus();
-                }
-            }
-        }
-    });
-
-    // Focus the file input
-    setTimeout(() => fileInput.focus(), 50);
-}
-
-/**
- * Handle custom entries import
- * @param {Object} importData - The import data object
- * @param {boolean} replaceExisting - Whether to replace existing entries
- * @param {Function} closeModal - Function to close the modal
- */
-function handleCustomImport(importData, replaceExisting, closeModal) {
-    // Import the data
-    const result = importCustomEntries(importData, replaceExisting);
-
-    // Close the modal
-    if (typeof closeModal === 'function') closeModal();
-
-    // Refresh calendar to show imported entries
-    renderCalendar(activeMonth);
-
-    // Show success message
-    const total = (result.plants?.length || 0) + (result.tasks?.length || 0);
-    alert(`Successfully imported ${total} custom entries.`);
 }
 
 /**
@@ -965,7 +673,5 @@ export default {
     initCustomEntries,
     openPlantModal,
     openTaskModal,
-    loadCustomEntries,
-    exportCustomEntries,
-    importCustomEntries
+    loadCustomEntries
 }; 
