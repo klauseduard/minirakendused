@@ -1,3 +1,5 @@
+import json
+import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
@@ -14,7 +16,7 @@ from .auth import (
     hash_password,
     verify_password,
 )
-from .database import get_db, init_db
+from .database import DB_DIR, get_db, init_db
 
 
 @asynccontextmanager
@@ -112,7 +114,6 @@ async def get_state(user: dict = Depends(get_current_user)):
         if not row:
             return SyncResponse(data={}, updated_at=datetime.now(timezone.utc).isoformat())
 
-        import json
         return SyncResponse(
             data=json.loads(row['data_json']),
             updated_at=row['updated_at'],
@@ -126,7 +127,6 @@ async def put_state(body: SyncState, user: dict = Depends(get_current_user)):
     user_id = int(user['sub'])
     now = datetime.now(timezone.utc).isoformat()
 
-    import json
     data_json = json.dumps(body.data)
 
     db = await get_db()
@@ -141,6 +141,63 @@ async def put_state(body: SyncState, user: dict = Depends(get_current_user)):
         return SyncResponse(data=body.data, updated_at=now)
     finally:
         await db.close()
+
+
+# --- Photo routes ---
+
+def _photos_dir(user_id: int) -> str:
+    d = os.path.join(DB_DIR, 'photos', str(user_id))
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+class PhotoUpload(BaseModel):
+    id: str
+    entryId: str
+    data: str
+    thumbnail: str = ''
+
+
+@app.get('/api/photos')
+async def list_photos(user: dict = Depends(get_current_user)):
+    """Return list of photo IDs stored on the server for this user."""
+    user_id = int(user['sub'])
+    d = _photos_dir(user_id)
+    ids = []
+    for fname in os.listdir(d):
+        if fname.endswith('.json'):
+            ids.append(fname[:-5])
+    return {'photo_ids': ids}
+
+
+@app.get('/api/photos/{photo_id}')
+async def get_photo(photo_id: str, user: dict = Depends(get_current_user)):
+    user_id = int(user['sub'])
+    path = os.path.join(_photos_dir(user_id), f'{photo_id}.json')
+    if not os.path.exists(path):
+        raise HTTPException(status_code=404, detail='Photo not found')
+    with open(path, 'r') as f:
+        return json.load(f)
+
+
+@app.put('/api/photos/{photo_id}')
+async def put_photo(photo_id: str, body: PhotoUpload, user: dict = Depends(get_current_user)):
+    user_id = int(user['sub'])
+    if body.id != photo_id:
+        raise HTTPException(status_code=400, detail='Photo ID in body must match URL')
+    path = os.path.join(_photos_dir(user_id), f'{photo_id}.json')
+    with open(path, 'w') as f:
+        json.dump({'id': body.id, 'entryId': body.entryId, 'data': body.data, 'thumbnail': body.thumbnail}, f)
+    return {'status': 'ok', 'id': photo_id}
+
+
+@app.delete('/api/photos/{photo_id}')
+async def delete_photo(photo_id: str, user: dict = Depends(get_current_user)):
+    user_id = int(user['sub'])
+    path = os.path.join(_photos_dir(user_id), f'{photo_id}.json')
+    if os.path.exists(path):
+        os.remove(path)
+    return {'status': 'ok'}
 
 
 @app.get('/api/health')

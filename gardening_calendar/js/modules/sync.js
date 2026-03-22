@@ -17,6 +17,7 @@ import {
     STORAGE_KEYS
 } from './storage.js';
 import { showOptionsModal, showNotification } from './ui.js';
+import { getAllPhotosRaw, clearAllPhotos, savePhotos } from './photo-storage.js';
 
 const TOKEN_KEY = 'gardening_sync_token';
 const USERNAME_KEY = 'gardening_sync_username';
@@ -219,6 +220,54 @@ async function pullState() {
 }
 
 /**
+ * Sync photos: push local photos missing on server, pull server photos missing locally.
+ * Runs after state sync to keep photos in sync.
+ */
+async function syncPhotos() {
+    try {
+        const remoteList = await apiRequest('/api/photos');
+        const remoteIds = new Set(remoteList.photo_ids || []);
+        const localPhotos = await getAllPhotosRaw();
+        const localIds = new Set(localPhotos.map(p => p.id));
+
+        // Push local photos not on server
+        const toPush = localPhotos.filter(p => !remoteIds.has(p.id));
+        for (const photo of toPush) {
+            await apiRequest(`/api/photos/${photo.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    id: photo.id,
+                    entryId: photo.entryId,
+                    data: photo.data,
+                    thumbnail: photo.thumbnail || '',
+                }),
+            });
+        }
+
+        // Pull server photos not local
+        const toPull = [...remoteIds].filter(id => !localIds.has(id));
+        // Group by entryId for batch save
+        const pullByEntry = {};
+        for (const id of toPull) {
+            const photo = await apiRequest(`/api/photos/${id}`);
+            const entryId = photo.entryId;
+            if (!pullByEntry[entryId]) pullByEntry[entryId] = [];
+            pullByEntry[entryId].push(photo);
+        }
+        for (const [entryId, photos] of Object.entries(pullByEntry)) {
+            await savePhotos(entryId, photos);
+        }
+
+        const total = toPush.length + toPull.length;
+        if (total > 0) {
+            console.log(`Photo sync: ${toPush.length} pushed, ${toPull.length} pulled`);
+        }
+    } catch (err) {
+        console.error('Photo sync failed:', err);
+    }
+}
+
+/**
  * Sync: compare timestamps and push/pull accordingly
  */
 async function sync() {
@@ -236,10 +285,12 @@ async function sync() {
         if (!remoteHasData && !localSyncTime) {
             // First sync — push local data up
             await pushState();
+            await syncPhotos();
             showNotification('Data synced to cloud.', 'success');
         } else if (!remoteHasData) {
             // Server empty, push
             await pushState();
+            await syncPhotos();
             showNotification('Data pushed to cloud.', 'success');
         } else if (!localSyncTime) {
             // Never synced locally but server has data — ask user
@@ -250,6 +301,7 @@ async function sync() {
         } else {
             // Local is newer or same — push
             await pushState();
+            await syncPhotos();
             showNotification('Data synced.', 'success');
         }
 
@@ -278,6 +330,7 @@ function showSyncConflictDialog(remote) {
                 onClick: async () => {
                     applyState(remote.data);
                     localStorage.setItem(LAST_SYNC_KEY, remote.updated_at);
+                    await syncPhotos();
                     showNotification('Server data applied. Reloading...', 'success');
                     setTimeout(() => window.location.reload(), 1000);
                 }
@@ -288,6 +341,7 @@ function showSyncConflictDialog(remote) {
                 description: 'Overwrite server data with your current local data.',
                 onClick: async () => {
                     await pushState();
+                    await syncPhotos();
                     showNotification('Local data pushed to server.', 'success');
                 }
             }
