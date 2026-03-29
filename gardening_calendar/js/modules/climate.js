@@ -8,6 +8,7 @@ let koppenGrid = null;
 let userClimateZone = null;
 let userClimateZoneOverride = null;
 let userLat = null;
+let pendingClimateArgs = null;
 
 /**
  * Phase configuration: frost-relative timing for each built-in period.
@@ -74,19 +75,22 @@ export function initClimateZone() {
         .then(data => {
             koppenGrid = data;
             console.log('Köppen grid data loaded successfully');
-            
-            // Check for cached location
-            const cached = localStorage.getItem('gardening_last_location');
-            if (cached) {
-                try {
-                    const loc = JSON.parse(cached);
-                    console.log(`Found cached location: ${JSON.stringify(loc)}`);
-                    if (loc.type === 'coords' && loc.lat && loc.lon) {
-                        console.log(`Showing climate zone for cached location: lat=${loc.lat}, lon=${loc.lon}`);
-                        showClimateZone(loc.lat, loc.lon);
+
+            // Replay any call that arrived before the grid was ready
+            if (pendingClimateArgs) {
+                showClimateZone(pendingClimateArgs.lat, pendingClimateArgs.lon);
+            } else {
+                // Fallback: check cached location if no module called showClimateZone yet
+                const cached = localStorage.getItem('gardening_last_location');
+                if (cached) {
+                    try {
+                        const loc = JSON.parse(cached);
+                        if (loc.type === 'coords' && loc.lat && loc.lon) {
+                            showClimateZone(loc.lat, loc.lon);
+                        }
+                    } catch (e) {
+                        console.error('Error processing cached location:', e);
                     }
-                } catch (e) {
-                    console.error('Error processing cached location:', e);
                 }
             }
         })
@@ -134,8 +138,7 @@ export function showClimateZone(lat, lon) {
     const climateZoneInfo = document.getElementById('climateZoneInfo');
     
     if (!koppenGrid) {
-        console.error('Köppen grid data not loaded yet');
-        climateZoneInfo.innerHTML = '';
+        pendingClimateArgs = { lat, lon };
         return;
     }
     
