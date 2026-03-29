@@ -613,6 +613,7 @@ function openBedEditor(bedId) {
     fCanvas = new fabric.Canvas('layoutCanvas', {
         isDrawingMode: true,
         backgroundColor: '#f5f0e6',
+        preserveObjectStacking: true,
         width: canvasW,
         height: canvasH
     });
