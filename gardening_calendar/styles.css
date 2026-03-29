@@ -4082,11 +4082,15 @@ body.layout-active #garden-layout {
     position: absolute;
     top: 0;
     left: 0;
+    pointer-events: none;
+}
+.layout-stickers-overlay.sticker-mode {
     pointer-events: auto;
 }
 
 /* Stickers */
 .layout-sticker {
+    pointer-events: auto;
     position: absolute;
     transform: translate(-4px, -50%);
     background: rgba(255,255,255,0.92);
