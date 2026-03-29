@@ -3911,6 +3911,18 @@ body.layout-active #garden-layout {
     border-radius: 10px;
 }
 
+.layout-bed-notes {
+    width: 100%;
+    margin: 0.25rem 0 0;
+    font-size: 0.8rem;
+    color: #666;
+    line-height: 1.4;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
 .layout-bed-actions {
     display: flex;
     justify-content: flex-end;
@@ -4158,6 +4170,18 @@ body.layout-active #garden-layout {
     font-size: 0.85rem;
     color: #888;
     padding: 0.5rem;
+}
+
+/* Notes editor in bed editor */
+.layout-bed-notes-editor {
+    margin-top: 0.75rem;
+}
+.layout-notes-textarea {
+    width: 100%;
+    max-width: 800px;
+    resize: vertical;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
 }
 
 /* Grid info */

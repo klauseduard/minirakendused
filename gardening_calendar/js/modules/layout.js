@@ -138,6 +138,7 @@ function renderLayout() {
                             ? `<span class="layout-bed-plant-count">${bed.stickers.length} plant${bed.stickers.length !== 1 ? 's' : ''}</span>`
                             : ''
                         }
+                        ${bed.notes ? `<p class="layout-bed-notes">${bed.notes}</p>` : ''}
                     </div>
                     <div class="layout-bed-actions">
                         <button class="layout-bed-edit-btn" data-id="${bed.id}" title="Edit sketch">✏️</button>
@@ -197,6 +198,10 @@ function showAddBedModal() {
                     <option value="lshape">L-Shape</option>
                 </select>
             </div>
+            <div class="form-row">
+                <label for="bedNotesInput" class="form-label">Notes (optional)</label>
+                <textarea id="bedNotesInput" class="form-textarea" rows="3" placeholder="e.g. Companion planting: carrots between onion rows for pest control"></textarea>
+            </div>
             <div class="form-actions">
                 <button type="button" id="bedModalCancel" class="modal-btn-cancel">Cancel</button>
                 <button type="button" id="bedModalConfirm" class="modal-btn-confirm">Create Bed</button>
@@ -214,6 +219,7 @@ function showAddBedModal() {
             const width = parseFloat(document.getElementById('bedWidthInput').value) || 2;
             const height = parseFloat(document.getElementById('bedHeightInput').value) || 4;
             const shape = document.getElementById('bedShapeSelect').value;
+            const notes = document.getElementById('bedNotesInput').value.trim();
 
             if (!name) {
                 showNotification('Please enter a bed name', 'warning');
@@ -226,6 +232,7 @@ function showAddBedModal() {
                 width,
                 height,
                 shape,
+                notes,
                 canvasData: null,
                 stickers: [],
                 createdAt: new Date().toISOString()
@@ -327,6 +334,11 @@ function openBedEditor(bedId) {
                     <button class="layout-sticker-cancel" id="layoutStickerCancel">Cancel</button>
                 </div>
                 <div class="layout-sticker-list" id="layoutStickerList"></div>
+            </div>
+            <div class="layout-bed-notes-editor">
+                <label for="layoutBedNotes" class="form-label">Notes</label>
+                <textarea id="layoutBedNotes" class="form-textarea layout-notes-textarea" rows="3"
+                    placeholder="Describe this bed's planting plan, companion planting strategy, etc.">${bed.notes || ''}</textarea>
             </div>
             <div class="layout-grid-info">
                 <span class="layout-grid-label">Grid: ~30cm squares</span>
@@ -477,6 +489,12 @@ function bindEditorEvents(bed) {
         saveBedCanvas(bed);
         activeBedId = null;
         renderLayout();
+    });
+
+    // Notes auto-save on change
+    document.getElementById('layoutBedNotes')?.addEventListener('input', (e) => {
+        bed.notes = e.target.value.trim();
+        saveBeds();
     });
 
     // Tool selection
