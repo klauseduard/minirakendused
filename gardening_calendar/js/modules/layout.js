@@ -505,12 +505,15 @@ function bindEditorEvents(bed) {
             btn.classList.add('active');
 
             const stickerPanel = document.getElementById('layoutStickerPanel');
+            const overlay = document.getElementById('layoutStickersOverlay');
             if (currentTool === 'sticker') {
                 showStickerPanel();
                 if (stickerPanel) stickerPanel.style.display = 'block';
+                if (overlay) overlay.classList.add('sticker-mode');
             } else {
                 placingSticker = null;
                 if (stickerPanel) stickerPanel.style.display = 'none';
+                if (overlay) overlay.classList.remove('sticker-mode');
             }
         });
     });
@@ -544,6 +547,8 @@ function bindEditorEvents(bed) {
     document.getElementById('layoutStickerCancel')?.addEventListener('click', () => {
         placingSticker = null;
         document.getElementById('layoutStickerPanel').style.display = 'none';
+        const overlay = document.getElementById('layoutStickersOverlay');
+        if (overlay) overlay.classList.remove('sticker-mode');
         currentTool = 'pen';
         document.querySelectorAll('.layout-tool-btn').forEach(b => {
             b.classList.toggle('active', b.dataset.tool === 'pen');
