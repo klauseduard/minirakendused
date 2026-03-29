@@ -1,10 +1,10 @@
 /**
  * Garden Layout Module — Option D: Hybrid (Structured Beds + Sketch Canvas)
- * Fabric.js variant — uses Fabric.js for canvas rendering with built-in
- * object manipulation (select, move, resize, rotate) and JSON serialization.
+ * Fabric.js variant — full object manipulation, vector persistence/export.
  *
- * Storage: bed.fabricJson = canvas.toJSON() — structured object data, not rasterized.
- * bed.canvasData = small JPEG thumbnail for bed list preview only.
+ * Storage: bed.fabricJson = canvas.toJSON() — structured object data.
+ * Export: SVG via canvas.toSVG() + grid overlay.
+ * Thumbnail: small JPEG for bed list preview only.
  */
 
 import { getSelectedItems } from './storage.js';
@@ -12,18 +12,19 @@ import { showModal, showConfirmDialog, showNotification } from './ui.js';
 
 const STORAGE_KEY = 'gardening_layout_hybrid';
 
+// Custom properties to persist in Fabric JSON serialization
+const CUSTOM_PROPS = ['isSticker', 'plantName', 'stickerColor'];
+
 let beds = [];
 let activeBedId = null;
 
-// Fabric.js canvas instance
 let fCanvas = null;
 let currentTool = 'pen';
 let currentColor = '#2d5016';
 let lineWidth = 3;
-
-// Sticker placement
 let placingSticker = null;
-let stickers = [];
+let clipboard = null;
+let activeKeyHandler = null;
 
 const COLORS = ['#2d5016', '#c75b12', '#8b4513', '#1a5276', '#7d3c98', '#c0392b', '#27ae60', '#2c3e50'];
 
@@ -34,7 +35,6 @@ const TOOLS = [
     { id: 'rect', label: 'Rect', icon: '⬜' },
     { id: 'ellipse', label: 'Ellipse', icon: '⭕' },
     { id: 'text', label: 'Text', icon: '🔤' },
-    { id: 'eraser', label: 'Eraser', icon: '🧹' },
     { id: 'sticker', label: 'Plants', icon: '🌱' }
 ];
 
@@ -91,6 +91,15 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
+function escapeXml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function countStickers(bed) {
+    if (!bed.fabricJson || !bed.fabricJson.objects) return 0;
+    return bed.fabricJson.objects.filter(o => o.isSticker).length;
+}
+
 // ── Fabric canvas setup ─────────────────────────────────────────────
 
 /**
@@ -143,24 +152,68 @@ function applyToolMode() {
         fCanvas.freeDrawingBrush = new fabric.PencilBrush(fCanvas);
         fCanvas.freeDrawingBrush.color = currentColor;
         fCanvas.freeDrawingBrush.width = lineWidth;
-    } else if (currentTool === 'eraser') {
-        fCanvas.isDrawingMode = true;
-        fCanvas.freeDrawingBrush = new fabric.PencilBrush(fCanvas);
-        fCanvas.freeDrawingBrush.color = '#f5f0e6';
-        fCanvas.freeDrawingBrush.width = lineWidth * 4;
     } else if (currentTool === 'select') {
         fCanvas.selection = true;
         fCanvas.defaultCursor = 'default';
         fCanvas.forEachObject(o => { o.selectable = true; o.evented = true; });
+    } else if (currentTool === 'sticker') {
+        fCanvas.defaultCursor = 'copy';
     }
 }
 
-/**
- * Generate thumbnail for bed list
- */
 function generateThumbnail() {
     if (!fCanvas) return null;
     return fCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 0.25 });
+}
+
+// ── Plant stickers as Fabric objects ────────────────────────────────
+
+function createStickerObject(plantName, x, y, color) {
+    const label = new fabric.Text('\ud83c\udf31 ' + plantName, {
+        fontSize: 14,
+        fontFamily: "'Source Sans 3', sans-serif",
+        fontWeight: 'bold',
+        fill: color,
+    });
+
+    const padding = 6;
+    const bg = new fabric.Rect({
+        width: label.width + padding * 2,
+        height: label.height + padding,
+        fill: 'rgba(255, 255, 255, 0.92)',
+        stroke: color,
+        strokeWidth: 1.5,
+        rx: 4,
+        ry: 4,
+    });
+
+    const group = new fabric.Group([bg, label], {
+        left: x,
+        top: y,
+        isSticker: true,
+        plantName: plantName,
+        stickerColor: color,
+    });
+
+    fCanvas.add(group);
+    return group;
+}
+
+/**
+ * Migrate old HTML-overlay stickers to Fabric objects
+ */
+function migrateOldStickers(bed) {
+    if (!bed.stickers || bed.stickers.length === 0 || !fCanvas) return;
+
+    const canvasW = fCanvas.width;
+    const canvasH = fCanvas.height;
+
+    bed.stickers.forEach(s => {
+        createStickerObject(s.text, (s.x / 100) * canvasW, (s.y / 100) * canvasH, s.color || '#2d5016');
+    });
+
+    bed.stickers = [];
+    fCanvas.renderAll();
 }
 
 // ── Shape drawing with mouse events ─────────────────────────────────
@@ -172,6 +225,14 @@ function setupShapeDrawing() {
     if (!fCanvas) return;
 
     fCanvas.on('mouse:down', function(opt) {
+        // Sticker placement
+        if (currentTool === 'sticker' && placingSticker) {
+            const pointer = fCanvas.getPointer(opt.e);
+            createStickerObject(placingSticker, pointer.x, pointer.y, currentColor);
+            fCanvas.renderAll();
+            return;
+        }
+
         if (['line', 'rect', 'ellipse'].includes(currentTool)) {
             const pointer = fCanvas.getPointer(opt.e);
             shapeStartX = pointer.x;
@@ -281,6 +342,48 @@ function promptText(x, y) {
     }, 100);
 }
 
+// ── Copy / Paste ────────────────────────────────────────────────────
+
+function copySelection() {
+    const active = fCanvas?.getActiveObject();
+    if (!active) return;
+    active.clone(function(cloned) {
+        clipboard = cloned;
+    }, CUSTOM_PROPS);
+}
+
+function pasteClipboard() {
+    if (!clipboard || !fCanvas) return;
+    clipboard.clone(function(cloned) {
+        fCanvas.discardActiveObject();
+        cloned.set({
+            left: cloned.left + 20,
+            top: cloned.top + 20,
+        });
+        if (cloned.type === 'activeSelection') {
+            cloned.canvas = fCanvas;
+            cloned.forEachObject(function(obj) {
+                fCanvas.add(obj);
+            });
+            cloned.setCoords();
+        } else {
+            fCanvas.add(cloned);
+        }
+        clipboard.left += 20;
+        clipboard.top += 20;
+
+        // Switch to select mode so pasted objects are interactive
+        currentTool = 'select';
+        document.querySelectorAll('.layout-tool-btn').forEach(b => {
+            b.classList.toggle('active', b.dataset.tool === 'select');
+        });
+        applyToolMode();
+
+        fCanvas.setActiveObject(cloned);
+        fCanvas.requestRenderAll();
+    }, CUSTOM_PROPS);
+}
+
 // ── Layout views ────────────────────────────────────────────────────
 
 function renderLayout() {
@@ -290,7 +393,7 @@ function renderLayout() {
     if (beds.length === 0) {
         content.innerHTML = `
             <div class="layout-empty-state">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">🌿</div>
+                <div style="font-size: 3rem; margin-bottom: 1rem;">\ud83c\udf3f</div>
                 <h3>No Garden Beds Yet</h3>
                 <p>Define your garden beds (raised beds, rows, borders) and sketch plant placements inside each one.</p>
             </div>
@@ -300,29 +403,32 @@ function renderLayout() {
 
     content.innerHTML = `
         <div class="layout-bed-grid">
-            ${beds.map(bed => `
+            ${beds.map(bed => {
+                const stickerCount = countStickers(bed);
+                return `
                 <div class="layout-bed-card" data-id="${bed.id}">
                     <div class="layout-bed-preview">
                         ${bed.canvasData
                             ? `<img src="${bed.canvasData}" alt="${bed.name}" class="layout-bed-thumb">`
-                            : `<div class="layout-bed-placeholder">🌱</div>`
+                            : `<div class="layout-bed-placeholder">\ud83c\udf31</div>`
                         }
                     </div>
                     <div class="layout-bed-info">
                         <h3 class="layout-bed-name">${bed.name}</h3>
-                        <span class="layout-bed-dims">${bed.width}m × ${bed.height}m</span>
-                        ${bed.stickers && bed.stickers.length > 0
-                            ? `<span class="layout-bed-plant-count">${bed.stickers.length} plant${bed.stickers.length !== 1 ? 's' : ''}</span>`
+                        <span class="layout-bed-dims">${bed.width}m \u00d7 ${bed.height}m</span>
+                        ${stickerCount > 0
+                            ? `<span class="layout-bed-plant-count">${stickerCount} plant${stickerCount !== 1 ? 's' : ''}</span>`
                             : ''
                         }
                         ${bed.notes ? `<p class="layout-bed-notes">${bed.notes}</p>` : ''}
                     </div>
                     <div class="layout-bed-actions">
-                        <button class="layout-bed-edit-btn" data-id="${bed.id}" title="Edit sketch">✏️</button>
-                        <button class="layout-bed-delete-btn" data-id="${bed.id}" title="Delete bed">🗑️</button>
+                        <button class="layout-bed-edit-btn" data-id="${bed.id}" title="Edit sketch">\u270f\ufe0f</button>
+                        <button class="layout-bed-delete-btn" data-id="${bed.id}" title="Delete bed">\ud83d\uddd1\ufe0f</button>
                     </div>
                 </div>
-            `).join('')}
+                `;
+            }).join('')}
         </div>
     `;
 
@@ -399,7 +505,6 @@ function showAddBedModal() {
                 name, width, height, shape, notes,
                 fabricJson: null,
                 canvasData: null,
-                stickers: [],
                 createdAt: new Date().toISOString()
             };
 
@@ -407,7 +512,7 @@ function showAddBedModal() {
             saveBeds();
             close();
             renderLayout();
-            showNotification(`"${name}" created — tap to start sketching`, 'success');
+            showNotification(`"${name}" created \u2014 tap to start sketching`, 'success');
         });
         document.getElementById('bedNameInput')?.focus();
     }, 100);
@@ -436,7 +541,6 @@ function openBedEditor(bedId) {
     if (!bed) return;
 
     activeBedId = bedId;
-    stickers = bed.stickers ? JSON.parse(JSON.stringify(bed.stickers)) : [];
 
     const content = document.getElementById('layoutContent');
     if (!content) return;
@@ -449,14 +553,16 @@ function openBedEditor(bedId) {
     content.innerHTML = `
         <div class="layout-editor">
             <div class="layout-editor-header">
-                <button class="layout-editor-back" id="layoutEditorBack">← Back</button>
-                <h3 class="layout-editor-title">${bed.name} <span class="layout-editor-dims">${bed.width}m × ${bed.height}m</span></h3>
+                <button class="layout-editor-back" id="layoutEditorBack">\u2190 Back</button>
+                <h3 class="layout-editor-title">${bed.name} <span class="layout-editor-dims">${bed.width}m \u00d7 ${bed.height}m</span></h3>
                 <div class="layout-editor-actions">
-                    <button class="layout-editor-action-btn" id="layoutUndoBtn" title="Undo (Ctrl+Z)">↩</button>
-                    <button class="layout-editor-action-btn" id="layoutRedoBtn" title="Redo (Ctrl+Y)">↪</button>
-                    <button class="layout-editor-action-btn" id="layoutDeleteObjBtn" title="Delete selected">🗑️</button>
-                    <button class="layout-editor-action-btn" id="layoutClearBtn" title="Clear all">✖</button>
-                    <button class="layout-editor-action-btn" id="layoutExportBtn" title="Export as PNG">💾</button>
+                    <button class="layout-editor-action-btn" id="layoutUndoBtn" title="Undo (Ctrl+Z)">\u21a9</button>
+                    <button class="layout-editor-action-btn" id="layoutRedoBtn" title="Redo (Ctrl+Y)">\u21aa</button>
+                    <button class="layout-editor-action-btn" id="layoutDeleteObjBtn" title="Delete selected (Del)">\ud83d\uddd1\ufe0f</button>
+                    <button class="layout-editor-action-btn" id="layoutBringFrontBtn" title="Bring to front">\u2b06\ufe0f</button>
+                    <button class="layout-editor-action-btn" id="layoutSendBackBtn" title="Send to back">\u2b07\ufe0f</button>
+                    <button class="layout-editor-action-btn" id="layoutClearBtn" title="Clear all">\u2716</button>
+                    <button class="layout-editor-action-btn" id="layoutExportBtn" title="Export as SVG">\ud83d\udcbe</button>
                 </div>
             </div>
             <div class="layout-toolbar">
@@ -483,14 +589,12 @@ function openBedEditor(bedId) {
             </div>
             <div class="layout-canvas-wrapper" id="layoutCanvasWrapper">
                 <canvas id="layoutCanvas" width="${canvasW}" height="${canvasH}"></canvas>
-                <div class="layout-stickers-overlay" id="layoutStickersOverlay"
-                     style="width: ${canvasW}px; height: ${canvasH}px;"></div>
                 ${renderBedShape(bed.shape, canvasW, canvasH)}
             </div>
             <div class="layout-sticker-panel" id="layoutStickerPanel" style="display: none;">
                 <div class="layout-sticker-header">
-                    <span>Place a plant label — tap on the bed</span>
-                    <button class="layout-sticker-cancel" id="layoutStickerCancel">Cancel</button>
+                    <span>Select a plant, then click on the bed to place it</span>
+                    <button class="layout-sticker-cancel" id="layoutStickerCancel">Done</button>
                 </div>
                 <div class="layout-sticker-list" id="layoutStickerList"></div>
             </div>
@@ -500,7 +604,7 @@ function openBedEditor(bedId) {
                     placeholder="Describe this bed's planting plan, companion planting strategy, etc.">${bed.notes || ''}</textarea>
             </div>
             <div class="layout-grid-info">
-                <span class="layout-grid-label">Grid: ~30cm squares | Use Select tool (👆) to move/resize drawn objects</span>
+                <span class="layout-grid-label">Grid: ~30cm squares | Select (\ud83d\udc46) to move, resize, copy objects | Del to remove</span>
             </div>
         </div>
     `;
@@ -513,27 +617,21 @@ function openBedEditor(bedId) {
         height: canvasH
     });
 
-    // Draw grid on the background
     drawGridBackground(bed, canvasW, canvasH);
 
-    // Restore saved Fabric JSON
     if (bed.fabricJson) {
         fCanvas.loadFromJSON(bed.fabricJson, () => {
             drawGridBackground(bed, canvasW, canvasH);
             fCanvas.renderAll();
             applyToolMode();
+            migrateOldStickers(bed);
         });
     } else {
         applyToolMode();
+        migrateOldStickers(bed);
     }
 
-    // Setup shape drawing handlers
     setupShapeDrawing();
-
-    // Render stickers
-    renderStickers();
-
-    // Bind editor events
     bindEditorEvents(bed);
 }
 
@@ -554,7 +652,7 @@ function renderBedShape(shape, w, h) {
     return '';
 }
 
-// ── Stickers ────────────────────────────────────────────────────────
+// ── Sticker panel ───────────────────────────────────────────────────
 
 function showStickerPanel() {
     const list = document.getElementById('layoutStickerList');
@@ -570,7 +668,7 @@ function showStickerPanel() {
     list.innerHTML = plants.map(name => `
         <button class="layout-sticker-btn ${placingSticker === name ? 'active' : ''}"
                 data-plant="${name}">
-            🌱 ${name}
+            \ud83c\udf31 ${name}
         </button>
     `).join('');
 
@@ -583,145 +681,88 @@ function showStickerPanel() {
     });
 }
 
-function renderStickers() {
-    const overlay = document.getElementById('layoutStickersOverlay');
-    if (!overlay) return;
-
-    overlay.innerHTML = stickers.map(s => `
-        <div class="layout-sticker" data-id="${s.id}"
-             style="left: ${s.x}%; top: ${s.y}%; border-color: ${s.color}; color: ${s.color};">
-            🌱 ${s.text}
-            <button class="layout-sticker-remove" data-id="${s.id}">×</button>
-        </div>
-    `).join('');
-
-    overlay.querySelectorAll('.layout-sticker').forEach(el => {
-        let dragStartX, dragStartY, origX, origY;
-        const sticker = stickers.find(s => s.id === el.dataset.id);
-
-        el.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('layout-sticker-remove')) return;
-            e.preventDefault();
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            origX = sticker.x;
-            origY = sticker.y;
-            el.classList.add('dragging');
-
-            const onMove = (me) => {
-                const rect = overlay.getBoundingClientRect();
-                const dx = ((me.clientX - dragStartX) / rect.width) * 100;
-                const dy = ((me.clientY - dragStartY) / rect.height) * 100;
-                sticker.x = Math.max(0, Math.min(100, origX + dx));
-                sticker.y = Math.max(0, Math.min(100, origY + dy));
-                el.style.left = sticker.x + '%';
-                el.style.top = sticker.y + '%';
-            };
-            const onUp = () => {
-                el.classList.remove('dragging');
-                document.removeEventListener('mousemove', onMove);
-                document.removeEventListener('mouseup', onUp);
-                const bed = beds.find(b => b.id === activeBedId);
-                if (bed) saveBedStickers(bed);
-            };
-            document.addEventListener('mousemove', onMove);
-            document.addEventListener('mouseup', onUp);
-        });
-    });
-
-    overlay.querySelectorAll('.layout-sticker-remove').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            stickers = stickers.filter(s => s.id !== btn.dataset.id);
-            renderStickers();
-            const bed = beds.find(b => b.id === activeBedId);
-            if (bed) saveBedStickers(bed);
-        });
-    });
-}
-
 // ── Save / Export ───────────────────────────────────────────────────
 
 function saveBedCanvas(bed) {
     if (fCanvas) {
-        bed.fabricJson = fCanvas.toJSON();
+        bed.fabricJson = fCanvas.toJSON(CUSTOM_PROPS);
         bed.canvasData = generateThumbnail();
     }
-    bed.stickers = JSON.parse(JSON.stringify(stickers));
-    saveBeds();
-}
-
-function saveBedStickers(bed) {
-    bed.stickers = JSON.parse(JSON.stringify(stickers));
     saveBeds();
 }
 
 function exportBed(bed) {
     if (!fCanvas) return;
 
-    const dataUrl = fCanvas.toDataURL({ format: 'png', multiplier: 1 });
-    const img = new Image();
-    img.onload = () => {
-        const exportCanvas = document.createElement('canvas');
-        exportCanvas.width = fCanvas.width;
-        exportCanvas.height = fCanvas.height;
-        const expCtx = exportCanvas.getContext('2d');
+    const w = fCanvas.width;
+    const h = fCanvas.height;
+    const pxPerMeter = w / bed.width;
+    const gridSpacing = pxPerMeter * 0.3;
 
-        expCtx.fillStyle = '#f5f0e6';
-        expCtx.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-        expCtx.drawImage(img, 0, 0);
+    let svg = fCanvas.toSVG();
 
-        expCtx.font = 'bold 14px "Source Sans 3", sans-serif';
-        stickers.forEach(s => {
-            const px = (s.x / 100) * exportCanvas.width;
-            const py = (s.y / 100) * exportCanvas.height;
+    // Build grid + border + title to append before closing </svg>
+    let extra = '<g id="grid" opacity="0.15">\n';
+    for (let x = gridSpacing; x < w; x += gridSpacing) {
+        extra += `  <line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${h}" stroke="#8b6914" stroke-width="1"/>\n`;
+    }
+    for (let y = gridSpacing; y < h; y += gridSpacing) {
+        extra += `  <line x1="0" y1="${y.toFixed(1)}" x2="${w}" y2="${y.toFixed(1)}" stroke="#8b6914" stroke-width="1"/>\n`;
+    }
+    extra += '</g>\n';
+    extra += `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" fill="none" stroke="#8b6914" stroke-width="2"/>\n`;
+    extra += `<text x="8" y="${h - 10}" font-family="Source Sans 3, sans-serif" font-weight="bold" font-size="16" fill="rgba(0,0,0,0.7)">${escapeXml(bed.name)} (${bed.width}m \u00d7 ${bed.height}m)</text>\n`;
 
-            const text = '🌱 ' + s.text;
-            const metrics = expCtx.measureText(text);
-            const padding = 6;
-            const bgW = metrics.width + padding * 2;
-            const bgH = 22;
+    svg = svg.replace('</svg>', extra + '</svg>');
 
-            expCtx.fillStyle = 'rgba(255,255,255,0.9)';
-            expCtx.strokeStyle = s.color;
-            expCtx.lineWidth = 2;
-            expCtx.beginPath();
-            expCtx.roundRect(px - 4, py - bgH / 2, bgW, bgH, 4);
-            expCtx.fill();
-            expCtx.stroke();
-
-            expCtx.fillStyle = s.color;
-            expCtx.textBaseline = 'middle';
-            expCtx.fillText(text, px + padding - 4, py);
-        });
-
-        expCtx.font = 'bold 16px "Source Sans 3", sans-serif';
-        expCtx.fillStyle = 'rgba(0,0,0,0.7)';
-        expCtx.fillText(bed.name + ` (${bed.width}m × ${bed.height}m)`, 8, exportCanvas.height - 10);
-
-        const link = document.createElement('a');
-        link.download = `garden-bed-${bed.name.replace(/\s+/g, '-').toLowerCase()}.png`;
-        link.href = exportCanvas.toDataURL('image/png');
-        link.click();
-
-        showNotification('Bed exported as PNG', 'success');
-    };
-    img.src = dataUrl;
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = `garden-bed-${bed.name.replace(/\s+/g, '-').toLowerCase()}.svg`;
+    link.href = url;
+    link.click();
+    URL.revokeObjectURL(url);
+    showNotification('Bed exported as SVG', 'success');
 }
 
 // ── Event binding ───────────────────────────────────────────────────
 
+function cleanupEditor() {
+    if (activeKeyHandler) {
+        document.removeEventListener('keydown', activeKeyHandler);
+        activeKeyHandler = null;
+    }
+}
+
+function deleteActiveObjects() {
+    if (!fCanvas) return;
+    const active = fCanvas.getActiveObject();
+    if (!active) return;
+
+    if (active.type === 'activeSelection') {
+        active.forEachObject(obj => fCanvas.remove(obj));
+        fCanvas.discardActiveObject();
+    } else {
+        fCanvas.remove(active);
+        fCanvas.discardActiveObject();
+    }
+    fCanvas.renderAll();
+}
+
 function bindEditorEvents(bed) {
+    // Clean up any previous key handler
+    cleanupEditor();
+
+    // Back button
     document.getElementById('layoutEditorBack')?.addEventListener('click', () => {
+        cleanupEditor();
         saveBedCanvas(bed);
-        if (fCanvas) {
-            fCanvas.dispose();
-            fCanvas = null;
-        }
+        if (fCanvas) { fCanvas.dispose(); fCanvas = null; }
         activeBedId = null;
         renderLayout();
     });
 
+    // Notes
     document.getElementById('layoutBedNotes')?.addEventListener('input', (e) => {
         bed.notes = e.target.value.trim();
         saveBeds();
@@ -735,15 +776,12 @@ function bindEditorEvents(bed) {
             btn.classList.add('active');
 
             const stickerPanel = document.getElementById('layoutStickerPanel');
-            const overlay = document.getElementById('layoutStickersOverlay');
             if (currentTool === 'sticker') {
                 showStickerPanel();
                 if (stickerPanel) stickerPanel.style.display = 'block';
-                if (overlay) overlay.classList.add('sticker-mode');
             } else {
                 placingSticker = null;
                 if (stickerPanel) stickerPanel.style.display = 'none';
-                if (overlay) overlay.classList.remove('sticker-mode');
             }
 
             applyToolMode();
@@ -757,7 +795,7 @@ function bindEditorEvents(bed) {
             document.querySelectorAll('.layout-color-swatch').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             if (fCanvas && fCanvas.isDrawingMode && fCanvas.freeDrawingBrush) {
-                fCanvas.freeDrawingBrush.color = currentTool === 'eraser' ? '#f5f0e6' : currentColor;
+                fCanvas.freeDrawingBrush.color = currentColor;
             }
         });
     });
@@ -766,23 +804,37 @@ function bindEditorEvents(bed) {
     document.getElementById('layoutLineWidth')?.addEventListener('input', (e) => {
         lineWidth = parseInt(e.target.value);
         if (fCanvas && fCanvas.isDrawingMode && fCanvas.freeDrawingBrush) {
-            fCanvas.freeDrawingBrush.width = currentTool === 'eraser' ? lineWidth * 4 : lineWidth;
+            fCanvas.freeDrawingBrush.width = lineWidth;
         }
     });
 
-    // Undo/Redo via JSON state tracking
+    // ── Undo/Redo ───────────────────────────────────────────────────
     let undoStack = [];
     let redoStack = [];
     const MAX_UNDO = 30;
 
     function saveState() {
-        undoStack.push(JSON.stringify(fCanvas.toJSON()));
+        undoStack.push(JSON.stringify(fCanvas.toJSON(CUSTOM_PROPS)));
         if (undoStack.length > MAX_UNDO) undoStack.shift();
         redoStack = [];
     }
 
-    saveState();
+    function restoreState(stateJson) {
+        fCanvas.off('object:added', saveState);
+        fCanvas.off('object:modified', saveState);
+        fCanvas.off('object:removed', saveState);
 
+        fCanvas.loadFromJSON(stateJson, () => {
+            drawGridBackground(bed, fCanvas.width, fCanvas.height);
+            fCanvas.renderAll();
+            applyToolMode();
+            fCanvas.on('object:added', saveState);
+            fCanvas.on('object:modified', saveState);
+            fCanvas.on('object:removed', saveState);
+        });
+    }
+
+    saveState();
     fCanvas.on('object:added', saveState);
     fCanvas.on('object:modified', saveState);
     fCanvas.on('object:removed', saveState);
@@ -790,54 +842,39 @@ function bindEditorEvents(bed) {
     document.getElementById('layoutUndoBtn')?.addEventListener('click', () => {
         if (undoStack.length <= 1) return;
         redoStack.push(undoStack.pop());
-        const prev = undoStack[undoStack.length - 1];
-
-        fCanvas.off('object:added', saveState);
-        fCanvas.off('object:modified', saveState);
-        fCanvas.off('object:removed', saveState);
-
-        fCanvas.loadFromJSON(prev, () => {
-            drawGridBackground(bed, fCanvas.width, fCanvas.height);
-            fCanvas.renderAll();
-            applyToolMode();
-            fCanvas.on('object:added', saveState);
-            fCanvas.on('object:modified', saveState);
-            fCanvas.on('object:removed', saveState);
-        });
+        restoreState(undoStack[undoStack.length - 1]);
     });
 
     document.getElementById('layoutRedoBtn')?.addEventListener('click', () => {
         if (redoStack.length === 0) return;
         const state = redoStack.pop();
         undoStack.push(state);
-
-        fCanvas.off('object:added', saveState);
-        fCanvas.off('object:modified', saveState);
-        fCanvas.off('object:removed', saveState);
-
-        fCanvas.loadFromJSON(state, () => {
-            drawGridBackground(bed, fCanvas.width, fCanvas.height);
-            fCanvas.renderAll();
-            applyToolMode();
-            fCanvas.on('object:added', saveState);
-            fCanvas.on('object:modified', saveState);
-            fCanvas.on('object:removed', saveState);
-        });
+        restoreState(state);
     });
 
-    // Delete selected object
-    document.getElementById('layoutDeleteObjBtn')?.addEventListener('click', () => {
+    // Delete selected
+    document.getElementById('layoutDeleteObjBtn')?.addEventListener('click', deleteActiveObjects);
+
+    // Bring to front / Send to back
+    document.getElementById('layoutBringFrontBtn')?.addEventListener('click', () => {
         const active = fCanvas.getActiveObject();
         if (active) {
-            fCanvas.remove(active);
-            fCanvas.discardActiveObject();
+            fCanvas.bringToFront(active);
+            fCanvas.renderAll();
+        }
+    });
+
+    document.getElementById('layoutSendBackBtn')?.addEventListener('click', () => {
+        const active = fCanvas.getActiveObject();
+        if (active) {
+            fCanvas.sendToBack(active);
             fCanvas.renderAll();
         }
     });
 
     // Clear all
     document.getElementById('layoutClearBtn')?.addEventListener('click', () => {
-        showConfirmDialog('Clear sketch?', 'This will erase all drawings (stickers will remain).', () => {
+        showConfirmDialog('Clear sketch?', 'This will erase all drawings and plant labels.', () => {
             fCanvas.clear();
             fCanvas.backgroundColor = '#f5f0e6';
             drawGridBackground(bed, fCanvas.width, fCanvas.height);
@@ -845,23 +882,22 @@ function bindEditorEvents(bed) {
         });
     });
 
+    // Export
     document.getElementById('layoutExportBtn')?.addEventListener('click', () => exportBed(bed));
 
-    // Sticker cancel
+    // Sticker panel done
     document.getElementById('layoutStickerCancel')?.addEventListener('click', () => {
         placingSticker = null;
         document.getElementById('layoutStickerPanel').style.display = 'none';
-        const overlay = document.getElementById('layoutStickersOverlay');
-        if (overlay) overlay.classList.remove('sticker-mode');
-        currentTool = 'pen';
+        currentTool = 'select';
         document.querySelectorAll('.layout-tool-btn').forEach(b => {
-            b.classList.toggle('active', b.dataset.tool === 'pen');
+            b.classList.toggle('active', b.dataset.tool === 'select');
         });
         applyToolMode();
     });
 
     // Keyboard shortcuts
-    const keyHandler = (e) => {
+    activeKeyHandler = (e) => {
         if (e.ctrlKey && e.key === 'z') {
             e.preventDefault();
             document.getElementById('layoutUndoBtn')?.click();
@@ -870,37 +906,21 @@ function bindEditorEvents(bed) {
             e.preventDefault();
             document.getElementById('layoutRedoBtn')?.click();
         }
+        if (e.ctrlKey && e.key === 'c') {
+            copySelection();
+        }
+        if (e.ctrlKey && e.key === 'v') {
+            pasteClipboard();
+        }
         if (e.key === 'Delete' || e.key === 'Backspace') {
             const active = fCanvas?.getActiveObject();
             if (active && !active.isEditing) {
                 e.preventDefault();
-                fCanvas.remove(active);
-                fCanvas.discardActiveObject();
-                fCanvas.renderAll();
+                deleteActiveObjects();
             }
         }
     };
-    document.addEventListener('keydown', keyHandler);
-
-    // Sticker overlay click
-    const overlay = document.getElementById('layoutStickersOverlay');
-    if (overlay) {
-        overlay.addEventListener('click', (e) => {
-            if (placingSticker && currentTool === 'sticker') {
-                const rect = overlay.getBoundingClientRect();
-                const x = ((e.clientX - rect.left) / rect.width) * 100;
-                const y = ((e.clientY - rect.top) / rect.height) * 100;
-                stickers.push({
-                    id: generateId(),
-                    x, y,
-                    text: placingSticker,
-                    color: currentColor
-                });
-                renderStickers();
-                saveBedStickers(bed);
-            }
-        });
-    }
+    document.addEventListener('keydown', activeKeyHandler);
 }
 
 // ── Init ────────────────────────────────────────────────────────────
@@ -921,6 +941,7 @@ export function initLayout() {
                 if (bed) saveBedCanvas(bed);
                 activeBedId = null;
             }
+            cleanupEditor();
             if (fCanvas) {
                 fCanvas.dispose();
                 fCanvas = null;
