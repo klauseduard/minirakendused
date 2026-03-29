@@ -1,24 +1,23 @@
 /**
  * Garden Layout Module — Option D: Hybrid (Structured Beds + Sketch Canvas)
- * Vector persistence variant — strokes stored as JSON operations, not rasterized bitmaps.
+ * SVG persistence — drawings stored as SVG documents, not rasterized bitmaps.
  *
- * Combines structured bed definitions (name, dimensions) with a free-form
- * sketch canvas within each bed for flexible plant placement.
+ * Drawing UX uses Canvas 2D (smooth freehand), but persistence is SVG:
+ * - On save: strokes → SVG document string (bed.svgData)
+ * - On load: SVG → parse elements → replay on Canvas
+ * - Export: download the actual SVG file (viewable in any browser/editor)
+ * - Thumbnail: SVG data URL (no JPEG needed)
  *
- * Storage format: bed.strokes = [
- *   { tool: 'pen', color, lineWidth, points: [[nx,ny], ...] },
- *   { tool: 'line'|'rect'|'ellipse', color, lineWidth, start: [nx,ny], end: [nx,ny] },
- *   { tool: 'text', color, fontSize, text, position: [nx,ny] },
- *   { tool: 'eraser', lineWidth, points: [[nx,ny], ...] }
- * ]
- * All coordinates normalized to 0–1 range so drawings survive canvas resize.
- * bed.canvasData is kept only as a thumbnail cache for the bed list view.
+ * SVG uses a viewBox of "0 0 {W} {H}" where W/H are proportional to bed
+ * dimensions (1000 units wide). All coordinates are in this space.
+ * No external dependencies.
  */
 
 import { getSelectedItems } from './storage.js';
 import { showModal, showConfirmDialog, showNotification } from './ui.js';
 
 const STORAGE_KEY = 'gardening_layout_hybrid';
+const SVG_SCALE = 1000; // viewBox width in SVG units
 
 let beds = [];
 let activeBedId = null;
@@ -31,13 +30,13 @@ let currentTool = 'pen';
 let currentColor = '#2d5016';
 let lineWidth = 3;
 
-// Vector stroke tracking
-let strokes = [];        // completed strokes for the active bed
-let currentStroke = null; // stroke being drawn right now
-let undoStack = [];       // strokes arrays (snapshots of strokes state)
-let redoStack = [];       // for redo
+// Stroke tracking (in-memory for Canvas drawing + undo/redo)
+let strokes = [];
+let currentStroke = null;
+let undoStack = [];
+let redoStack = [];
 const MAX_UNDO = 30;
-let startX, startY;       // normalized start coords for shapes
+let startX, startY; // normalized start coords for shapes
 
 // Sticker placement
 let placingSticker = null;
@@ -55,17 +54,14 @@ const TOOLS = [
     { id: 'sticker', label: 'Plants', icon: '🌱' }
 ];
 
-/**
- * Load beds from localStorage
- */
+// ── Storage ─────────────────────────────────────────────────────────
+
 function loadBeds() {
     try {
         const raw = localStorage.getItem(STORAGE_KEY);
         beds = raw ? JSON.parse(raw) : [];
-        // Migrate: if a bed has canvasData but no strokes, it's from the old bitmap format.
-        // We keep the bitmap for display but can't reconstruct strokes from it.
         beds.forEach(bed => {
-            if (!bed.strokes) bed.strokes = [];
+            if (!bed.svgData) bed.svgData = null;
         });
     } catch (e) {
         console.error('Failed to load layout beds:', e);
@@ -73,9 +69,6 @@ function loadBeds() {
     }
 }
 
-/**
- * Save beds to localStorage
- */
 function saveBeds() {
     try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(beds));
@@ -84,9 +77,8 @@ function saveBeds() {
     }
 }
 
-/**
- * Get the plant name from a selection item
- */
+// ── Helpers ─────────────────────────────────────────────────────────
+
 function getPlantName(item) {
     const lang = window.GardeningApp?.currentLang || 'en';
     if (typeof item === 'object' && item !== null) {
@@ -95,9 +87,6 @@ function getPlantName(item) {
     return String(item);
 }
 
-/**
- * Get selected plants from calendar
- */
 function getSelectedPlants() {
     const selections = getSelectedItems();
     const plants = new Set();
@@ -114,34 +103,216 @@ function getSelectedPlants() {
     return [...plants].sort();
 }
 
-/**
- * Generate a unique ID
- */
 function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-// ── Coordinate normalization ────────────────────────────────────────
+// ── SVG coordinate system ───────────────────────────────────────────
 
-/**
- * Convert pixel coords to normalized 0–1
- */
-function toNorm(px, py) {
-    return [px / canvas.width, py / canvas.height];
+function svgViewBoxH(bed) {
+    return Math.round(SVG_SCALE * bed.height / bed.width);
 }
 
-/**
- * Convert normalized 0–1 coords to current canvas pixels
- */
+/** Convert normalized 0-1 coords to SVG viewBox coords */
+function toSvg(nx, ny, bed) {
+    return [nx * SVG_SCALE, ny * svgViewBoxH(bed)];
+}
+
+/** Convert SVG viewBox coords to normalized 0-1 */
+function fromSvg(sx, sy, bed) {
+    return [sx / SVG_SCALE, sy / svgViewBoxH(bed)];
+}
+
+/** Convert normalized 0-1 to canvas pixel coords */
 function toPx(nx, ny) {
     return [nx * canvas.width, ny * canvas.height];
 }
 
-// ── Stroke replay (the core of vector persistence) ──────────────────
+/** Convert canvas pixel coords to normalized 0-1 */
+function toNorm(px, py) {
+    return [px / canvas.width, py / canvas.height];
+}
 
-/**
- * Replay a single stroke onto the canvas context
- */
+// ── SVG generation (strokes → SVG document) ─────────────────────────
+
+function escapeXml(str) {
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+              .replace(/"/g, '&quot;').replace(/'/g, '&apos;');
+}
+
+function strokesToSvg(bed) {
+    const vbW = SVG_SCALE;
+    const vbH = svgViewBoxH(bed);
+
+    // Grid lines
+    let gridLines = '';
+    const gridStep = (SVG_SCALE / bed.width) * 0.3; // 30cm
+    for (let x = gridStep; x < vbW; x += gridStep) {
+        gridLines += `    <line x1="${x.toFixed(1)}" y1="0" x2="${x.toFixed(1)}" y2="${vbH}" stroke="rgba(139,105,20,0.15)" stroke-width="1"/>\n`;
+    }
+    for (let y = gridStep; y < vbH; y += gridStep) {
+        gridLines += `    <line x1="0" y1="${y.toFixed(1)}" x2="${vbW}" y2="${y.toFixed(1)}" stroke="rgba(139,105,20,0.15)" stroke-width="1"/>\n`;
+    }
+
+    // User drawing elements
+    let drawingElements = '';
+    for (const stroke of strokes) {
+        if (stroke.tool === 'pen' || stroke.tool === 'eraser') {
+            if (!stroke.points || stroke.points.length < 1) continue;
+            const d = stroke.points.map((p, i) => {
+                const [sx, sy] = toSvg(p[0], p[1], bed);
+                return `${i === 0 ? 'M' : 'L'}${sx.toFixed(1)},${sy.toFixed(1)}`;
+            }).join(' ');
+            const color = stroke.tool === 'eraser' ? '#f5f0e6' : stroke.color;
+            const w = stroke.tool === 'eraser' ? stroke.lineWidth * 4 : stroke.lineWidth;
+            drawingElements += `    <path d="${d}" stroke="${color}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round" data-tool="${stroke.tool}"/>\n`;
+        } else if (stroke.tool === 'line') {
+            const [x1, y1] = toSvg(stroke.start[0], stroke.start[1], bed);
+            const [x2, y2] = toSvg(stroke.end[0], stroke.end[1], bed);
+            drawingElements += `    <line x1="${x1.toFixed(1)}" y1="${y1.toFixed(1)}" x2="${x2.toFixed(1)}" y2="${y2.toFixed(1)}" stroke="${stroke.color}" stroke-width="${stroke.lineWidth}" stroke-linecap="round" data-tool="line"/>\n`;
+        } else if (stroke.tool === 'rect') {
+            const [x1, y1] = toSvg(stroke.start[0], stroke.start[1], bed);
+            const [x2, y2] = toSvg(stroke.end[0], stroke.end[1], bed);
+            const rx = Math.min(x1, x2), ry = Math.min(y1, y2);
+            const rw = Math.abs(x2 - x1), rh = Math.abs(y2 - y1);
+            drawingElements += `    <rect x="${rx.toFixed(1)}" y="${ry.toFixed(1)}" width="${rw.toFixed(1)}" height="${rh.toFixed(1)}" stroke="${stroke.color}" stroke-width="${stroke.lineWidth}" fill="none" stroke-linecap="round" data-tool="rect"/>\n`;
+        } else if (stroke.tool === 'ellipse') {
+            const [x1, y1] = toSvg(stroke.start[0], stroke.start[1], bed);
+            const [x2, y2] = toSvg(stroke.end[0], stroke.end[1], bed);
+            const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+            const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+            drawingElements += `    <ellipse cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" rx="${rx.toFixed(1)}" ry="${ry.toFixed(1)}" stroke="${stroke.color}" stroke-width="${stroke.lineWidth}" fill="none" stroke-linecap="round" data-tool="ellipse"/>\n`;
+        } else if (stroke.tool === 'text') {
+            const [sx, sy] = toSvg(stroke.position[0], stroke.position[1], bed);
+            drawingElements += `    <text x="${sx.toFixed(1)}" y="${sy.toFixed(1)}" fill="${stroke.color}" font-size="${stroke.fontSize}" font-weight="bold" font-family="'Source Sans 3', sans-serif" dominant-baseline="middle" data-tool="text">${escapeXml(stroke.text)}</text>\n`;
+        }
+    }
+
+    // Sticker labels (also part of the SVG)
+    let stickerElements = '';
+    for (const s of stickers) {
+        const sx = (s.x / 100) * vbW;
+        const sy = (s.y / 100) * vbH;
+        stickerElements += `    <g class="sticker" data-id="${s.id}" transform="translate(${sx.toFixed(1)},${sy.toFixed(1)})">\n`;
+        stickerElements += `      <rect x="-4" y="-10" width="120" height="20" rx="4" fill="rgba(255,255,255,0.9)" stroke="${s.color}" stroke-width="1.5"/>\n`;
+        stickerElements += `      <text x="4" y="3" fill="${s.color}" font-size="12" font-family="'Source Sans 3', sans-serif" font-weight="bold">${escapeXml(s.text)}</text>\n`;
+        stickerElements += `    </g>\n`;
+    }
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${vbW} ${vbH}"
+     width="${bed.width * 100}" height="${bed.height * 100}"
+     data-bed-name="${escapeXml(bed.name)}" data-bed-width="${bed.width}" data-bed-height="${bed.height}">
+  <title>${escapeXml(bed.name)} (${bed.width}m × ${bed.height}m)</title>
+  <rect width="100%" height="100%" fill="#f5f0e6"/>
+  <g id="grid">
+${gridLines}    <rect x="1" y="1" width="${vbW - 2}" height="${vbH - 2}" stroke="#8b6914" stroke-width="2" fill="none"/>
+  </g>
+  <g id="drawing">
+${drawingElements}  </g>
+  <g id="stickers">
+${stickerElements}  </g>
+</svg>`;
+}
+
+// ── SVG parsing (SVG document → strokes) ────────────────────────────
+
+function svgToStrokes(svgString, bed) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(svgString, 'image/svg+xml');
+    const drawingGroup = doc.getElementById('drawing');
+    if (!drawingGroup) return [];
+
+    const parsed = [];
+    for (const el of drawingGroup.children) {
+        const tool = el.getAttribute('data-tool');
+        if (!tool) continue;
+
+        if ((tool === 'pen' || tool === 'eraser') && el.tagName === 'path') {
+            const d = el.getAttribute('d') || '';
+            const points = [];
+            const commands = d.match(/[ML][^ML]*/g) || [];
+            for (const cmd of commands) {
+                const coords = cmd.substring(1).split(',').map(Number);
+                if (coords.length === 2 && !isNaN(coords[0])) {
+                    const [nx, ny] = fromSvg(coords[0], coords[1], bed);
+                    points.push([nx, ny]);
+                }
+            }
+            if (points.length > 0) {
+                parsed.push({
+                    tool,
+                    color: tool === 'eraser' ? null : el.getAttribute('stroke'),
+                    lineWidth: parseFloat(el.getAttribute('stroke-width')) / (tool === 'eraser' ? 4 : 1),
+                    points
+                });
+            }
+        } else if (tool === 'line' && el.tagName === 'line') {
+            const x1 = parseFloat(el.getAttribute('x1'));
+            const y1 = parseFloat(el.getAttribute('y1'));
+            const x2 = parseFloat(el.getAttribute('x2'));
+            const y2 = parseFloat(el.getAttribute('y2'));
+            const [ns1, ns2] = fromSvg(x1, y1, bed);
+            const [ne1, ne2] = fromSvg(x2, y2, bed);
+            parsed.push({
+                tool: 'line',
+                color: el.getAttribute('stroke'),
+                lineWidth: parseFloat(el.getAttribute('stroke-width')),
+                start: [ns1, ns2],
+                end: [ne1, ne2]
+            });
+        } else if (tool === 'rect' && el.tagName === 'rect') {
+            const x = parseFloat(el.getAttribute('x'));
+            const y = parseFloat(el.getAttribute('y'));
+            const w = parseFloat(el.getAttribute('width'));
+            const h = parseFloat(el.getAttribute('height'));
+            const [ns1, ns2] = fromSvg(x, y, bed);
+            const [ne1, ne2] = fromSvg(x + w, y + h, bed);
+            parsed.push({
+                tool: 'rect',
+                color: el.getAttribute('stroke'),
+                lineWidth: parseFloat(el.getAttribute('stroke-width')),
+                start: [ns1, ns2],
+                end: [ne1, ne2]
+            });
+        } else if (tool === 'ellipse' && el.tagName === 'ellipse') {
+            const cx = parseFloat(el.getAttribute('cx'));
+            const cy = parseFloat(el.getAttribute('cy'));
+            const rx = parseFloat(el.getAttribute('rx'));
+            const ry = parseFloat(el.getAttribute('ry'));
+            const [ns1, ns2] = fromSvg(cx - rx, cy - ry, bed);
+            const [ne1, ne2] = fromSvg(cx + rx, cy + ry, bed);
+            parsed.push({
+                tool: 'ellipse',
+                color: el.getAttribute('stroke'),
+                lineWidth: parseFloat(el.getAttribute('stroke-width')),
+                start: [ns1, ns2],
+                end: [ne1, ne2]
+            });
+        } else if (tool === 'text' && el.tagName === 'text') {
+            const sx = parseFloat(el.getAttribute('x'));
+            const sy = parseFloat(el.getAttribute('y'));
+            const [nx, ny] = fromSvg(sx, sy, bed);
+            parsed.push({
+                tool: 'text',
+                color: el.getAttribute('fill'),
+                fontSize: parseFloat(el.getAttribute('font-size')),
+                text: el.textContent,
+                position: [nx, ny]
+            });
+        }
+    }
+    return parsed;
+}
+
+// ── SVG thumbnail for bed list ──────────────────────────────────────
+
+function svgToDataUrl(svgString) {
+    return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+}
+
+// ── Canvas replay (strokes → Canvas drawing) ────────────────────────
+
 function replayStroke(stroke) {
     if (stroke.tool === 'pen' || stroke.tool === 'eraser') {
         if (!stroke.points || stroke.points.length < 1) return;
@@ -186,10 +357,8 @@ function replayStroke(stroke) {
     } else if (stroke.tool === 'ellipse') {
         const [x1, y1] = toPx(stroke.start[0], stroke.start[1]);
         const [x2, y2] = toPx(stroke.end[0], stroke.end[1]);
-        const cx = (x1 + x2) / 2;
-        const cy = (y1 + y2) / 2;
-        const rx = Math.abs(x2 - x1) / 2;
-        const ry = Math.abs(y2 - y1) / 2;
+        const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+        const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
         ctx.strokeStyle = stroke.color;
         ctx.lineWidth = stroke.lineWidth * (canvas.width / 800);
         ctx.lineCap = 'round';
@@ -206,29 +375,20 @@ function replayStroke(stroke) {
     }
 }
 
-/**
- * Redraw the full canvas: background + all strokes
- */
 function redrawCanvas(bed) {
     if (!canvas || !ctx) return;
     drawBedBackground(bed, canvas.width, canvas.height);
     strokes.forEach(stroke => replayStroke(stroke));
 }
 
-// ── Undo / Redo (operation-based) ───────────────────────────────────
+// ── Undo / Redo ─────────────────────────────────────────────────────
 
-/**
- * Save current strokes state for undo
- */
 function saveUndoState() {
     undoStack.push(JSON.parse(JSON.stringify(strokes)));
     if (undoStack.length > MAX_UNDO) undoStack.shift();
     redoStack = [];
 }
 
-/**
- * Undo last stroke
- */
 function undo() {
     if (undoStack.length <= 1) return;
     redoStack.push(undoStack.pop());
@@ -237,9 +397,6 @@ function undo() {
     if (bed) redrawCanvas(bed);
 }
 
-/**
- * Redo last undone stroke
- */
 function redo() {
     if (redoStack.length === 0) return;
     const state = redoStack.pop();
@@ -251,9 +408,6 @@ function redo() {
 
 // ── Canvas helpers ──────────────────────────────────────────────────
 
-/**
- * Get canvas coordinates from pointer event (pixel space)
- */
 function getCanvasCoords(e) {
     const rect = canvas.getBoundingClientRect();
     const touch = e.touches ? e.touches[0] : e;
@@ -263,9 +417,6 @@ function getCanvasCoords(e) {
     };
 }
 
-/**
- * Draw the bed background with grid lines
- */
 function drawBedBackground(bed, canvasW, canvasH) {
     ctx.fillStyle = '#f5f0e6';
     ctx.fillRect(0, 0, canvasW, canvasH);
@@ -294,9 +445,6 @@ function drawBedBackground(bed, canvasW, canvasH) {
     ctx.strokeRect(1, 1, canvasW - 2, canvasH - 2);
 }
 
-/**
- * Render SVG bed shape overlay
- */
 function renderBedShape(shape, w, h) {
     if (shape === 'circle') {
         return `<svg class="layout-bed-shape-overlay" width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
@@ -312,21 +460,6 @@ function renderBedShape(shape, w, h) {
         </svg>`;
     }
     return '';
-}
-
-/**
- * Generate a thumbnail data URL from current canvas (for bed list preview only)
- */
-function generateThumbnail() {
-    if (!canvas) return null;
-    const thumb = document.createElement('canvas');
-    const thumbW = 200;
-    const thumbH = Math.round(thumbW * (canvas.height / canvas.width));
-    thumb.width = thumbW;
-    thumb.height = thumbH;
-    const tctx = thumb.getContext('2d');
-    tctx.drawImage(canvas, 0, 0, thumbW, thumbH);
-    return thumb.toDataURL('image/jpeg', 0.6);
 }
 
 // ── Drawing event handlers ──────────────────────────────────────────
@@ -353,7 +486,6 @@ function onPointerDown(e) {
             lineWidth,
             points: [[nx, ny]]
         };
-        // Start drawing immediately
         ctx.beginPath();
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -380,14 +512,10 @@ function onPointerMove(e) {
         ctx.lineTo(coords.x, coords.y);
         ctx.stroke();
     } else if (['line', 'rect', 'ellipse'].includes(currentTool)) {
-        // Preview: redraw everything + the shape being drawn
         const bed = beds.find(b => b.id === activeBedId);
         if (bed) {
             redrawCanvas(bed);
-            drawShapePreview(
-                ...toPx(startX, startY),
-                coords.x, coords.y
-            );
+            drawShapePreview(...toPx(startX, startY), coords.x, coords.y);
         }
     }
 }
@@ -417,16 +545,12 @@ function onPointerUp(e) {
             end: [nx, ny]
         });
 
-        // Final redraw with the committed shape
         const bed = beds.find(b => b.id === activeBedId);
         if (bed) redrawCanvas(bed);
         saveUndoState();
     }
 }
 
-/**
- * Draw shape preview during drag (not committed to strokes yet)
- */
 function drawShapePreview(x1, y1, x2, y2) {
     ctx.strokeStyle = currentColor;
     ctx.lineWidth = lineWidth;
@@ -440,19 +564,14 @@ function drawShapePreview(x1, y1, x2, y2) {
     } else if (currentTool === 'rect') {
         ctx.strokeRect(x1, y1, x2 - x1, y2 - y1);
     } else if (currentTool === 'ellipse') {
-        const cx = (x1 + x2) / 2;
-        const cy = (y1 + y2) / 2;
-        const rx = Math.abs(x2 - x1) / 2;
-        const ry = Math.abs(y2 - y1) / 2;
+        const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+        const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
         ctx.beginPath();
         ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
         ctx.stroke();
     }
 }
 
-/**
- * Prompt for text input and add as a text stroke
- */
 function promptText(x, y) {
     const modalContent = document.createElement('div');
     modalContent.innerHTML = `
@@ -487,7 +606,6 @@ function promptText(x, y) {
                 position: [nx, ny]
             });
 
-            // Draw it immediately
             const bed = beds.find(b => b.id === activeBedId);
             if (bed) redrawCanvas(bed);
             saveUndoState();
@@ -499,9 +617,6 @@ function promptText(x, y) {
 
 // ── Layout views ────────────────────────────────────────────────────
 
-/**
- * Render the main layout view (bed list)
- */
 function renderLayout() {
     const content = document.getElementById('layoutContent');
     if (!content) return;
@@ -519,11 +634,15 @@ function renderLayout() {
 
     content.innerHTML = `
         <div class="layout-bed-grid">
-            ${beds.map(bed => `
+            ${beds.map(bed => {
+                const thumbSrc = bed.svgData
+                    ? svgToDataUrl(bed.svgData)
+                    : (bed.canvasData || ''); // fallback for old bitmap data
+                return `
                 <div class="layout-bed-card" data-id="${bed.id}">
                     <div class="layout-bed-preview">
-                        ${bed.canvasData
-                            ? `<img src="${bed.canvasData}" alt="${bed.name}" class="layout-bed-thumb">`
+                        ${thumbSrc
+                            ? `<img src="${thumbSrc}" alt="${bed.name}" class="layout-bed-thumb">`
                             : `<div class="layout-bed-placeholder">🌱</div>`
                         }
                     </div>
@@ -540,18 +659,14 @@ function renderLayout() {
                         <button class="layout-bed-edit-btn" data-id="${bed.id}" title="Edit sketch">✏️</button>
                         <button class="layout-bed-delete-btn" data-id="${bed.id}" title="Delete bed">🗑️</button>
                     </div>
-                </div>
-            `).join('')}
+                </div>`;
+            }).join('')}
         </div>
     `;
 
     content.querySelectorAll('.layout-bed-card').forEach(card => {
         card.addEventListener('click', (e) => {
             if (e.target.closest('.layout-bed-delete-btn')) return;
-            if (e.target.closest('.layout-bed-edit-btn')) {
-                openBedEditor(card.dataset.id);
-                return;
-            }
             openBedEditor(card.dataset.id);
         });
     });
@@ -564,9 +679,6 @@ function renderLayout() {
     });
 }
 
-/**
- * Show the "Add Bed" modal
- */
 function showAddBedModal() {
     const modalContent = document.createElement('div');
     modalContent.innerHTML = `
@@ -622,13 +734,9 @@ function showAddBedModal() {
 
             const bed = {
                 id: generateId(),
-                name,
-                width,
-                height,
-                shape,
-                notes,
-                strokes: [],
-                canvasData: null,
+                name, width, height, shape, notes,
+                svgData: null,
+                canvasData: null, // kept for backward compat with old data
                 stickers: [],
                 createdAt: new Date().toISOString()
             };
@@ -643,9 +751,6 @@ function showAddBedModal() {
     }, 100);
 }
 
-/**
- * Delete a bed
- */
 function deleteBed(bedId) {
     const bed = beds.find(b => b.id === bedId);
     if (!bed) return;
@@ -662,16 +767,21 @@ function deleteBed(bedId) {
     );
 }
 
-/**
- * Open the bed sketch editor
- */
+// ── Bed editor ──────────────────────────────────────────────────────
+
 function openBedEditor(bedId) {
     const bed = beds.find(b => b.id === bedId);
     if (!bed) return;
 
     activeBedId = bedId;
     stickers = bed.stickers ? JSON.parse(JSON.stringify(bed.stickers)) : [];
-    strokes = bed.strokes ? JSON.parse(JSON.stringify(bed.strokes)) : [];
+
+    // Restore strokes from SVG (or start fresh)
+    if (bed.svgData) {
+        strokes = svgToStrokes(bed.svgData, bed);
+    } else {
+        strokes = [];
+    }
     undoStack = [];
     redoStack = [];
 
@@ -692,7 +802,7 @@ function openBedEditor(bedId) {
                     <button class="layout-editor-action-btn" id="layoutUndoBtn" title="Undo (Ctrl+Z)">↩</button>
                     <button class="layout-editor-action-btn" id="layoutRedoBtn" title="Redo (Ctrl+Y)">↪</button>
                     <button class="layout-editor-action-btn" id="layoutClearBtn" title="Clear canvas">🗑️</button>
-                    <button class="layout-editor-action-btn" id="layoutExportBtn" title="Export as PNG">💾</button>
+                    <button class="layout-editor-action-btn" id="layoutExportBtn" title="Export as SVG">💾</button>
                 </div>
             </div>
             <div class="layout-toolbar">
@@ -741,24 +851,16 @@ function openBedEditor(bedId) {
         </div>
     `;
 
-    // Initialize canvas
     canvas = document.getElementById('layoutCanvas');
     ctx = canvas.getContext('2d');
 
-    // Draw background + replay all saved strokes
     redrawCanvas(bed);
-
-    // Save initial undo state
     saveUndoState();
-
-    // Render existing stickers
     renderStickers();
-
-    // Bind events
     bindEditorEvents(bed);
 }
 
-// ── Sticker UI ──────────────────────────────────────────────────────
+// ── Stickers ────────────────────────────────────────────────────────
 
 function showStickerPanel() {
     const list = document.getElementById('layoutStickerList');
@@ -846,71 +948,29 @@ function renderStickers() {
 
 // ── Save / Export ───────────────────────────────────────────────────
 
-/**
- * Save vector strokes + thumbnail to bed
- */
 function saveBedCanvas(bed) {
-    bed.strokes = JSON.parse(JSON.stringify(strokes));
-    bed.canvasData = generateThumbnail(); // cache for bed list preview only
+    bed.svgData = strokesToSvg(bed);
     bed.stickers = JSON.parse(JSON.stringify(stickers));
     saveBeds();
 }
 
-/**
- * Save just stickers to bed
- */
 function saveBedStickers(bed) {
     bed.stickers = JSON.parse(JSON.stringify(stickers));
     saveBeds();
 }
 
-/**
- * Export bed as PNG
- */
 function exportBed(bed) {
-    if (!canvas) return;
-
-    const exportCanvas = document.createElement('canvas');
-    exportCanvas.width = canvas.width;
-    exportCanvas.height = canvas.height;
-    const expCtx = exportCanvas.getContext('2d');
-
-    expCtx.drawImage(canvas, 0, 0);
-
-    expCtx.font = 'bold 14px "Source Sans 3", sans-serif';
-    stickers.forEach(s => {
-        const px = (s.x / 100) * canvas.width;
-        const py = (s.y / 100) * canvas.height;
-
-        const text = '🌱 ' + s.text;
-        const metrics = expCtx.measureText(text);
-        const padding = 6;
-        const bgW = metrics.width + padding * 2;
-        const bgH = 22;
-
-        expCtx.fillStyle = 'rgba(255,255,255,0.9)';
-        expCtx.strokeStyle = s.color;
-        expCtx.lineWidth = 2;
-        expCtx.beginPath();
-        expCtx.roundRect(px - 4, py - bgH / 2, bgW, bgH, 4);
-        expCtx.fill();
-        expCtx.stroke();
-
-        expCtx.fillStyle = s.color;
-        expCtx.textBaseline = 'middle';
-        expCtx.fillText(text, px + padding - 4, py);
-    });
-
-    expCtx.font = 'bold 16px "Source Sans 3", sans-serif';
-    expCtx.fillStyle = 'rgba(0,0,0,0.7)';
-    expCtx.fillText(bed.name + ` (${bed.width}m × ${bed.height}m)`, 8, canvas.height - 10);
+    const svgString = strokesToSvg(bed);
+    const blob = new Blob([svgString], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
 
     const link = document.createElement('a');
-    link.download = `garden-bed-${bed.name.replace(/\s+/g, '-').toLowerCase()}.png`;
-    link.href = exportCanvas.toDataURL('image/png');
+    link.download = `garden-bed-${bed.name.replace(/\s+/g, '-').toLowerCase()}.svg`;
+    link.href = url;
     link.click();
 
-    showNotification('Bed exported as PNG', 'success');
+    URL.revokeObjectURL(url);
+    showNotification('Bed exported as SVG', 'success');
 }
 
 // ── Event binding ───────────────────────────────────────────────────
@@ -1039,7 +1099,7 @@ export function initLayout() {
     }
 
     renderLayout();
-    console.log('Layout (hybrid + vector persistence) module initialized');
+    console.log('Layout (hybrid + SVG persistence) module initialized');
 }
 
 export { renderLayout, loadBeds, saveBeds };
