@@ -51,6 +51,9 @@
                 <button class="quick-jump-btn" data-section="garden-journal">
                     <span class="nav-icon">📔</span> Journal
                 </button>
+                <button class="quick-jump-btn" data-section="garden-layout">
+                    <span class="nav-icon">🎨</span> Layout
+                </button>
             </div>
         </header>
         <div class="header-illustration" id="headerIllustration"></div>
@@ -191,6 +194,24 @@
             <div class="onboarding-hint hidden-default" id="calendarHint">
                 Check the plants you're growing this season to track them
             </div>
+
+            <!-- Garden Layout Section -->
+            <section class="garden-layout hidden-default" id="garden-layout">
+                <div class="layout-header">
+                    <h2 class="layout-title">Garden Layout</h2>
+                    <div class="layout-actions-group">
+                        <button id="layoutAddSketchBtn" class="layout-btn layout-btn-primary">
+                            <span>✏️</span> New Sketch
+                        </button>
+                        <button id="layoutCloseBtn" class="layout-close-btn" aria-label="Back to calendar">
+                            ← Back
+                        </button>
+                    </div>
+                </div>
+                <div id="layoutContent" class="layout-content">
+                    <!-- Populated by layout.js -->
+                </div>
+            </section>
 
             <!-- Garden Journal Section -->
             <section class="garden-journal hidden-default" id="garden-journal">
@@ -503,9 +524,9 @@
         <span class="nav-icon-emoji">📔</span>
         <span class="bottom-nav-label">Journal</span>
       </button>
-      <button class="bottom-nav-btn" data-section="search-section" aria-label="AI Helper">
-        <span class="nav-icon-emoji">🤖</span>
-        <span class="bottom-nav-label">AI Helper</span>
+      <button class="bottom-nav-btn" data-section="garden-layout" aria-label="Layout">
+        <span class="nav-icon-emoji">🎨</span>
+        <span class="bottom-nav-label">Layout</span>
       </button>
     </nav>
 

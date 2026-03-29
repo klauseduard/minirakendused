@@ -3758,3 +3758,485 @@ body.journal-active #garden-journal {
         gap: 4px;
     }
 }
+
+
+/* ============================================================
+   Layout (Canvas Sketch) — full-width view
+   ============================================================ */
+
+body.layout-active .main-layout > *:not(#garden-layout):not(.scroll-to-top):not(.bottom-nav) {
+    display: none !important;
+}
+
+body.layout-active #garden-layout {
+    animation: layoutFadeIn 0.3s ease-out;
+}
+
+@media (min-width: 769px) {
+    body.layout-active header {
+        display: block !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.layout-active header {
+        display: none !important;
+    }
+}
+
+@keyframes layoutFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Layout header */
+.layout-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+}
+
+.layout-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.layout-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.layout-close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+.layout-close-btn:hover {
+    background: var(--highlight);
+    color: var(--text-primary);
+    border-color: var(--sage);
+}
+
+@media (max-width: 768px) {
+    .layout-close-btn {
+        display: none;
+    }
+}
+
+/* Layout content area */
+.layout-content {
+    padding: 20px;
+}
+
+/* Empty state */
+.layout-empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.layout-empty-state h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.3rem;
+    color: var(--text-primary);
+    margin: 16px 0 8px;
+}
+
+.layout-empty-state p {
+    max-width: 400px;
+    margin: 0 auto 24px;
+    line-height: 1.5;
+}
+
+/* Buttons */
+.layout-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+}
+
+.layout-btn-primary {
+    background: var(--forest);
+    color: white;
+}
+
+.layout-btn-primary:hover {
+    background: #4a6239;
+}
+
+.layout-btn-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+}
+
+.layout-btn-secondary:hover {
+    background: var(--highlight);
+}
+
+/* ── Sketch list (card grid) ─────────────────────────────── */
+
+.layout-sketch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.layout-sketch-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.layout-sketch-card:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+    transform: translateY(-2px);
+}
+
+.layout-sketch-preview {
+    aspect-ratio: 3 / 2;
+    background: #faf8f5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.layout-sketch-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.layout-sketch-placeholder {
+    font-size: 3rem;
+    opacity: 0.3;
+}
+
+.layout-sketch-info {
+    padding: 12px 16px 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.layout-sketch-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+.layout-sketch-date {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.layout-sketch-actions {
+    padding: 4px 16px 12px;
+    display: flex;
+    gap: 6px;
+}
+
+.layout-sketch-action-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.layout-sketch-action-btn:hover {
+    background: var(--highlight);
+}
+
+.layout-sketch-action-btn--danger:hover {
+    background: #fce8e6;
+    border-color: #c25a3c;
+}
+
+/* ── Editor ──────────────────────────────────────────────── */
+
+.layout-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+/* Toolbar */
+.layout-editor-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.layout-toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.layout-toolbar-separator {
+    width: 1px;
+    height: 28px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+.layout-toolbar-back {
+    margin-left: auto;
+}
+
+/* Tool buttons */
+.layout-tool-btn {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.12s;
+    color: var(--text-secondary);
+}
+
+.layout-tool-btn:hover {
+    background: var(--highlight);
+    color: var(--text-primary);
+}
+
+.layout-tool-btn.active {
+    background: var(--forest);
+    color: white;
+    border-color: var(--forest);
+}
+
+.layout-tool-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+}
+
+/* Color swatches */
+.layout-color-group {
+    gap: 3px;
+}
+
+.layout-color-swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.layout-color-swatch:hover {
+    transform: scale(1.15);
+}
+
+.layout-color-swatch.active {
+    border-color: var(--text-primary);
+    box-shadow: 0 0 0 2px var(--surface);
+}
+
+/* Width buttons */
+.layout-width-btn {
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: none;
+    cursor: pointer;
+    transition: all 0.12s;
+}
+
+.layout-width-btn:hover {
+    background: var(--highlight);
+}
+
+.layout-width-btn.active {
+    background: var(--highlight);
+    border-color: var(--border);
+}
+
+.layout-width-dot {
+    display: block;
+    border-radius: 50%;
+    background: var(--text-primary);
+}
+
+/* Editor body: canvas + sidebar */
+.layout-editor-body {
+    display: flex;
+    gap: 16px;
+}
+
+.layout-canvas-wrapper {
+    flex: 1;
+    min-width: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: #fff;
+}
+
+#layoutCanvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    touch-action: none;
+}
+
+/* Plant sidebar */
+.layout-plant-sidebar {
+    width: 200px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    background: var(--surface);
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.layout-sidebar-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    margin: 0 0 4px;
+    color: var(--text-primary);
+}
+
+.layout-sidebar-hint {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    margin: 0 0 12px;
+    line-height: 1.4;
+}
+
+.layout-sidebar-empty {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    text-align: center;
+    padding: 16px 0;
+}
+
+.layout-sidebar-empty p {
+    margin: 0 0 8px;
+}
+
+.layout-plant-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.layout-plant-sticker-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: white;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+
+.layout-plant-sticker-btn:hover {
+    background: var(--highlight);
+    border-color: var(--sage);
+}
+
+/* ── Mobile responsive ───────────────────────────────────── */
+
+@media (max-width: 768px) {
+    .layout-content {
+        padding: 12px;
+    }
+
+    .layout-header {
+        padding: 12px 16px;
+    }
+
+    .layout-title {
+        font-size: 1.3rem;
+    }
+
+    .layout-sketch-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .layout-editor-toolbar {
+        padding: 8px 10px;
+        gap: 6px;
+    }
+
+    .layout-toolbar-separator {
+        display: none;
+    }
+
+    .layout-editor-body {
+        flex-direction: column;
+    }
+
+    .layout-plant-sidebar {
+        width: 100%;
+        max-height: none;
+    }
+
+    .layout-plant-list {
+        flex-direction: row;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .layout-plant-sticker-btn {
+        width: auto;
+    }
+
+    .layout-canvas-wrapper {
+        border-radius: 8px;
+    }
+}
