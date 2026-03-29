@@ -3758,3 +3758,459 @@ body.journal-active #garden-journal {
         gap: 4px;
     }
 }
+
+/* ============================================================
+   Garden Layout — Bed Planner
+   ============================================================ */
+
+/* Layout Active Mode — same full-page pattern as journal */
+body.layout-active .main-layout > *:not(#garden-layout):not(.scroll-to-top):not(.bottom-nav) {
+    display: none !important;
+}
+
+body.layout-active #garden-layout {
+    animation: journalFadeIn 0.3s ease-out;
+}
+
+@media (min-width: 769px) {
+    body.layout-active header {
+        display: block !important;
+    }
+}
+
+@media (max-width: 768px) {
+    body.layout-active header {
+        display: none !important;
+    }
+}
+
+/* Section header */
+.layout-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 0 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+}
+
+.layout-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    color: var(--forest);
+    margin: 0;
+}
+
+.layout-actions-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.layout-add-bed-btn {
+    background: var(--forest);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s;
+}
+
+.layout-add-bed-btn:hover {
+    background: #3a7a3a;
+}
+
+.layout-close-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.layout-close-btn:hover {
+    background: var(--highlight);
+    color: var(--text-primary);
+}
+
+/* Empty state */
+.layout-empty-state {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--text-secondary);
+}
+
+.layout-empty-state h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    color: var(--text-primary);
+    margin: 12px 0 8px;
+}
+
+.layout-empty-add-btn {
+    margin-top: 16px;
+}
+
+/* Bed card grid */
+.layout-bed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.layout-bed-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+    transition: box-shadow 0.15s;
+}
+
+.layout-bed-card:hover {
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.layout-bed-card-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.layout-bed-name {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.layout-bed-dims {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* Mini-grid preview */
+.layout-bed-preview {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+}
+
+.layout-mini-grid {
+    display: grid;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.layout-mini-cell {
+    background: var(--bg-cream);
+    aspect-ratio: 1;
+}
+
+/* Plant legend chips */
+.layout-bed-plants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin: 8px 0;
+    min-height: 24px;
+}
+
+.layout-legend-chip {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.layout-no-plants {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Bed card actions */
+.layout-bed-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+}
+
+.layout-btn-open {
+    flex: 1;
+    background: var(--highlight);
+    color: var(--forest);
+    border: 1px solid var(--sage);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.layout-btn-open:hover {
+    background: var(--sage);
+    color: #fff;
+}
+
+.layout-btn-icon {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: var(--text-secondary);
+}
+
+.layout-btn-icon:hover {
+    background: var(--highlight);
+    color: var(--text-primary);
+}
+
+.layout-btn-delete:hover {
+    background: #fdecea;
+    color: #c62828;
+    border-color: #ef9a9a;
+}
+
+/* ── Grid Editor ── */
+
+.layout-grid-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.layout-back-btn {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.layout-back-btn:hover {
+    background: var(--highlight);
+    color: var(--text-primary);
+}
+
+.layout-grid-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.2rem;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.layout-grid-dims {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.layout-grid-body {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+}
+
+/* Plant palette sidebar */
+.layout-palette {
+    width: 180px;
+    flex-shrink: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.layout-palette-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.layout-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    background: none;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 5px 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.1s;
+    color: var(--text-primary);
+}
+
+.layout-palette-item:hover {
+    background: var(--highlight);
+}
+
+.layout-palette-item.active {
+    border-color: var(--forest);
+    background: var(--highlight);
+    font-weight: 600;
+}
+
+.layout-palette-swatch {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.1);
+}
+
+.layout-eraser-swatch {
+    background: repeating-linear-gradient(
+        45deg,
+        #fff,
+        #fff 3px,
+        #eee 3px,
+        #eee 6px
+    );
+}
+
+.layout-palette-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.layout-palette-empty {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    padding: 8px 0;
+}
+
+/* Grid area */
+.layout-grid-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.layout-grid {
+    display: grid;
+    gap: 2px;
+    background: var(--border);
+    border: 2px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    touch-action: none;  /* prevent scroll while painting */
+    user-select: none;
+}
+
+.layout-grid-cell {
+    background: var(--bg-cream);
+    aspect-ratio: 1;
+    cursor: crosshair;
+    transition: background 0.05s;
+    min-width: 0;
+    min-height: 0;
+}
+
+.layout-grid-cell:hover {
+    outline: 2px solid var(--forest);
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+.layout-grid-hint {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 8px;
+    font-style: italic;
+}
+
+/* Resize note in modal */
+.layout-resize-note {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin: 4px 0 0;
+}
+
+/* ── Layout Mobile Responsive ── */
+
+@media (max-width: 768px) {
+    .layout-header {
+        padding: 12px 0 10px;
+    }
+
+    .layout-title {
+        font-size: 1.2rem;
+    }
+
+    .layout-bed-grid {
+        grid-template-columns: 1fr;
+    }
+
+    /* Stack palette above grid on mobile */
+    .layout-grid-body {
+        flex-direction: column;
+    }
+
+    .layout-palette {
+        width: 100%;
+        max-height: none;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 8px;
+    }
+
+    .layout-palette-title {
+        width: 100%;
+        margin-bottom: 4px;
+    }
+
+    .layout-palette-item {
+        width: auto;
+        flex-shrink: 0;
+        padding: 4px 8px;
+        font-size: 0.75rem;
+    }
+
+    .layout-palette-label {
+        max-width: 90px;
+    }
+
+    .layout-grid-cell {
+        min-width: 20px;
+        min-height: 20px;
+    }
+}
