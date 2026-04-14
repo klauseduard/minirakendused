@@ -4079,6 +4079,22 @@ body.layout-active #garden-layout {
     touch-action: none;
 }
 
+.layout-fill-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.layout-fill-toggle {
+    font-size: 0.75rem !important;
+    padding: 0.25rem 0.5rem !important;
+}
+.layout-opacity-slider {
+    width: 50px;
+}
+.layout-opacity-slider:disabled {
+    opacity: 0.35;
+}
+
 .layout-snap-toggle {
     font-size: 0.85rem !important;
     padding: 0.3rem 0.5rem !important;

@@ -27,6 +27,8 @@ let clipboard = null;
 let activeKeyHandler = null;
 let snapToGrid = false;
 let gridSpacingPx = 0;
+let fillEnabled = false;
+let fillOpacity = 0.3;
 
 const COLORS = ['#2d5016', '#c75b12', '#8b4513', '#1a5276', '#7d3c98', '#c0392b', '#27ae60', '#2c3e50'];
 
@@ -95,6 +97,16 @@ function generateId() {
 
 function escapeHtml(str) {
     return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
+function getShapeFill() {
+    if (!fillEnabled) return 'transparent';
+    // Convert hex color to rgba with current opacity
+    const hex = currentColor.replace('#', '');
+    const r = parseInt(hex.substring(0, 2), 16);
+    const g = parseInt(hex.substring(2, 4), 16);
+    const b = parseInt(hex.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${fillOpacity})`;
 }
 
 function countStickers(bed) {
@@ -258,13 +270,13 @@ function setupShapeDrawing() {
             } else if (currentTool === 'rect') {
                 activeShape = new fabric.Rect({
                     left: pointer.x, top: pointer.y, width: 0, height: 0,
-                    fill: 'transparent', stroke: currentColor, strokeWidth: lineWidth,
+                    fill: getShapeFill(), stroke: currentColor, strokeWidth: lineWidth,
                     selectable: false, evented: false
                 });
             } else if (currentTool === 'ellipse') {
                 activeShape = new fabric.Ellipse({
                     left: pointer.x, top: pointer.y, rx: 0, ry: 0,
-                    fill: 'transparent', stroke: currentColor, strokeWidth: lineWidth,
+                    fill: getShapeFill(), stroke: currentColor, strokeWidth: lineWidth,
                     selectable: false, evented: false
                 });
             }
@@ -606,6 +618,11 @@ function openBedEditor(bedId) {
                 <button class="layout-tool-btn layout-snap-toggle" id="layoutSnapToggle" title="Snap to grid (30cm)">
                     <span class="layout-snap-icon">\u25a6</span>
                 </button>
+                <div class="layout-fill-controls">
+                    <button class="layout-tool-btn layout-fill-toggle" id="layoutFillToggle" title="Fill shapes with color">Fill</button>
+                    <input type="range" id="layoutFillOpacity" min="5" max="100" value="${Math.round(fillOpacity * 100)}"
+                        class="layout-width-slider layout-opacity-slider" title="Fill opacity" ${fillEnabled ? '' : 'disabled'}>
+                </div>
             </div>
             <div class="layout-canvas-wrapper" id="layoutCanvasWrapper">
                 <canvas id="layoutCanvas" width="${canvasW}" height="${canvasH}"></canvas>
@@ -801,6 +818,18 @@ function bindEditorEvents(bed) {
             left: Math.round(obj.left / gridSpacingPx) * gridSpacingPx,
             top: Math.round(obj.top / gridSpacingPx) * gridSpacingPx,
         });
+    });
+
+    // Fill toggle and opacity
+    const fillToggle = document.getElementById('layoutFillToggle');
+    const opacitySlider = document.getElementById('layoutFillOpacity');
+    fillToggle?.addEventListener('click', () => {
+        fillEnabled = !fillEnabled;
+        fillToggle.classList.toggle('active', fillEnabled);
+        if (opacitySlider) opacitySlider.disabled = !fillEnabled;
+    });
+    opacitySlider?.addEventListener('input', (e) => {
+        fillOpacity = parseInt(e.target.value) / 100;
     });
 
     // Tool selection
