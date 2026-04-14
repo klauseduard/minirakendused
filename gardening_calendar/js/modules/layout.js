@@ -91,8 +91,8 @@ function generateId() {
     return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
 
-function escapeXml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+function escapeHtml(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function countStickers(bed) {
@@ -163,7 +163,7 @@ function applyToolMode() {
 
 function generateThumbnail() {
     if (!fCanvas) return null;
-    // Ensure thumbnail is at least 200px wide regardless of canvas size
+    // Scale down large canvases to ~200px wide; never upscale small ones
     const multiplier = Math.min(1, 200 / fCanvas.width);
     return fCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier });
 }
@@ -222,6 +222,8 @@ function migrateOldStickers(bed) {
 
 let shapeStartX = 0, shapeStartY = 0;
 let activeShape = null;
+let suppressUndo = false;
+let onSaveState = null;
 
 function setupShapeDrawing() {
     if (!fCanvas) return;
@@ -236,6 +238,7 @@ function setupShapeDrawing() {
         }
 
         if (['line', 'rect', 'ellipse'].includes(currentTool)) {
+            suppressUndo = true;
             const pointer = fCanvas.getPointer(opt.e);
             shapeStartX = pointer.x;
             shapeStartY = pointer.y;
@@ -296,6 +299,8 @@ function setupShapeDrawing() {
         if (activeShape) {
             activeShape.setCoords();
             activeShape = null;
+            suppressUndo = false;
+            if (onSaveState) onSaveState();
         }
     });
 }
@@ -411,18 +416,18 @@ function renderLayout() {
                 <div class="layout-bed-card" data-id="${bed.id}">
                     <div class="layout-bed-preview">
                         ${bed.canvasData
-                            ? `<img src="${bed.canvasData}" alt="${bed.name}" class="layout-bed-thumb">`
+                            ? `<img src="${bed.canvasData}" alt="${escapeHtml(bed.name)}" class="layout-bed-thumb">`
                             : `<div class="layout-bed-placeholder">\ud83c\udf31</div>`
                         }
                     </div>
                     <div class="layout-bed-info">
-                        <h3 class="layout-bed-name">${bed.name}</h3>
+                        <h3 class="layout-bed-name">${escapeHtml(bed.name)}</h3>
                         <span class="layout-bed-dims">${bed.width}m \u00d7 ${bed.height}m</span>
                         ${stickerCount > 0
                             ? `<span class="layout-bed-plant-count">${stickerCount} plant${stickerCount !== 1 ? 's' : ''}</span>`
                             : ''
                         }
-                        ${bed.notes ? `<p class="layout-bed-notes">${bed.notes}</p>` : ''}
+                        ${bed.notes ? `<p class="layout-bed-notes">${escapeHtml(bed.notes)}</p>` : ''}
                     </div>
                     <div class="layout-bed-actions">
                         <button class="layout-bed-edit-btn" data-id="${bed.id}" title="Edit sketch">\u270f\ufe0f</button>
@@ -542,6 +547,15 @@ function openBedEditor(bedId) {
     const bed = beds.find(b => b.id === bedId);
     if (!bed) return;
 
+    // Clean up previous editor if open
+    if (fCanvas) {
+        const prevBed = beds.find(b => b.id === activeBedId);
+        if (prevBed) saveBedCanvas(prevBed);
+        cleanupEditor();
+        fCanvas.dispose();
+        fCanvas = null;
+    }
+
     activeBedId = bedId;
 
     const content = document.getElementById('layoutContent');
@@ -558,7 +572,7 @@ function openBedEditor(bedId) {
         <div class="layout-editor">
             <div class="layout-editor-header">
                 <button class="layout-editor-back" id="layoutEditorBack">\u2190 Back</button>
-                <h3 class="layout-editor-title">${bed.name} <span class="layout-editor-dims">${bed.width}m \u00d7 ${bed.height}m</span></h3>
+                <h3 class="layout-editor-title">${escapeHtml(bed.name)} <span class="layout-editor-dims">${bed.width}m \u00d7 ${bed.height}m</span></h3>
                 <div class="layout-editor-actions">
                     <button class="layout-editor-action-btn" id="layoutUndoBtn" title="Undo (Ctrl+Z)">\u21a9</button>
                     <button class="layout-editor-action-btn" id="layoutRedoBtn" title="Redo (Ctrl+Y)">\u21aa</button>
@@ -673,8 +687,8 @@ function showStickerPanel() {
 
     list.innerHTML = plants.map(name => `
         <button class="layout-sticker-btn ${placingSticker === name ? 'active' : ''}"
-                data-plant="${name}">
-            \ud83c\udf31 ${name}
+                data-plant="${escapeHtml(name)}">
+            \ud83c\udf31 ${escapeHtml(name)}
         </button>
     `).join('');
 
@@ -717,7 +731,7 @@ function exportBed(bed) {
     }
     extra += '</g>\n';
     extra += `<rect x="1" y="1" width="${w - 2}" height="${h - 2}" fill="none" stroke="#8b6914" stroke-width="2"/>\n`;
-    extra += `<text x="8" y="${h - 10}" font-family="Source Sans 3, sans-serif" font-weight="bold" font-size="16" fill="rgba(0,0,0,0.7)">${escapeXml(bed.name)} (${bed.width}m \u00d7 ${bed.height}m)</text>\n`;
+    extra += `<text x="8" y="${h - 10}" font-family="Source Sans 3, sans-serif" font-weight="bold" font-size="16" fill="rgba(0,0,0,0.7)">${escapeHtml(bed.name)} (${bed.width}m \u00d7 ${bed.height}m)</text>\n`;
 
     svg = svg.replace('</svg>', extra + '</svg>');
 
@@ -727,7 +741,7 @@ function exportBed(bed) {
     link.download = `garden-bed-${bed.name.replace(/\s+/g, '-').toLowerCase()}.svg`;
     link.href = url;
     link.click();
-    URL.revokeObjectURL(url);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
     showNotification('Bed exported as SVG', 'success');
 }
 
@@ -820,6 +834,7 @@ function bindEditorEvents(bed) {
     const MAX_UNDO = 30;
 
     function saveState() {
+        if (suppressUndo) return;
         undoStack.push(JSON.stringify(fCanvas.toJSON(CUSTOM_PROPS)));
         if (undoStack.length > MAX_UNDO) undoStack.shift();
         redoStack = [];
@@ -841,6 +856,7 @@ function bindEditorEvents(bed) {
     }
 
     saveState();
+    onSaveState = saveState;
     fCanvas.on('object:added', saveState);
     fCanvas.on('object:modified', saveState);
     fCanvas.on('object:removed', saveState);
@@ -907,8 +923,11 @@ function bindEditorEvents(bed) {
         applyToolMode();
     });
 
-    // Keyboard shortcuts
+    // Keyboard shortcuts — skip when user is typing in a text field
     activeKeyHandler = (e) => {
+        const tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
         if (e.ctrlKey && e.key === 'z') {
             e.preventDefault();
             document.getElementById('layoutUndoBtn')?.click();
@@ -918,9 +937,11 @@ function bindEditorEvents(bed) {
             document.getElementById('layoutRedoBtn')?.click();
         }
         if (e.ctrlKey && e.key === 'c') {
+            e.preventDefault();
             copySelection();
         }
         if (e.ctrlKey && e.key === 'v') {
+            e.preventDefault();
             pasteClipboard();
         }
         if (e.key === 'Delete' || e.key === 'Backspace') {
