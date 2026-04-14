@@ -19,6 +19,7 @@ import * as socialModule from './modules/social.js';
 import * as photoStorage from './modules/photo-storage.js';
 import * as todoModule from './modules/todo.js';
 import * as backupModule from './modules/backup.js';
+import * as layoutModule from './modules/layout.js';
 
 // Global state for sharing data between modules
 window.GardeningApp = {
@@ -37,7 +38,8 @@ window.GardeningApp = {
         social: socialModule,
         photoStorage: photoStorage,
         todo: todoModule,
-        backup: backupModule
+        backup: backupModule,
+        layout: layoutModule
     },
     state: {
         currentMonth: null,
@@ -170,6 +172,10 @@ async function initApp() {
     // Step 11: Initialize backup module
     backupModule.initBackup();
     console.log('Backup module initialized');
+
+    // Step 12: Initialize layout module
+    layoutModule.initLayout();
+    console.log('Layout module initialized');
     
     // Set up header illustration with seasonal swapping
     updateHeaderIllustration(window.GardeningApp.activeMonth);
@@ -192,6 +198,17 @@ async function initApp() {
         });
     }
     
+    // Layout close button
+    const layoutCloseBtn = document.getElementById('layoutCloseBtn');
+    if (layoutCloseBtn) {
+        layoutCloseBtn.addEventListener('click', () => {
+            closeLayoutPanel();
+            document.querySelectorAll('.quick-jump-btn, .bottom-nav-btn').forEach(b => {
+                if (b.dataset.section === 'garden-layout') b.classList.remove('active');
+            });
+        });
+    }
+
     // Check for hash in URL to navigate to specific section on load
     if (window.location.hash) {
         const sectionId = window.location.hash.substring(1); // Remove the # symbol
@@ -331,8 +348,23 @@ function setupNavigation() {
  * @param {boolean} options.isMobile - Whether this is mobile navigation
  */
 function navigateToSection(sectionId, { isMobile = false } = {}) {
+    if (sectionId === 'garden-layout') {
+        // Full-width layout view
+        closeJournalPanel();
+        document.body.classList.add('layout-active');
+
+        const layoutSection = document.getElementById('garden-layout');
+        if (layoutSection) {
+            layoutSection.style.display = 'block';
+            layoutModule.renderLayout();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        return;
+    }
+
     if (sectionId === 'garden-journal') {
         // Full-width journal view on all screen sizes
+        closeLayoutPanel();
         document.body.classList.add('journal-active');
 
         const journalSection = document.getElementById('garden-journal');
@@ -342,8 +374,9 @@ function navigateToSection(sectionId, { isMobile = false } = {}) {
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     } else {
-        // Leave journal view, restore main sections
+        // Leave journal/layout views, restore main sections
         closeJournalPanel();
+        closeLayoutPanel();
 
         // Re-render calendar/todo when navigating to schedule
         if (sectionId === 'monthly-calendar') {
@@ -383,6 +416,19 @@ function closeJournalPanel() {
     showAllMainSections();
     document.body.classList.remove('journal-active');
 }
+
+/**
+ * Close the layout panel
+ */
+function closeLayoutPanel() {
+    const layoutSection = document.getElementById('garden-layout');
+    if (layoutSection) layoutSection.style.display = 'none';
+    showAllMainSections();
+    document.body.classList.remove('layout-active');
+}
+
+// Expose closeLayoutPanel for the layout module
+window.GardeningApp.closeLayoutPanel = closeLayoutPanel;
 
 /**
  * Set up a nav container (works for both desktop quick-jump and mobile bottom nav)
@@ -451,8 +497,8 @@ function showAllMainSections() {
     const activeTab = window.GardeningApp.state.activeScheduleTab || 'calendar';
     const calendarContent = document.getElementById('calendarContent');
 
-    // Show all main sections and elements except journal
-    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(.bottom-nav):not(#scrollToTop)').forEach(el => {
+    // Show all main sections and elements except journal and layout
+    document.querySelectorAll('.main-layout > *:not(#garden-journal):not(#garden-layout):not(.bottom-nav):not(#scrollToTop)').forEach(el => {
         // When TODO tab is active, keep calendar-specific elements hidden
         if (activeTab === 'todo') {
             if (el.id === 'search-section' || el.id === 'calendarHint') {
