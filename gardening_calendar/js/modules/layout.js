@@ -244,6 +244,11 @@ let activeShape = null;
 let suppressUndo = false;
 let onSaveState = null;
 
+function snap(val) {
+    if (!snapToGrid || !gridSpacingPx) return val;
+    return Math.round(val / gridSpacingPx) * gridSpacingPx;
+}
+
 function setupShapeDrawing() {
     if (!fCanvas) return;
 
@@ -251,7 +256,7 @@ function setupShapeDrawing() {
         // Sticker placement
         if (currentTool === 'sticker' && placingSticker) {
             const pointer = fCanvas.getPointer(opt.e);
-            createStickerObject(placingSticker, pointer.x, pointer.y, currentColor);
+            createStickerObject(placingSticker, snap(pointer.x), snap(pointer.y), currentColor);
             fCanvas.renderAll();
             return;
         }
@@ -259,23 +264,23 @@ function setupShapeDrawing() {
         if (['line', 'rect', 'ellipse'].includes(currentTool)) {
             suppressUndo = true;
             const pointer = fCanvas.getPointer(opt.e);
-            shapeStartX = pointer.x;
-            shapeStartY = pointer.y;
+            shapeStartX = snap(pointer.x);
+            shapeStartY = snap(pointer.y);
 
             if (currentTool === 'line') {
                 activeShape = new fabric.Line(
-                    [pointer.x, pointer.y, pointer.x, pointer.y],
+                    [shapeStartX, shapeStartY, shapeStartX, shapeStartY],
                     { stroke: currentColor, strokeWidth: lineWidth, selectable: false, evented: false }
                 );
             } else if (currentTool === 'rect') {
                 activeShape = new fabric.Rect({
-                    left: pointer.x, top: pointer.y, width: 0, height: 0,
+                    left: shapeStartX, top: shapeStartY, width: 0, height: 0,
                     fill: getShapeFill(), stroke: currentColor, strokeWidth: lineWidth,
                     selectable: false, evented: false
                 });
             } else if (currentTool === 'ellipse') {
                 activeShape = new fabric.Ellipse({
-                    left: pointer.x, top: pointer.y, rx: 0, ry: 0,
+                    left: shapeStartX, top: shapeStartY, rx: 0, ry: 0,
                     fill: getShapeFill(), stroke: currentColor, strokeWidth: lineWidth,
                     selectable: false, evented: false
                 });
@@ -291,23 +296,25 @@ function setupShapeDrawing() {
     fCanvas.on('mouse:move', function(opt) {
         if (!activeShape) return;
         const pointer = fCanvas.getPointer(opt.e);
+        const px = snap(pointer.x);
+        const py = snap(pointer.y);
 
         if (currentTool === 'line') {
-            activeShape.set({ x2: pointer.x, y2: pointer.y });
+            activeShape.set({ x2: px, y2: py });
         } else if (currentTool === 'rect') {
-            const left = Math.min(shapeStartX, pointer.x);
-            const top = Math.min(shapeStartY, pointer.y);
+            const left = Math.min(shapeStartX, px);
+            const top = Math.min(shapeStartY, py);
             activeShape.set({
                 left, top,
-                width: Math.abs(pointer.x - shapeStartX),
-                height: Math.abs(pointer.y - shapeStartY)
+                width: Math.abs(px - shapeStartX),
+                height: Math.abs(py - shapeStartY)
             });
         } else if (currentTool === 'ellipse') {
-            const rx = Math.abs(pointer.x - shapeStartX) / 2;
-            const ry = Math.abs(pointer.y - shapeStartY) / 2;
+            const rx = Math.abs(px - shapeStartX) / 2;
+            const ry = Math.abs(py - shapeStartY) / 2;
             activeShape.set({
-                left: Math.min(shapeStartX, pointer.x),
-                top: Math.min(shapeStartY, pointer.y),
+                left: Math.min(shapeStartX, px),
+                top: Math.min(shapeStartY, py),
                 rx, ry
             });
         }
