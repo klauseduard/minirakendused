@@ -103,37 +103,42 @@ function countStickers(bed) {
 // ── Fabric canvas setup ─────────────────────────────────────────────
 
 /**
- * Draw the grid background onto the lower canvas (not part of object model)
+ * Register an after:render handler that redraws the grid on every paint.
+ * This is robust against Fabric.js clearing the lower canvas during
+ * loadFromJSON, undo/redo, or clear operations.
  */
-function drawGridBackground(bed, canvasW, canvasH) {
-    const lowerCanvas = fCanvas.lowerCanvasEl;
-    const lctx = lowerCanvas.getContext('2d');
+function setupGridOverlay(bed) {
+    if (!fCanvas) return;
 
-    lctx.fillStyle = '#f5f0e6';
-    lctx.fillRect(0, 0, canvasW, canvasH);
+    fCanvas.on('after:render', function() {
+        const ctx = fCanvas.getContext('2d');
+        const w = fCanvas.width;
+        const h = fCanvas.height;
+        const pxPerMeter = w / bed.width;
+        const gridSpacing = pxPerMeter * 0.3;
 
-    const pxPerMeter = canvasW / bed.width;
-    const gridSpacing = pxPerMeter * 0.3;
+        ctx.save();
+        ctx.strokeStyle = 'rgba(139, 105, 20, 0.15)';
+        ctx.lineWidth = 1;
 
-    lctx.strokeStyle = 'rgba(139, 105, 20, 0.15)';
-    lctx.lineWidth = 1;
+        for (let x = gridSpacing; x < w; x += gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(Math.round(x) + 0.5, 0);
+            ctx.lineTo(Math.round(x) + 0.5, h);
+            ctx.stroke();
+        }
+        for (let y = gridSpacing; y < h; y += gridSpacing) {
+            ctx.beginPath();
+            ctx.moveTo(0, Math.round(y) + 0.5);
+            ctx.lineTo(w, Math.round(y) + 0.5);
+            ctx.stroke();
+        }
 
-    for (let x = gridSpacing; x < canvasW; x += gridSpacing) {
-        lctx.beginPath();
-        lctx.moveTo(Math.round(x) + 0.5, 0);
-        lctx.lineTo(Math.round(x) + 0.5, canvasH);
-        lctx.stroke();
-    }
-    for (let y = gridSpacing; y < canvasH; y += gridSpacing) {
-        lctx.beginPath();
-        lctx.moveTo(0, Math.round(y) + 0.5);
-        lctx.lineTo(canvasW, Math.round(y) + 0.5);
-        lctx.stroke();
-    }
-
-    lctx.strokeStyle = '#8b6914';
-    lctx.lineWidth = 2;
-    lctx.strokeRect(1, 1, canvasW - 2, canvasH - 2);
+        ctx.strokeStyle = '#8b6914';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(1, 1, w - 2, h - 2);
+        ctx.restore();
+    });
 }
 
 /**
@@ -637,11 +642,10 @@ function openBedEditor(bedId) {
         height: canvasH
     });
 
-    drawGridBackground(bed, canvasW, canvasH);
+    setupGridOverlay(bed);
 
     if (bed.fabricJson) {
         fCanvas.loadFromJSON(bed.fabricJson, () => {
-            drawGridBackground(bed, canvasW, canvasH);
             fCanvas.renderAll();
             applyToolMode();
             migrateOldStickers(bed);
@@ -657,14 +661,14 @@ function openBedEditor(bedId) {
 
 function renderBedShape(shape, w, h) {
     if (shape === 'circle') {
-        return `<svg class="layout-bed-shape-overlay" width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
+        return `<svg width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
             <ellipse cx="${w/2}" cy="${h/2}" rx="${w/2-2}" ry="${h/2-2}" fill="none" stroke="#8b6914" stroke-width="3" stroke-dasharray="8,4"/>
         </svg>`;
     }
     if (shape === 'lshape') {
         const midX = w * 0.6;
         const midY = h * 0.5;
-        return `<svg class="layout-bed-shape-overlay" width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
+        return `<svg width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
             <polyline points="2,2 ${w-2},2 ${w-2},${midY} ${midX},${midY} ${midX},${h-2} 2,${h-2} 2,2"
                 fill="none" stroke="#8b6914" stroke-width="3" stroke-dasharray="8,4"/>
         </svg>`;
@@ -846,7 +850,6 @@ function bindEditorEvents(bed) {
         fCanvas.off('object:removed', saveState);
 
         fCanvas.loadFromJSON(stateJson, () => {
-            drawGridBackground(bed, fCanvas.width, fCanvas.height);
             fCanvas.renderAll();
             applyToolMode();
             fCanvas.on('object:added', saveState);
@@ -899,7 +902,6 @@ function bindEditorEvents(bed) {
         showConfirmDialog('Clear sketch?', 'This will erase all drawings and plant labels.', () => {
             fCanvas.clear();
             fCanvas.backgroundColor = '#f5f0e6';
-            drawGridBackground(bed, fCanvas.width, fCanvas.height);
             fCanvas.renderAll();
         });
     });
