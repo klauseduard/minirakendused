@@ -4079,6 +4079,31 @@ body.layout-active #garden-layout {
     touch-action: none;
 }
 
+.layout-snap-toggle {
+    font-size: 0.85rem !important;
+    padding: 0.3rem 0.5rem !important;
+}
+.layout-snap-icon {
+    opacity: 0.7;
+}
+.layout-snap-toggle.active .layout-snap-icon {
+    opacity: 1;
+}
+
+.layout-cursor-coords {
+    position: absolute;
+    bottom: 6px;
+    right: 8px;
+    font-family: 'Source Sans 3', monospace;
+    font-size: 0.75rem;
+    color: rgba(0, 0, 0, 0.5);
+    background: rgba(255, 255, 255, 0.75);
+    padding: 1px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    min-height: 1.2em;
+}
+
 .layout-stickers-overlay {
     position: absolute;
     top: 0;

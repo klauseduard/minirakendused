@@ -25,6 +25,8 @@ let lineWidth = 3;
 let placingSticker = null;
 let clipboard = null;
 let activeKeyHandler = null;
+let snapToGrid = false;
+let gridSpacingPx = 0;
 
 const COLORS = ['#2d5016', '#c75b12', '#8b4513', '#1a5276', '#7d3c98', '#c0392b', '#27ae60', '#2c3e50'];
 
@@ -601,9 +603,13 @@ function openBedEditor(bedId) {
                     <label>Size:</label>
                     <input type="range" id="layoutLineWidth" min="1" max="12" value="${lineWidth}" class="layout-width-slider">
                 </div>
+                <button class="layout-tool-btn layout-snap-toggle" id="layoutSnapToggle" title="Snap to grid (30cm)">
+                    <span class="layout-snap-icon">\u25a6</span>
+                </button>
             </div>
             <div class="layout-canvas-wrapper" id="layoutCanvasWrapper">
                 <canvas id="layoutCanvas" width="${canvasW}" height="${canvasH}"></canvas>
+                <div class="layout-cursor-coords" id="layoutCursorCoords"></div>
             </div>
             <div class="layout-sticker-panel" id="layoutStickerPanel" style="display: none;">
                 <div class="layout-sticker-header">
@@ -633,6 +639,7 @@ function openBedEditor(bedId) {
     });
 
     setupGridOverlay(bed);
+    gridSpacingPx = (canvasW / bed.width) * 0.3;
 
     if (bed.fabricJson) {
         fCanvas.loadFromJSON(bed.fabricJson, () => {
@@ -763,6 +770,37 @@ function bindEditorEvents(bed) {
     document.getElementById('layoutBedNotes')?.addEventListener('input', (e) => {
         bed.notes = e.target.value.trim();
         saveBeds();
+    });
+
+    // Cursor coordinate display (in meters)
+    const coordsEl = document.getElementById('layoutCursorCoords');
+    if (coordsEl) {
+        const pxPerMeter = fCanvas.width / bed.width;
+        fCanvas.on('mouse:move', function(opt) {
+            const pointer = fCanvas.getPointer(opt.e);
+            const xm = (pointer.x / pxPerMeter).toFixed(2);
+            const ym = (pointer.y / pxPerMeter).toFixed(2);
+            coordsEl.textContent = `${xm} \u00d7 ${ym} m`;
+        });
+        fCanvas.on('mouse:out', function() {
+            coordsEl.textContent = '';
+        });
+    }
+
+    // Snap to grid toggle
+    document.getElementById('layoutSnapToggle')?.addEventListener('click', () => {
+        snapToGrid = !snapToGrid;
+        document.getElementById('layoutSnapToggle')?.classList.toggle('active', snapToGrid);
+    });
+
+    // Snap objects to grid when moving/scaling
+    fCanvas.on('object:moving', function(opt) {
+        if (!snapToGrid || !gridSpacingPx) return;
+        const obj = opt.target;
+        obj.set({
+            left: Math.round(obj.left / gridSpacingPx) * gridSpacingPx,
+            top: Math.round(obj.top / gridSpacingPx) * gridSpacingPx,
+        });
     });
 
     // Tool selection
