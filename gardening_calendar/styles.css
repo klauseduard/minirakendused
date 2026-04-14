@@ -3879,7 +3879,7 @@ body.layout-active #garden-layout {
 .layout-bed-thumb {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
 }
 .layout-bed-placeholder {
     font-size: 2.5rem;
@@ -3995,6 +3995,7 @@ body.layout-active #garden-layout {
     transition: background 0.15s;
 }
 .layout-editor-action-btn:hover { background: var(--bg-cream); }
+.layout-overflow-toggle { display: none; }
 
 /* Toolbar */
 .layout-toolbar {
@@ -4244,5 +4245,38 @@ body.layout-active #garden-layout {
     }
     .layout-stickers-overlay {
         width: 100% !important;
+    }
+
+    /* Overflow menu for action buttons */
+    .layout-action-overflow {
+        display: none;
+    }
+    .layout-overflow-toggle {
+        display: inline-flex;
+    }
+    .layout-editor-actions.show-overflow .layout-action-overflow {
+        display: inline-flex;
+    }
+    .layout-editor-actions.show-overflow {
+        flex-wrap: wrap;
+    }
+
+    /* Sticker panel as bottom sheet */
+    .layout-sticker-panel {
+        position: fixed;
+        bottom: 60px;
+        left: 0;
+        right: 0;
+        z-index: 1200;
+        border-radius: 12px 12px 0 0;
+        max-height: 40vh;
+        overflow-y: auto;
+        box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+        margin-top: 0;
+    }
+
+    /* Notes + grid info above bottom nav */
+    .layout-bed-notes-editor {
+        padding-bottom: 70px;
     }
 }

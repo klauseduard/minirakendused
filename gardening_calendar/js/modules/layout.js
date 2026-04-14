@@ -163,7 +163,9 @@ function applyToolMode() {
 
 function generateThumbnail() {
     if (!fCanvas) return null;
-    return fCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier: 0.25 });
+    // Ensure thumbnail is at least 200px wide regardless of canvas size
+    const multiplier = Math.min(1, 200 / fCanvas.width);
+    return fCanvas.toDataURL({ format: 'jpeg', quality: 0.6, multiplier });
 }
 
 // ── Plant stickers as Fabric objects ────────────────────────────────
@@ -545,8 +547,10 @@ function openBedEditor(bedId) {
     const content = document.getElementById('layoutContent');
     if (!content) return;
 
-    const maxWidth = Math.min(window.innerWidth - 40, 800);
-    const scale = maxWidth / Math.max(bed.width, bed.height);
+    const isMobile = window.innerWidth <= 768;
+    const availWidth = isMobile ? window.innerWidth - 20 : Math.min(window.innerWidth - 40, 800);
+    const maxHeight = isMobile ? window.innerHeight - 260 : 600;
+    const scale = Math.min(availWidth / bed.width, maxHeight / bed.height);
     const canvasW = Math.round(bed.width * scale);
     const canvasH = Math.round(bed.height * scale);
 
@@ -559,10 +563,11 @@ function openBedEditor(bedId) {
                     <button class="layout-editor-action-btn" id="layoutUndoBtn" title="Undo (Ctrl+Z)">\u21a9</button>
                     <button class="layout-editor-action-btn" id="layoutRedoBtn" title="Redo (Ctrl+Y)">\u21aa</button>
                     <button class="layout-editor-action-btn" id="layoutDeleteObjBtn" title="Delete selected (Del)">\ud83d\uddd1\ufe0f</button>
-                    <button class="layout-editor-action-btn" id="layoutBringFrontBtn" title="Bring to front">\u2b06\ufe0f</button>
-                    <button class="layout-editor-action-btn" id="layoutSendBackBtn" title="Send to back">\u2b07\ufe0f</button>
-                    <button class="layout-editor-action-btn" id="layoutClearBtn" title="Clear all">\u2716</button>
-                    <button class="layout-editor-action-btn" id="layoutExportBtn" title="Export as SVG">\ud83d\udcbe</button>
+                    <button class="layout-editor-action-btn layout-action-overflow" id="layoutBringFrontBtn" title="Bring to front">\u2b06\ufe0f</button>
+                    <button class="layout-editor-action-btn layout-action-overflow" id="layoutSendBackBtn" title="Send to back">\u2b07\ufe0f</button>
+                    <button class="layout-editor-action-btn layout-action-overflow" id="layoutClearBtn" title="Clear all">\u2716</button>
+                    <button class="layout-editor-action-btn layout-action-overflow" id="layoutExportBtn" title="Export as SVG">\ud83d\udcbe</button>
+                    <button class="layout-editor-action-btn layout-overflow-toggle" id="layoutOverflowToggle" title="More actions">\u22ef</button>
                 </div>
             </div>
             <div class="layout-toolbar">
@@ -885,6 +890,11 @@ function bindEditorEvents(bed) {
 
     // Export
     document.getElementById('layoutExportBtn')?.addEventListener('click', () => exportBed(bed));
+
+    // Overflow toggle for mobile action buttons
+    document.getElementById('layoutOverflowToggle')?.addEventListener('click', () => {
+        document.querySelector('.layout-editor-actions')?.classList.toggle('show-overflow');
+    });
 
     // Sticker panel done
     document.getElementById('layoutStickerCancel')?.addEventListener('click', () => {
