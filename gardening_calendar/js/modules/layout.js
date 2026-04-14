@@ -478,14 +478,6 @@ function showAddBedModal() {
                 </div>
             </div>
             <div class="form-row">
-                <label for="bedShapeSelect" class="form-label">Shape</label>
-                <select id="bedShapeSelect" class="form-input">
-                    <option value="rect">Rectangle</option>
-                    <option value="circle">Circle / Oval</option>
-                    <option value="lshape">L-Shape</option>
-                </select>
-            </div>
-            <div class="form-row">
                 <label for="bedNotesInput" class="form-label">Notes (optional)</label>
                 <textarea id="bedNotesInput" class="form-textarea" rows="3" placeholder="e.g. Companion planting: carrots between onion rows for pest control"></textarea>
             </div>
@@ -504,7 +496,6 @@ function showAddBedModal() {
             const name = document.getElementById('bedNameInput').value.trim();
             const width = parseFloat(document.getElementById('bedWidthInput').value) || 2;
             const height = parseFloat(document.getElementById('bedHeightInput').value) || 4;
-            const shape = document.getElementById('bedShapeSelect').value;
             const notes = document.getElementById('bedNotesInput').value.trim();
 
             if (!name) {
@@ -514,7 +505,7 @@ function showAddBedModal() {
 
             const bed = {
                 id: generateId(),
-                name, width, height, shape, notes,
+                name, width, height, notes,
                 fabricJson: null,
                 canvasData: null,
                 createdAt: new Date().toISOString()
@@ -613,7 +604,6 @@ function openBedEditor(bedId) {
             </div>
             <div class="layout-canvas-wrapper" id="layoutCanvasWrapper">
                 <canvas id="layoutCanvas" width="${canvasW}" height="${canvasH}"></canvas>
-                ${renderBedShape(bed.shape, canvasW, canvasH)}
             </div>
             <div class="layout-sticker-panel" id="layoutStickerPanel" style="display: none;">
                 <div class="layout-sticker-header">
@@ -657,23 +647,6 @@ function openBedEditor(bedId) {
 
     setupShapeDrawing();
     bindEditorEvents(bed);
-}
-
-function renderBedShape(shape, w, h) {
-    if (shape === 'circle') {
-        return `<svg width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
-            <ellipse cx="${w/2}" cy="${h/2}" rx="${w/2-2}" ry="${h/2-2}" fill="none" stroke="#8b6914" stroke-width="3" stroke-dasharray="8,4"/>
-        </svg>`;
-    }
-    if (shape === 'lshape') {
-        const midX = w * 0.6;
-        const midY = h * 0.5;
-        return `<svg width="${w}" height="${h}" style="position:absolute;top:0;left:0;pointer-events:none;">
-            <polyline points="2,2 ${w-2},2 ${w-2},${midY} ${midX},${midY} ${midX},${h-2} 2,${h-2} 2,2"
-                fill="none" stroke="#8b6914" stroke-width="3" stroke-dasharray="8,4"/>
-        </svg>`;
-    }
-    return '';
 }
 
 // ── Sticker panel ───────────────────────────────────────────────────
