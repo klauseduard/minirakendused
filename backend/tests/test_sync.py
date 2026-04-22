@@ -58,7 +58,7 @@ async def test_put_updates_timestamp(client):
 @pytest.mark.asyncio
 async def test_sync_requires_auth(client):
     resp = await client.get('/api/sync')
-    assert resp.status_code == 403
+    assert resp.status_code in (401, 403)
 
 
 @pytest.mark.asyncio

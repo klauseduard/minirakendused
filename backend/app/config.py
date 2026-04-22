@@ -8,6 +8,7 @@ class Settings(BaseSettings):
     jwt_secret: str = 'change-me-in-production'
     jwt_algorithm: str = 'HS256'
     jwt_expire_minutes: int = 60 * 24 * 30  # 30 days
+    allowed_origins: str = 'https://klauseduard.github.io,https://klauseduard.duckdns.org'
 
 
 settings = Settings()

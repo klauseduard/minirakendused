@@ -10,7 +10,21 @@ async def test_register(client):
     assert resp.status_code == 201
     data = resp.json()
     assert data['username'] == 'alice'
+    assert data['display_name'] == 'alice'  # defaults to username
     assert 'access_token' in data
+
+
+@pytest.mark.asyncio
+async def test_register_with_display_name(client):
+    resp = await client.post('/api/register', json={
+        'username': 'alice',
+        'password': 'secret123',
+        'display_name': 'Alice W.',
+    })
+    assert resp.status_code == 201
+    data = resp.json()
+    assert data['username'] == 'alice'
+    assert data['display_name'] == 'Alice W.'
 
 
 @pytest.mark.asyncio
@@ -34,10 +48,14 @@ async def test_register_short_password(client):
 
 @pytest.mark.asyncio
 async def test_login_success(client):
-    await client.post('/api/register', json={'username': 'alice', 'password': 'secret123'})
+    await client.post('/api/register', json={
+        'username': 'alice', 'password': 'secret123', 'display_name': 'Alice W.',
+    })
     resp = await client.post('/api/login', json={'username': 'alice', 'password': 'secret123'})
     assert resp.status_code == 200
-    assert 'access_token' in resp.json()
+    data = resp.json()
+    assert 'access_token' in data
+    assert data['display_name'] == 'Alice W.'
 
 
 @pytest.mark.asyncio

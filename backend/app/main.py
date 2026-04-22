@@ -16,6 +16,7 @@ from .auth import (
     hash_password,
     verify_password,
 )
+from .config import settings
 from .database import DB_DIR, get_db, init_db
 
 
@@ -29,7 +30,7 @@ app = FastAPI(title='Garden Planner API', lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['*'],  # tighten in production
+    allow_origins=[o.strip() for o in settings.allowed_origins.split(',')],
     allow_credentials=True,
     allow_methods=['*'],
     allow_headers=['*'],
@@ -51,9 +52,10 @@ async def register(body: UserCreate):
         if await existing.fetchone():
             raise HTTPException(status_code=409, detail='Username already taken')
 
+        display_name = body.display_name or body.username
         cursor = await db.execute(
-            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
-            (body.username, hash_password(body.password)),
+            'INSERT INTO users (username, display_name, password_hash) VALUES (?, ?, ?)',
+            (body.username, display_name, hash_password(body.password)),
         )
         await db.commit()
         user_id = cursor.lastrowid
@@ -66,7 +68,7 @@ async def register(body: UserCreate):
         await db.commit()
 
         token = create_token(user_id, body.username)
-        return TokenResponse(access_token=token, username=body.username)
+        return TokenResponse(access_token=token, username=body.username, display_name=display_name)
     finally:
         await db.close()
 
@@ -76,7 +78,7 @@ async def login(body: UserLogin):
     db = await get_db()
     try:
         cursor = await db.execute(
-            'SELECT id, username, password_hash FROM users WHERE username = ?',
+            'SELECT id, username, display_name, password_hash FROM users WHERE username = ?',
             (body.username,),
         )
         row = await cursor.fetchone()
@@ -84,7 +86,7 @@ async def login(body: UserLogin):
             raise HTTPException(status_code=401, detail='Invalid username or password')
 
         token = create_token(row['id'], row['username'])
-        return TokenResponse(access_token=token, username=row['username'])
+        return TokenResponse(access_token=token, username=row['username'], display_name=row['display_name'])
     finally:
         await db.close()
 

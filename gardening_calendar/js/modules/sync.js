@@ -21,6 +21,7 @@ import { getAllPhotosRaw, clearAllPhotos, savePhotos } from './photo-storage.js'
 
 const TOKEN_KEY = 'gardening_sync_token';
 const USERNAME_KEY = 'gardening_sync_username';
+const DISPLAY_NAME_KEY = 'gardening_sync_display_name';
 const LAST_SYNC_KEY = 'gardening_last_sync';
 const API_URL_KEY = 'gardening_sync_api_url';
 const BUILTIN_ORDER_KEY = 'gardenCal_builtinPeriodOrders';
@@ -38,6 +39,10 @@ function getToken() {
 
 function getUsername() {
     return localStorage.getItem(USERNAME_KEY);
+}
+
+function getDisplayName() {
+    return localStorage.getItem(DISPLAY_NAME_KEY) || getUsername();
 }
 
 function isLoggedIn() {
@@ -158,16 +163,17 @@ async function apiRequest(path, options = {}) {
 /**
  * Register a new account
  */
-async function register(apiUrl, username, password) {
+async function register(apiUrl, username, password, displayName) {
     localStorage.setItem(API_URL_KEY, apiUrl.replace(/\/+$/, ''));
 
     const data = await apiRequest('/api/register', {
         method: 'POST',
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, display_name: displayName || username }),
     });
 
     localStorage.setItem(TOKEN_KEY, data.access_token);
     localStorage.setItem(USERNAME_KEY, data.username);
+    localStorage.setItem(DISPLAY_NAME_KEY, data.display_name);
     updateSyncUI();
     return data;
 }
@@ -185,6 +191,7 @@ async function login(apiUrl, username, password) {
 
     localStorage.setItem(TOKEN_KEY, data.access_token);
     localStorage.setItem(USERNAME_KEY, data.username);
+    localStorage.setItem(DISPLAY_NAME_KEY, data.display_name);
     updateSyncUI();
     return data;
 }
@@ -195,6 +202,7 @@ async function login(apiUrl, username, password) {
 function logout() {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USERNAME_KEY);
+    localStorage.removeItem(DISPLAY_NAME_KEY);
     updateSyncUI();
 }
 
@@ -375,6 +383,10 @@ function showAuthModal() {
                 Password
                 <input type="password" id="syncPassword" autocomplete="current-password" />
             </label>
+            <label id="syncDisplayNameLabel" style="display:none">
+                Display Name (optional)
+                <input type="text" id="syncDisplayName" placeholder="How you want to be shown" />
+            </label>
         </div>
         <div id="syncAuthError" class="sync-auth-error"></div>
         <div class="sync-auth-actions">
@@ -395,12 +407,14 @@ function showAuthModal() {
     const tabs = content.querySelectorAll('.sync-auth-tab');
     const submitBtn = content.querySelector('#syncAuthSubmit');
     const errorEl = content.querySelector('#syncAuthError');
+    const displayNameLabel = content.querySelector('#syncDisplayNameLabel');
 
     tabs.forEach(tab => {
         tab.addEventListener('click', () => {
             mode = tab.dataset.tab;
             tabs.forEach(t => t.classList.toggle('active', t === tab));
             submitBtn.textContent = mode === 'login' ? 'Log In' : 'Register';
+            displayNameLabel.style.display = mode === 'register' ? '' : 'none';
         });
     });
 
@@ -422,10 +436,11 @@ function showAuthModal() {
             if (mode === 'login') {
                 await login(apiUrl, username, password);
             } else {
-                await register(apiUrl, username, password);
+                const displayName = content.querySelector('#syncDisplayName').value.trim();
+                await register(apiUrl, username, password, displayName);
             }
             overlay.remove();
-            showNotification(`Logged in as ${username}.`, 'success');
+            showNotification(`Logged in as ${getDisplayName()}.`, 'success');
             // Auto-sync after login
             sync();
         } catch (err) {
@@ -451,17 +466,29 @@ function updateSyncUI() {
     const syncBtn = document.getElementById('syncNowBtn');
     const logoutBtn = document.getElementById('syncLogoutBtn');
     const statusEl = document.getElementById('syncUserStatus');
+    const headerBtn = document.getElementById('headerUserBtn');
+    const headerLabel = document.getElementById('headerUserLabel');
+    const bottomNavBtn = document.getElementById('bottomNavUserBtn');
+    const bottomNavLabel = document.getElementById('bottomNavUserLabel');
 
     if (isLoggedIn()) {
         if (loginBtn) loginBtn.style.display = 'none';
         if (syncBtn) syncBtn.style.display = '';
         if (logoutBtn) logoutBtn.style.display = '';
-        if (statusEl) statusEl.textContent = getUsername();
+        if (statusEl) statusEl.textContent = getDisplayName();
+        if (headerLabel) headerLabel.textContent = getDisplayName();
+        if (headerBtn) headerBtn.classList.add('logged-in');
+        if (bottomNavLabel) bottomNavLabel.textContent = getDisplayName();
+        if (bottomNavBtn) bottomNavBtn.classList.add('logged-in');
     } else {
         if (loginBtn) loginBtn.style.display = '';
         if (syncBtn) syncBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'none';
         if (statusEl) statusEl.textContent = '';
+        if (headerLabel) headerLabel.textContent = 'Sign in';
+        if (headerBtn) headerBtn.classList.remove('logged-in');
+        if (bottomNavLabel) bottomNavLabel.textContent = 'Sign in';
+        if (bottomNavBtn) bottomNavBtn.classList.remove('logged-in');
     }
 }
 
@@ -472,8 +499,21 @@ export function initSync() {
     const loginBtn = document.getElementById('syncLoginBtn');
     const syncBtn = document.getElementById('syncNowBtn');
     const logoutBtn = document.getElementById('syncLogoutBtn');
+    const headerBtn = document.getElementById('headerUserBtn');
+    const bottomNavBtn = document.getElementById('bottomNavUserBtn');
 
     if (loginBtn) loginBtn.addEventListener('click', showAuthModal);
+    [headerBtn, bottomNavBtn].forEach(btn => {
+        if (btn) {
+            btn.addEventListener('click', () => {
+                if (isLoggedIn()) {
+                    document.querySelector('.sync-controls')?.scrollIntoView({ behavior: 'smooth' });
+                } else {
+                    showAuthModal();
+                }
+            });
+        }
+    });
     if (syncBtn) syncBtn.addEventListener('click', sync);
     if (logoutBtn) {
         logoutBtn.addEventListener('click', () => {

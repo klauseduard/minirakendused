@@ -1,9 +1,10 @@
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
+import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
+from jwt import InvalidTokenError
 from pydantic import BaseModel
 
 from .config import settings
@@ -14,6 +15,7 @@ security = HTTPBearer()
 class UserCreate(BaseModel):
     username: str
     password: str
+    display_name: str = ''
 
 
 class UserLogin(BaseModel):
@@ -25,6 +27,7 @@ class TokenResponse(BaseModel):
     access_token: str
     token_type: str = 'bearer'
     username: str
+    display_name: str
 
 
 def hash_password(password: str) -> str:
@@ -48,7 +51,7 @@ def create_token(user_id: int, username: str) -> str:
 def decode_token(token: str) -> dict:
     try:
         return jwt.decode(token, settings.jwt_secret, algorithms=[settings.jwt_algorithm])
-    except JWTError:
+    except InvalidTokenError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail='Invalid or expired token',
