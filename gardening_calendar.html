@@ -33,7 +33,7 @@
 <body>
     <div class="container">
         <header>
-            <button id="headerUserBtn" class="header-user-btn" aria-label="Account">
+            <button id="headerUserBtn" class="header-user-btn" aria-label="Account" title="Sign in to sync your data across devices">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span id="headerUserLabel">Sign in</span>
             </button>
@@ -365,7 +365,7 @@
             <div class="footer-content">
                 <div class="sync-controls">
                     <span id="syncUserStatus" class="sync-user-status"></span>
-                    <button id="syncLoginBtn" class="data-manage-btn">🔑 Log In / Register</button>
+                    <button id="syncLoginBtn" class="data-manage-btn" style="display:none">🔑 Log In / Register</button>
                     <button id="syncNowBtn" class="data-manage-btn" style="display:none">☁️ Sync Now</button>
                     <button id="syncLogoutBtn" class="data-manage-btn" style="display:none">Log Out</button>
                     <span id="syncStatus" class="sync-status"></span>
@@ -541,7 +541,7 @@
         <span class="nav-icon-emoji">🗺️</span>
         <span class="bottom-nav-label">Layout</span>
       </button>
-      <button class="bottom-nav-btn bottom-nav-user-btn" id="bottomNavUserBtn" aria-label="Account">
+      <button class="bottom-nav-btn bottom-nav-user-btn" id="bottomNavUserBtn" aria-label="Account" title="Sign in to sync your data across devices">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <span class="bottom-nav-label" id="bottomNavUserLabel">Sign in</span>
       </button>

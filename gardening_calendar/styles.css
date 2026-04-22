@@ -1143,6 +1143,75 @@ footer .social-share-container {
     margin-bottom: 5px;
 }
 
+/* Share button styling */
+.social-share-wrapper {
+    display: inline-flex;
+    position: relative;
+}
+
+.social-share-btn {
+    padding: 6px 12px;
+    background: var(--surface);
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s, background-color 0.2s;
+}
+
+.social-share-btn:hover {
+    color: var(--forest);
+    border-color: var(--forest);
+    background-color: var(--highlight);
+}
+
+.social-share-btn .share-icon {
+    font-size: 0.9em;
+}
+
+.social-custom-share,
+.social-native-share {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px;
+    display: flex;
+    gap: 4px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    z-index: 100;
+}
+
+.social-platform-btn {
+    padding: 6px 10px;
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    transition: background-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.social-platform-btn:hover {
+    background-color: var(--highlight);
+    color: var(--text-primary);
+}
+
 footer p {
     margin: 0;
     color: var(--text-secondary);
@@ -1243,6 +1312,45 @@ footer p {
     gap: 10px;
     margin-top: 16px;
     justify-content: flex-end;
+}
+
+.sync-auth-actions .confirm-btn {
+    padding: 8px 18px;
+    background: var(--forest);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+
+.sync-auth-actions .confirm-btn:hover {
+    background-color: #245024;
+}
+
+.sync-auth-actions .confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.sync-auth-actions .secondary-btn {
+    padding: 8px 18px;
+    background: none;
+    color: var(--text-secondary);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: 'Source Sans 3', sans-serif;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: color 0.15s, border-color 0.15s;
+}
+
+.sync-auth-actions .secondary-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--text-secondary);
 }
 
 /* Backup controls in footer */

@@ -455,9 +455,10 @@ function showAuthModal() {
     content.appendChild(actions);
 
     const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
+    overlay.className = 'weather-modal-overlay';
+    overlay.style.display = 'flex';
     const modal = document.createElement('div');
-    modal.className = 'modal sync-auth-modal';
+    modal.className = 'weather-modal sync-auth-modal';
     modal.appendChild(content);
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
@@ -537,7 +538,7 @@ function updateSyncUI() {
         if (bottomNavLabel) bottomNavLabel.textContent = getDisplayName();
         if (bottomNavBtn) bottomNavBtn.classList.add('logged-in');
     } else {
-        if (loginBtn) loginBtn.style.display = '';
+        if (loginBtn) loginBtn.style.display = 'none';
         if (syncBtn) syncBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'none';
         if (statusEl) statusEl.textContent = '';
