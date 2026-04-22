@@ -3,7 +3,7 @@ import os
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 
-from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi import Depends, FastAPI, HTTPException, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -18,6 +18,7 @@ from .auth import (
 )
 from .config import settings
 from .database import DB_DIR, get_db, init_db
+from .ratelimit import login_limiter, register_limiter
 
 
 @asynccontextmanager
@@ -40,7 +41,7 @@ app.add_middleware(
 # --- Auth routes ---
 
 @app.post('/api/register', response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: UserCreate):
+async def register(body: UserCreate, _=Depends(register_limiter)):
     if len(body.username) < 3:
         raise HTTPException(status_code=400, detail='Username must be at least 3 characters')
     if len(body.password) < 6:
@@ -74,7 +75,7 @@ async def register(body: UserCreate):
 
 
 @app.post('/api/login', response_model=TokenResponse)
-async def login(body: UserLogin):
+async def login(body: UserLogin, _=Depends(login_limiter)):
     db = await get_db()
     try:
         cursor = await db.execute(
@@ -125,11 +126,17 @@ async def get_state(user: dict = Depends(get_current_user)):
 
 
 @app.put('/api/sync', response_model=SyncResponse)
-async def put_state(body: SyncState, user: dict = Depends(get_current_user)):
+async def put_state(request: Request, user: dict = Depends(get_current_user)):
+    content_length = int(request.headers.get('content-length', 0))
+    if content_length > settings.max_sync_size_mb * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='Sync data too large')
+
+    body = await request.json()
     user_id = int(user['sub'])
     now = datetime.now(timezone.utc).isoformat()
 
-    data_json = json.dumps(body.data)
+    data = body.get('data', {})
+    data_json = json.dumps(data)
 
     db = await get_db()
     try:
@@ -140,7 +147,7 @@ async def put_state(body: SyncState, user: dict = Depends(get_current_user)):
             (user_id, data_json, now, data_json, now),
         )
         await db.commit()
-        return SyncResponse(data=body.data, updated_at=now)
+        return SyncResponse(data=data, updated_at=now)
     finally:
         await db.close()
 
@@ -183,13 +190,23 @@ async def get_photo(photo_id: str, user: dict = Depends(get_current_user)):
 
 
 @app.put('/api/photos/{photo_id}')
-async def put_photo(photo_id: str, body: PhotoUpload, user: dict = Depends(get_current_user)):
+async def put_photo(photo_id: str, request: Request, user: dict = Depends(get_current_user)):
+    content_length = int(request.headers.get('content-length', 0))
+    if content_length > settings.max_photo_size_mb * 1024 * 1024:
+        raise HTTPException(status_code=413, detail='Photo too large')
+
+    body = await request.json()
     user_id = int(user['sub'])
-    if body.id != photo_id:
+    if body.get('id') != photo_id:
         raise HTTPException(status_code=400, detail='Photo ID in body must match URL')
     path = os.path.join(_photos_dir(user_id), f'{photo_id}.json')
     with open(path, 'w') as f:
-        json.dump({'id': body.id, 'entryId': body.entryId, 'data': body.data, 'thumbnail': body.thumbnail}, f)
+        json.dump({
+            'id': body['id'],
+            'entryId': body['entryId'],
+            'data': body['data'],
+            'thumbnail': body.get('thumbnail', ''),
+        }, f)
     return {'status': 'ok', 'id': photo_id}
 
 

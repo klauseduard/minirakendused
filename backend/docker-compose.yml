@@ -7,6 +7,11 @@ services:
       - garden-data:/app/data
     environment:
       - GARDEN_JWT_SECRET=${GARDEN_JWT_SECRET:-change-me-in-production}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
     restart: unless-stopped
 
 volumes:

@@ -42,4 +42,8 @@ async def reset_db():
         shutil.rmtree(photos_dir)
     # Recreate schema
     await init_db()
+    # Reset rate limiters so test isolation is maintained
+    from app.ratelimit import login_limiter, register_limiter
+    login_limiter.reset()
+    register_limiter.reset()
     yield

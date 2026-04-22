@@ -365,35 +365,94 @@ function showAuthModal() {
 
     const content = document.createElement('div');
     content.className = 'sync-auth-form';
-    content.innerHTML = `
-        <div class="sync-auth-tabs">
-            <button class="sync-auth-tab active" data-tab="login">Log In</button>
-            <button class="sync-auth-tab" data-tab="register">Register</button>
-        </div>
-        <div class="sync-auth-fields">
-            <label>
-                Server URL
-                <input type="url" id="syncApiUrl" placeholder="https://your-server:8000" value="${savedApiUrl}" />
-            </label>
-            <label>
-                Username
-                <input type="text" id="syncUsername" autocomplete="username" />
-            </label>
-            <label>
-                Password
-                <input type="password" id="syncPassword" autocomplete="current-password" />
-            </label>
-            <label id="syncDisplayNameLabel" style="display:none">
-                Display Name (optional)
-                <input type="text" id="syncDisplayName" placeholder="How you want to be shown" />
-            </label>
-        </div>
-        <div id="syncAuthError" class="sync-auth-error"></div>
-        <div class="sync-auth-actions">
-            <button id="syncAuthSubmit" class="confirm-btn">Log In</button>
-            <button id="syncAuthCancel" class="secondary-btn">Cancel</button>
-        </div>
-    `;
+
+    // Tabs
+    const tabs = document.createElement('div');
+    tabs.className = 'sync-auth-tabs';
+
+    const loginTab = document.createElement('button');
+    loginTab.className = 'sync-auth-tab active';
+    loginTab.setAttribute('data-tab', 'login');
+    loginTab.textContent = 'Log In';
+
+    const registerTab = document.createElement('button');
+    registerTab.className = 'sync-auth-tab';
+    registerTab.setAttribute('data-tab', 'register');
+    registerTab.textContent = 'Register';
+
+    tabs.appendChild(loginTab);
+    tabs.appendChild(registerTab);
+
+    // Fields
+    const fields = document.createElement('div');
+    fields.className = 'sync-auth-fields';
+
+    const serverLabel = document.createElement('label');
+    serverLabel.textContent = 'Server URL';
+    const serverInput = document.createElement('input');
+    serverInput.setAttribute('type', 'url');
+    serverInput.id = 'syncApiUrl';
+    serverInput.setAttribute('placeholder', 'https://your-server:8000');
+    serverInput.setAttribute('value', savedApiUrl);
+    serverLabel.appendChild(serverInput);
+
+    const usernameLabel = document.createElement('label');
+    usernameLabel.textContent = 'Username';
+    const usernameInput = document.createElement('input');
+    usernameInput.setAttribute('type', 'text');
+    usernameInput.id = 'syncUsername';
+    usernameInput.setAttribute('autocomplete', 'username');
+    usernameLabel.appendChild(usernameInput);
+
+    const passwordLabel = document.createElement('label');
+    passwordLabel.textContent = 'Password';
+    const passwordInput = document.createElement('input');
+    passwordInput.setAttribute('type', 'password');
+    passwordInput.id = 'syncPassword';
+    passwordInput.setAttribute('autocomplete', 'current-password');
+    passwordLabel.appendChild(passwordInput);
+
+    const displayNameLabel = document.createElement('label');
+    displayNameLabel.id = 'syncDisplayNameLabel';
+    displayNameLabel.style.display = 'none';
+    displayNameLabel.textContent = 'Display Name (optional)';
+    const displayNameInput = document.createElement('input');
+    displayNameInput.setAttribute('type', 'text');
+    displayNameInput.id = 'syncDisplayName';
+    displayNameInput.setAttribute('placeholder', 'How you want to be shown');
+    displayNameLabel.appendChild(displayNameInput);
+
+    fields.appendChild(serverLabel);
+    fields.appendChild(usernameLabel);
+    fields.appendChild(passwordLabel);
+    fields.appendChild(displayNameLabel);
+
+    // Error container
+    const errorDiv = document.createElement('div');
+    errorDiv.id = 'syncAuthError';
+    errorDiv.className = 'sync-auth-error';
+
+    // Action buttons
+    const actions = document.createElement('div');
+    actions.className = 'sync-auth-actions';
+
+    const submitBtn = document.createElement('button');
+    submitBtn.id = 'syncAuthSubmit';
+    submitBtn.className = 'confirm-btn';
+    submitBtn.textContent = 'Log In';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.id = 'syncAuthCancel';
+    cancelBtn.className = 'secondary-btn';
+    cancelBtn.textContent = 'Cancel';
+
+    actions.appendChild(submitBtn);
+    actions.appendChild(cancelBtn);
+
+    content.appendChild(tabs);
+    content.appendChild(fields);
+    content.appendChild(errorDiv);
+    content.appendChild(actions);
 
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay';
@@ -404,39 +463,36 @@ function showAuthModal() {
     document.body.appendChild(overlay);
 
     let mode = 'login';
-    const tabs = content.querySelectorAll('.sync-auth-tab');
-    const submitBtn = content.querySelector('#syncAuthSubmit');
-    const errorEl = content.querySelector('#syncAuthError');
-    const displayNameLabel = content.querySelector('#syncDisplayNameLabel');
+    const tabButtons = [loginTab, registerTab];
 
-    tabs.forEach(tab => {
+    tabButtons.forEach(tab => {
         tab.addEventListener('click', () => {
             mode = tab.dataset.tab;
-            tabs.forEach(t => t.classList.toggle('active', t === tab));
+            tabButtons.forEach(t => t.classList.toggle('active', t === tab));
             submitBtn.textContent = mode === 'login' ? 'Log In' : 'Register';
             displayNameLabel.style.display = mode === 'register' ? '' : 'none';
         });
     });
 
     submitBtn.addEventListener('click', async () => {
-        const apiUrl = content.querySelector('#syncApiUrl').value.trim();
-        const username = content.querySelector('#syncUsername').value.trim();
-        const password = content.querySelector('#syncPassword').value;
+        const apiUrl = serverInput.value.trim();
+        const username = usernameInput.value.trim();
+        const password = passwordInput.value;
 
         if (!apiUrl || !username || !password) {
-            errorEl.textContent = 'All fields are required.';
+            errorDiv.textContent = 'All fields are required.';
             return;
         }
 
         submitBtn.disabled = true;
         submitBtn.textContent = 'Connecting...';
-        errorEl.textContent = '';
+        errorDiv.textContent = '';
 
         try {
             if (mode === 'login') {
                 await login(apiUrl, username, password);
             } else {
-                const displayName = content.querySelector('#syncDisplayName').value.trim();
+                const displayName = displayNameInput.value.trim();
                 await register(apiUrl, username, password, displayName);
             }
             overlay.remove();
@@ -444,18 +500,18 @@ function showAuthModal() {
             // Auto-sync after login
             sync();
         } catch (err) {
-            errorEl.textContent = err.message;
+            errorDiv.textContent = err.message;
             submitBtn.disabled = false;
             submitBtn.textContent = mode === 'login' ? 'Log In' : 'Register';
         }
     });
 
-    content.querySelector('#syncAuthCancel').addEventListener('click', () => {
+    cancelBtn.addEventListener('click', () => {
         overlay.remove();
     });
 
     // Focus username field
-    setTimeout(() => content.querySelector('#syncUsername').focus(), 100);
+    setTimeout(() => usernameInput.focus(), 100);
 }
 
 /**
