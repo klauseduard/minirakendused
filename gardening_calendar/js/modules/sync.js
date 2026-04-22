@@ -25,12 +25,13 @@ const DISPLAY_NAME_KEY = 'gardening_sync_display_name';
 const LAST_SYNC_KEY = 'gardening_last_sync';
 const API_URL_KEY = 'gardening_sync_api_url';
 const BUILTIN_ORDER_KEY = 'gardenCal_builtinPeriodOrders';
+const DEFAULT_API_URL = 'https://klauseduard.duckdns.org/garden-api';
 
 /**
  * Get the configured API base URL
  */
 function getApiUrl() {
-    return localStorage.getItem(API_URL_KEY) || '';
+    return localStorage.getItem(API_URL_KEY) || DEFAULT_API_URL;
 }
 
 function getToken() {
@@ -361,8 +362,6 @@ function showSyncConflictDialog(remote) {
  * Show login/register modal
  */
 function showAuthModal() {
-    const savedApiUrl = getApiUrl() || '';
-
     const content = document.createElement('div');
     content.className = 'sync-auth-form';
 
@@ -386,15 +385,6 @@ function showAuthModal() {
     // Fields
     const fields = document.createElement('div');
     fields.className = 'sync-auth-fields';
-
-    const serverLabel = document.createElement('label');
-    serverLabel.textContent = 'Server URL';
-    const serverInput = document.createElement('input');
-    serverInput.setAttribute('type', 'url');
-    serverInput.id = 'syncApiUrl';
-    serverInput.setAttribute('placeholder', 'https://your-server:8000');
-    serverInput.setAttribute('value', savedApiUrl);
-    serverLabel.appendChild(serverInput);
 
     const usernameLabel = document.createElement('label');
     usernameLabel.textContent = 'Username';
@@ -422,7 +412,6 @@ function showAuthModal() {
     displayNameInput.setAttribute('placeholder', 'How you want to be shown');
     displayNameLabel.appendChild(displayNameInput);
 
-    fields.appendChild(serverLabel);
     fields.appendChild(usernameLabel);
     fields.appendChild(passwordLabel);
     fields.appendChild(displayNameLabel);
@@ -476,11 +465,11 @@ function showAuthModal() {
     });
 
     submitBtn.addEventListener('click', async () => {
-        const apiUrl = serverInput.value.trim();
+        const apiUrl = getApiUrl();
         const username = usernameInput.value.trim();
         const password = passwordInput.value;
 
-        if (!apiUrl || !username || !password) {
+        if (!username || !password) {
             errorDiv.textContent = 'All fields are required.';
             return;
         }
